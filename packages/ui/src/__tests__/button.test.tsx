@@ -17,7 +17,7 @@ describe('Button component', () => {
       </Button>,
     );
     const button = screen.getByRole('button', { name: /continue/i });
-    expect(button.className).toContain('bg-slate-100');
+    expect(button.className).toContain('bg-secondary');
     expect(button.className).toContain('h-12');
   });
 });

@@ -1,0 +1,29 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "startServerCommand": "pnpm --filter @bodhai/web start",
+      "startServerReadyPattern": "Ready in",
+      "url": [
+        "http://localhost:3000/en",
+        "http://localhost:3000/hi",
+        "http://localhost:3000/en/how-it-works",
+        "http://localhost:3000/en/for-students",
+        "http://localhost:3000/en/contact"
+      ]
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.9 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:best-practices": ["error", { "minScore": 0.9 }],
+        "categories:seo": ["error", { "minScore": 0.95 }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.05 }],
+        "first-contentful-paint": ["warn", { "maxNumericValue": 2000 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

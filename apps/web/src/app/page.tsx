@@ -1,6 +1,5 @@
-import type * as React from 'react';
-import { Hello } from '@/components/hello';
+import { redirect } from 'next/navigation';
 
-export default function HomePage(): React.JSX.Element {
-  return <Hello />;
+export default function RootPage(): never {
+  redirect('/en');
 }

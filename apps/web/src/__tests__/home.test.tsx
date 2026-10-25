@@ -1,18 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import HomePage from '../app/page';
+import { screen } from '@testing-library/react';
+import HomePage from '../app/[locale]/page';
+import { renderWithIntl } from './test-utils';
 
-describe('Home Page', () => {
-  it('renders platform heading and class selection buttons', () => {
-    render(<HomePage />);
+describe('BodhAI Home Page', () => {
+  it('renders hero title and curriculum coverage', async () => {
+    const page = await HomePage({
+      params: Promise.resolve({ locale: 'en' }),
+    });
 
-    const heading = screen.getByRole('heading', { level: 1, name: /welcome to bodhai/i });
-    expect(heading).toBeInTheDocument();
+    renderWithIntl(page);
 
-    const startButton = screen.getByRole('button', { name: /start diagnostic assessment/i });
-    expect(startButton).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: /adaptive mastery learning for middle & secondary school/i,
+      }),
+    ).toBeInTheDocument();
 
-    const class6Btn = screen.getByRole('button', { name: /class 6/i });
-    expect(class6Btn).toBeInTheDocument();
+    expect(screen.getByText('10.09 Crore')).toBeInTheDocument();
+    expect(screen.getByText('45.8%')).toBeInTheDocument();
+    expect(
+      screen.getByText(/UDISE\+ 2024-25, Ministry of Education, Govt\. of India/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Annual Status of Education Report \(ASER\) 2024/i),
+    ).toBeInTheDocument();
   });
 });
