@@ -1,0 +1,1419 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BodhAI API",
+    "description": "Adaptive learning platform backend for Classes 6-10 in India",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Liveness Probe",
+        "description": "Returns 200 OK if the FastAPI process is active and accepting requests.",
+        "operationId": "get_health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Readiness Probe",
+        "description": "Probes PostgreSQL and Redis connections to verify operational readiness.",
+        "operationId": "get_ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "All backend dependencies are healthy and ready to serve traffic.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "One or more dependencies (PostgreSQL or Redis) are unavailable."
+          }
+        }
+      }
+    },
+    "/api/v1/curricula": {
+      "get": {
+        "tags": ["Curriculum"],
+        "summary": "List Curricula",
+        "description": "Retrieve educational curricula filtered by grade or board.",
+        "operationId": "list_curricula_api_v1_curricula_get",
+        "parameters": [
+          {
+            "name": "grade",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 10,
+                  "minimum": 6
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Grade filter (Classes 6-10)",
+              "title": "Grade"
+            },
+            "description": "Grade filter (Classes 6-10)"
+          },
+          {
+            "name": "board",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Board filter (CBSE, NCERT, STATE_BOARD)",
+              "title": "Board"
+            },
+            "description": "Board filter (CBSE, NCERT, STATE_BOARD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurriculumResponse"
+                  },
+                  "title": "Response List Curricula Api V1 Curricula Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/curricula/{code}": {
+      "get": {
+        "tags": ["Curriculum"],
+        "summary": "Get Curriculum by Code",
+        "description": "Retrieve curriculum by its unique code identifier.",
+        "operationId": "get_curriculum_api_v1_curricula__code__get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurriculumResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/curricula/{code}/topics": {
+      "get": {
+        "tags": ["Curriculum"],
+        "summary": "List Curriculum Topics",
+        "description": "Retrieve ordered topics for a specific curriculum framework.",
+        "operationId": "get_curriculum_topics_api_v1_curricula__code__topics_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopicResponse"
+                  },
+                  "title": "Response Get Curriculum Topics Api V1 Curricula  Code  Topics Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{skill_id}": {
+      "get": {
+        "tags": ["Skills"],
+        "summary": "Get Skill by ID",
+        "description": "Retrieve atomic competency node by UUID.",
+        "operationId": "get_skill_api_v1_skills__skill_id__get",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{skill_id}/prerequisites": {
+      "get": {
+        "tags": ["Skills"],
+        "summary": "Get Skill Prerequisites",
+        "description": "Retrieve incoming prerequisite dependency graph edges for a skill.",
+        "operationId": "get_skill_prerequisites_api_v1_skills__skill_id__prerequisites_get",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrerequisiteResponse"
+                  },
+                  "title": "Response Get Skill Prerequisites Api V1 Skills  Skill Id  Prerequisites Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/by-topic/{topic_id}": {
+      "get": {
+        "tags": ["Skills"],
+        "summary": "List Skills by Topic",
+        "description": "Retrieve all skills under a curriculum topic.",
+        "operationId": "list_skills_by_topic_api_v1_skills_by_topic__topic_id__get",
+        "parameters": [
+          {
+            "name": "topic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Topic Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillResponse"
+                  },
+                  "title": "Response List Skills By Topic Api V1 Skills By Topic  Topic Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions": {
+      "get": {
+        "tags": ["Questions"],
+        "summary": "List Questions for Skill",
+        "description": "Retrieve calibrated assessment questions belonging to a competency skill.",
+        "operationId": "list_questions_api_v1_questions_get",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Skill competency UUID",
+              "title": "Skill Id"
+            },
+            "description": "Skill competency UUID"
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Language code ('en', 'hi')",
+              "default": "en",
+              "title": "Language"
+            },
+            "description": "Language code ('en', 'hi')"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionResponse"
+                  },
+                  "title": "Response List Questions Api V1 Questions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/{question_id}": {
+      "get": {
+        "tags": ["Questions"],
+        "summary": "Get Question by ID",
+        "description": "Retrieve a single calibrated question by UUID.",
+        "operationId": "get_question_api_v1_questions__question_id__get",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Language code ('en', 'hi')",
+              "default": "en",
+              "title": "Language"
+            },
+            "description": "Language code ('en', 'hi')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/attempts": {
+      "post": {
+        "tags": ["Attempts"],
+        "summary": "Submit Question Attempt",
+        "description": "Submit a question answer for Bayesian evaluation with strict idempotency.",
+        "operationId": "submit_attempt_api_v1_attempts_post",
+        "parameters": [
+          {
+            "name": "x-student-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Authenticated student UUID or guest profile identifier",
+              "title": "X-Student-Id"
+            },
+            "description": "Authenticated student UUID or guest profile identifier"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptSubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mastery": {
+      "get": {
+        "tags": ["Mastery"],
+        "summary": "List Student Mastery States",
+        "description": "Retrieve all competency mastery levels tracked for a student.",
+        "operationId": "list_student_mastery_api_v1_mastery_get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Student UUID",
+              "title": "Student Id"
+            },
+            "description": "Student UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MasteryResponse"
+                  },
+                  "title": "Response List Student Mastery Api V1 Mastery Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mastery/{skill_id}": {
+      "get": {
+        "tags": ["Mastery"],
+        "summary": "Get Skill Mastery",
+        "description": "Retrieve student mastery probability for a specific skill.",
+        "operationId": "get_skill_mastery_api_v1_mastery__skill_id__get",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "student_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Student UUID",
+              "title": "Student Id"
+            },
+            "description": "Student UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasteryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/consents": {
+      "post": {
+        "tags": ["Consent"],
+        "summary": "Record Granted Consent",
+        "description": "Record parental or student consent for DPDP Act compliance.",
+        "operationId": "create_consent_api_v1_consents_post",
+        "parameters": [
+          {
+            "name": "x-student-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Student UUID",
+              "title": "X-Student-Id"
+            },
+            "description": "Student UUID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Consent"],
+        "summary": "List Active Consents",
+        "description": "List all currently active granted consents for a student.",
+        "operationId": "list_active_consents_api_v1_consents_get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Student UUID",
+              "title": "Student Id"
+            },
+            "description": "Student UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentResponse"
+                  },
+                  "title": "Response List Active Consents Api V1 Consents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync": {
+      "post": {
+        "tags": ["Sync"],
+        "summary": "Batch Offline Sync",
+        "description": "Process queued offline events idempotently upon network reconnect.",
+        "operationId": "sync_offline_events_api_v1_sync_post",
+        "parameters": [
+          {
+            "name": "x-student-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Authenticated student UUID or guest profile identifier",
+              "title": "X-Student-Id"
+            },
+            "description": "Authenticated student UUID or guest profile identifier"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncBatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AttemptResponse": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          },
+          "p_mastery_after": {
+            "type": "number",
+            "title": "P Mastery After",
+            "description": "Updated Bayesian mastery probability [0.0 - 1.0]"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Step-by-step conceptual solution"
+          },
+          "is_duplicate": {
+            "type": "boolean",
+            "title": "Is Duplicate",
+            "description": "Flag indicating if idempotency deduplicated this request",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": ["attempt_id", "is_correct", "p_mastery_after", "explanation"],
+        "title": "AttemptResponse",
+        "description": "Evaluation result for a submitted attempt."
+      },
+      "AttemptSubmitRequest": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "skill_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Skill Id"
+          },
+          "selected_answer": {
+            "type": "string",
+            "title": "Selected Answer",
+            "description": "Answer identifier (e.g. 'B') or numeric string"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "description": "Client-generated unique UUID preventing duplicate submissions"
+          },
+          "time_spent_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Time Spent Ms",
+            "description": "Time spent solving the question in milliseconds"
+          },
+          "client_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Client Timestamp",
+            "description": "Client-side UTC timestamp when completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "skill_id",
+          "selected_answer",
+          "idempotency_key",
+          "time_spent_ms",
+          "client_timestamp"
+        ],
+        "title": "AttemptSubmitRequest",
+        "description": "Practice question response submission payload."
+      },
+      "ConsentCreateRequest": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "description": "Consent scope, e.g. 'diagnostic', 'learning', 'data_sharing', 'offline_sync'"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Policy version consented to",
+            "default": "2024.1"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Id",
+            "description": "Guardian UUID if student is minor"
+          }
+        },
+        "type": "object",
+        "required": ["scope"],
+        "title": "ConsentCreateRequest",
+        "description": "Parental/student consent registration payload."
+      },
+      "ConsentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "is_granted": {
+            "type": "boolean",
+            "title": "Is Granted"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "type": "object",
+        "required": ["id", "student_id", "scope", "version", "is_granted", "timestamp"],
+        "title": "ConsentResponse",
+        "description": "Consent status confirmation."
+      },
+      "CurriculumResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "board": {
+            "type": "string",
+            "title": "Board"
+          },
+          "grade": {
+            "type": "integer",
+            "title": "Grade"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/TopicResponse"
+            },
+            "type": "array",
+            "title": "Topics"
+          }
+        },
+        "type": "object",
+        "required": ["id", "code", "board", "grade", "subject", "version"],
+        "title": "CurriculumResponse",
+        "description": "Board curriculum response with associated topics."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "description": "Liveness confirmation flag",
+            "default": "ok"
+          },
+          "app": {
+            "type": "string",
+            "title": "App",
+            "description": "Name of the running application service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Semantic version string"
+          }
+        },
+        "type": "object",
+        "required": ["app", "version"],
+        "title": "HealthResponse",
+        "description": "Liveness probe status payload."
+      },
+      "MasteryResponse": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Skill Id"
+          },
+          "p_mastery": {
+            "type": "number",
+            "title": "P Mastery"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "attempts_count": {
+            "type": "integer",
+            "title": "Attempts Count"
+          },
+          "correct_count": {
+            "type": "integer",
+            "title": "Correct Count"
+          },
+          "last_attempted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attempted At"
+          }
+        },
+        "type": "object",
+        "required": ["skill_id", "p_mastery", "confidence", "attempts_count", "correct_count"],
+        "title": "MasteryResponse",
+        "description": "Student competency mastery summary."
+      },
+      "PrerequisiteResponse": {
+        "properties": {
+          "parent_skill_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Parent Skill Id"
+          },
+          "child_skill_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Child Skill Id"
+          },
+          "relation_type": {
+            "type": "string",
+            "title": "Relation Type"
+          }
+        },
+        "type": "object",
+        "required": ["parent_skill_id", "child_skill_id", "relation_type"],
+        "title": "PrerequisiteResponse",
+        "description": "Prerequisite relationship edge."
+      },
+      "QuestionOptionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Option identifier (A, B, C, D)"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Localized option label text"
+          }
+        },
+        "type": "object",
+        "required": ["id", "text"],
+        "title": "QuestionOptionResponse",
+        "description": "Question multiple-choice option."
+      },
+      "QuestionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "skill_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Skill Id"
+          },
+          "difficulty": {
+            "type": "number",
+            "title": "Difficulty"
+          },
+          "question_type": {
+            "type": "string",
+            "title": "Question Type"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOptionResponse"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "hints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": ["id", "skill_id", "difficulty", "question_type", "prompt", "options"],
+        "title": "QuestionResponse",
+        "description": "Calibrated question item presented to student."
+      },
+      "ReadyResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ready", "degraded"],
+            "title": "Status",
+            "description": "Operational readiness state"
+          },
+          "database": {
+            "type": "boolean",
+            "title": "Database",
+            "description": "Whether the PostgreSQL connection probe succeeded"
+          },
+          "redis": {
+            "type": "boolean",
+            "title": "Redis",
+            "description": "Whether the Redis connection probe succeeded"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "UTC timestamp of readiness evaluation"
+          }
+        },
+        "type": "object",
+        "required": ["status", "database", "redis", "timestamp"],
+        "title": "ReadyResponse",
+        "description": "Readiness probe status payload indicating database and cache health."
+      },
+      "SkillResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "difficulty": {
+            "type": "number",
+            "title": "Difficulty"
+          },
+          "blooms_level": {
+            "type": "string",
+            "title": "Blooms Level"
+          }
+        },
+        "type": "object",
+        "required": ["id", "topic_id", "code", "name", "description", "difficulty", "blooms_level"],
+        "title": "SkillResponse",
+        "description": "Atomic competency node details."
+      },
+      "SyncBatchRequest": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/SyncItemRequest"
+            },
+            "type": "array",
+            "title": "Events",
+            "description": "List of queued offline events"
+          }
+        },
+        "type": "object",
+        "required": ["events"],
+        "title": "SyncBatchRequest",
+        "description": "Batch payload sent during network reconnection."
+      },
+      "SyncBatchResponse": {
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SyncItemResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": ["processed", "failed", "results"],
+        "title": "SyncBatchResponse",
+        "description": "Summary of batch synchronization execution."
+      },
+      "SyncItemRequest": {
+        "properties": {
+          "client_event_id": {
+            "type": "string",
+            "title": "Client Event Id",
+            "description": "Unique client UUID for deduplication"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type",
+            "description": "Event type name (e.g. attempt_submission)"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload",
+            "description": "Event data payload"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Client creation timestamp"
+          }
+        },
+        "type": "object",
+        "required": ["client_event_id", "event_type", "payload", "timestamp"],
+        "title": "SyncItemRequest",
+        "description": "Individual queued offline action."
+      },
+      "SyncItemResult": {
+        "properties": {
+          "client_event_id": {
+            "type": "string",
+            "title": "Client Event Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["client_event_id", "status"],
+        "title": "SyncItemResult",
+        "description": "Individual synchronization outcome."
+      },
+      "TopicResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "sequence_order": {
+            "type": "integer",
+            "title": "Sequence Order"
+          }
+        },
+        "type": "object",
+        "required": ["id", "code", "name", "sequence_order"],
+        "title": "TopicResponse",
+        "description": "Curriculum topic summary."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

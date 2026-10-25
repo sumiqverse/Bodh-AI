@@ -9,15 +9,28 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
+    "sqlalchemy[asyncio]>=2.0.38",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.1",
+    "structlog>=24.4.0",
+    "redis[hiredis]>=5.2.1",
+    "pgvector>=0.3.6",
+    "python-multipart>=0.0.20",
+    "email-validator>=2.2.0",
+    "greenlet>=3.1.1",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.25.0",
+    "pytest-cov>=6.0.0",
     "httpx>=0.28.0",
     "mypy>=1.15.0",
     "ruff>=0.9.0",
+    "factory-boy>=3.3.3",
+    "aiosqlite>=0.20.0",
+    "testcontainers[postgres]>=4.9.1",
 ]
 
 [tool.ruff]
@@ -42,6 +55,7 @@ ignore = []
 [tool.mypy]
 python_version = "3.12"
 strict = true
+explicit_package_bases = true
 disallow_untyped_defs = true
 disallow_any_generics = true
 disallow_subclassing_any = true
@@ -55,6 +69,22 @@ no_implicit_reexport = true
 strict_equality = true
 pretty = true
 
+[[tool.mypy.overrides]]
+module = [
+    "pgvector.*",
+    "testcontainers.*",
+    "factory.*",
+    "aiosqlite.*",
+    "asyncpg.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.factories",
+]
+ignore_errors = true
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
@@ -62,3 +92,7 @@ asyncio_mode = "auto"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=80"
+filterwarnings = [
+    "ignore:.*HTTP_422_UNPROCESSABLE_ENTITY.*",
+]

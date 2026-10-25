@@ -7,6 +7,10 @@
     "typecheck": "uv run mypy app tests",
     "test": "uv run pytest",
     "build": "node -e \"console.log('API build validation passed')\"",
-    "dev": "uv run uvicorn app.main:app --reload --port 8000"
+    "dev": "uv run uvicorn app.main:app --reload --port 8000",
+    "migrate": "uv run python scripts/migrate.py",
+    "seed": "uv run python scripts/seed.py",
+    "reset": "uv run python scripts/reset.py",
+    "openapi:export": "uv run python scripts/export_openapi.py"
   }
 }

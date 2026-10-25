@@ -1,0 +1,72 @@
+"""Question item bank repository."""
+
+import uuid
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.assessment import Question, QuestionTranslation
+from app.repositories.base import BaseRepository
+
+
+class QuestionRepository(BaseRepository[Question]):
+    """Repository operations for assessment questions and localized translations."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(Question, session)
+
+    async def get_with_translations(self, question_id: uuid.UUID) -> Question | None:
+        """Fetch question by ID eagerly loading all language translations."""
+        statement = (
+            select(Question)
+            .where(Question.id == question_id, Question.is_deleted == False)  # noqa: E712
+            .options(selectinload(Question.translations))
+        )
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def list_by_skill(
+        self,
+        skill_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> Sequence[Question]:
+        """Fetch calibrated assessment questions belonging to a competency skill."""
+        statement = (
+            select(Question)
+            .where(
+                Question.skill_id == skill_id,
+                Question.is_active == True,  # noqa: E712
+                Question.is_deleted == False,  # noqa: E712
+            )
+            .options(selectinload(Question.translations))
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.session.execute(statement)
+        return result.scalars().all()
+
+    async def add_translation(
+        self,
+        question_id: uuid.UUID,
+        language: str,
+        prompt: str,
+        options: list[dict[str, Any]],
+        explanation: str,
+        hints: list[str] | None = None,
+    ) -> QuestionTranslation:
+        """Attach a localized translation to an existing question."""
+        translation = QuestionTranslation(
+            question_id=question_id,
+            language=language,
+            prompt=prompt,
+            options=options,
+            explanation=explanation,
+            hints=hints or [],
+        )
+        self.session.add(translation)
+        await self.session.flush()
+        return translation
