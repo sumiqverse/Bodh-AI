@@ -25,7 +25,7 @@ export function SiteHeader(): React.JSX.Element {
     { label: tNav('safety'), href: '/privacy-safety', isActive: pathname === '/privacy-safety' },
     { label: tNav('contact'), href: '/contact', isActive: pathname === '/contact' },
     {
-      label: tNav('curriculum'),
+      label: tNav.has('curriculum') ? tNav('curriculum') : 'Curriculum',
       href: '/curriculum',
       isActive: pathname?.startsWith('/curriculum') ?? false,
     },
