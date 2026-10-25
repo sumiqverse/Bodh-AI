@@ -5,10 +5,49 @@ import type { components, paths } from './schema';
 export type Paths = paths;
 export type HealthResponse = components['schemas']['HealthResponse'];
 export type ReadyResponse = components['schemas']['ReadyResponse'];
-export type CurriculumResponse = components['schemas']['CurriculumResponse'];
-export type TopicResponse = components['schemas']['TopicResponse'];
-export type SkillResponse = components['schemas']['SkillResponse'];
-export type PrerequisiteResponse = components['schemas']['PrerequisiteResponse'];
+export interface PrerequisiteResponse {
+  skill_id: string;
+  prerequisite_id: string;
+  prerequisite_code?: string;
+  prerequisite_name?: string;
+  relationship_type: string;
+}
+
+export interface SkillResponse {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  topic_id: string;
+  topic_code?: string | null;
+  blooms_level?: string | null;
+  difficulty: number;
+  prerequisites?: PrerequisiteResponse[];
+}
+
+export interface TopicResponse {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  order_index?: number;
+  curriculum_id?: string;
+  skills: SkillResponse[];
+}
+
+export interface CurriculumResponse {
+  id: string;
+  code: string;
+  name: string;
+  board: string;
+  grade: number;
+  subject: string;
+  version: string;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+  topics?: TopicResponse[];
+}
 export type QuestionResponse = components['schemas']['QuestionResponse'];
 export type AttemptSubmitRequest = components['schemas']['AttemptSubmitRequest'];
 export type AttemptResponse = components['schemas']['AttemptResponse'];
@@ -44,6 +83,94 @@ export type DataDeleteResponse = components['schemas']['DataDeleteResponse'];
 
 // Admin types
 export type AdminSchoolStatsResponse = components['schemas']['AdminSchoolStatsResponse'];
+
+// Content & Curriculum types
+export interface GraphNode {
+  id: string;
+  code: string;
+  name: string;
+  topic_code: string;
+  topic_name?: string;
+  blooms_level?: string;
+  difficulty?: number;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  relationship_type: string;
+}
+
+export interface CurriculumGraphResponse {
+  curriculum_code: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface ImportDiff {
+  curriculum_created: number;
+  curriculum_updated: number;
+  topics_created: number;
+  topics_updated: number;
+  skills_created: number;
+  skills_updated: number;
+  prerequisites_created: number;
+  questions_created: number;
+  questions_updated: number;
+  glossary_created: number;
+  glossary_updated: number;
+}
+
+export interface ImportResponse {
+  is_valid: boolean;
+  errors: string[];
+  warnings: string[];
+  diff: ImportDiff | null;
+  summary: string;
+}
+
+export interface QuestionTranslationDetail {
+  language: string;
+  question_text: string;
+  options?: Array<{ id: string; text: string; is_correct?: boolean }> | null;
+  verified_answer?: string | null;
+  worked_solution?: string | null;
+  explanation?: string | null;
+  hints: string[];
+}
+
+export interface QuestionVersionItem {
+  id: string;
+  version_number: number;
+  status: string;
+  reviewer_id?: string | null;
+  review_notes?: string | null;
+  created_at: string;
+  change_summary?: string | null;
+}
+
+export interface QuestionDetailResponse {
+  id: string;
+  skill_id: string;
+  code: string;
+  question_type: string;
+  difficulty: number;
+  status: 'draft' | 'reviewed' | 'published';
+  needs_teacher_review: boolean;
+  created_at: string;
+  updated_at: string;
+  translations: QuestionTranslationDetail[];
+  versions: QuestionVersionItem[];
+}
+
+export interface QuestionUpdateRequest {
+  question_type?: string;
+  difficulty?: number;
+  status?: 'draft' | 'reviewed' | 'published';
+  needs_teacher_review?: boolean;
+  review_notes?: string;
+  translations?: QuestionTranslationDetail[];
+}
 
 export interface ProblemDetail {
   type?: string;
@@ -414,5 +541,99 @@ export class BodhaiApiClient {
       headers,
       body: JSON.stringify(batch),
     });
+  }
+
+  // --- Content Engine & Editorial Review Workflow Methods ---
+
+  public async getCurriculumGraph(code: string): Promise<CurriculumGraphResponse> {
+    return this.request<CurriculumGraphResponse>(
+      `/api/v1/curricula/${encodeURIComponent(code)}/graph`,
+    );
+  }
+
+  public async importContentPack(
+    packData: Record<string, unknown>,
+    dryRun: boolean = false,
+    token?: string,
+  ): Promise<ImportResponse> {
+    return this.request<ImportResponse>(`/api/v1/curricula/import?dry_run=${dryRun}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeaders(token),
+      },
+      body: JSON.stringify(packData),
+    });
+  }
+
+  public async listManageQuestions(
+    params?: {
+      skill_id?: string;
+      status?: string;
+      needs_teacher_review?: boolean;
+      skip?: number;
+      limit?: number;
+    },
+    token?: string,
+  ): Promise<QuestionDetailResponse[]> {
+    const query = new URLSearchParams();
+    if (params?.skill_id) query.set('skill_id', params.skill_id);
+    if (params?.status) query.set('status', params.status);
+    if (params?.needs_teacher_review !== undefined) {
+      query.set('needs_teacher_review', String(params.needs_teacher_review));
+    }
+    if (params?.skip !== undefined) query.set('skip', params.skip.toString());
+    if (params?.limit !== undefined) query.set('limit', params.limit.toString());
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request<QuestionDetailResponse[]>(`/api/v1/questions/manage${qs}`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async getQuestionDetail(
+    questionId: string,
+    token?: string,
+  ): Promise<QuestionDetailResponse> {
+    return this.request<QuestionDetailResponse>(
+      `/api/v1/questions/${encodeURIComponent(questionId)}/detail`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async updateQuestionStatus(
+    questionId: string,
+    status: 'draft' | 'reviewed' | 'published',
+    reviewNotes?: string,
+    token?: string,
+  ): Promise<QuestionDetailResponse> {
+    const query = new URLSearchParams({ status });
+    if (reviewNotes) query.set('review_notes', reviewNotes);
+    return this.request<QuestionDetailResponse>(
+      `/api/v1/questions/${encodeURIComponent(questionId)}/status?${query.toString()}`,
+      {
+        method: 'PUT',
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async updateQuestion(
+    questionId: string,
+    payload: QuestionUpdateRequest,
+    token?: string,
+  ): Promise<QuestionDetailResponse> {
+    return this.request<QuestionDetailResponse>(
+      `/api/v1/questions/${encodeURIComponent(questionId)}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.authHeaders(token),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
   }
 }

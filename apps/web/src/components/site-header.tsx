@@ -23,8 +23,12 @@ export function SiteHeader(): React.JSX.Element {
       isActive: pathname === '/languages-offline',
     },
     { label: tNav('safety'), href: '/privacy-safety', isActive: pathname === '/privacy-safety' },
-    { label: tNav('about'), href: '/about', isActive: pathname === '/about' },
     { label: tNav('contact'), href: '/contact', isActive: pathname === '/contact' },
+    {
+      label: tNav('curriculum'),
+      href: '/curriculum',
+      isActive: pathname?.startsWith('/curriculum') ?? false,
+    },
   ];
 
   return (

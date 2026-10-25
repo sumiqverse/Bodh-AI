@@ -133,3 +133,25 @@ class Prerequisite(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         CheckConstraint("parent_skill_id != child_skill_id", name="ck_no_self_prerequisite"),
         UniqueConstraint("parent_skill_id", "child_skill_id", name="uq_prerequisite_pair"),
     )
+
+
+class GlossaryTerm(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Shared multilingual terminology definition (e.g. Rational Number / परिमेय संख्या)."""
+
+    __tablename__ = "glossary_terms"
+
+    curriculum_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("curricula.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    term_en: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    term_hi: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    definition_en: Mapped[str] = mapped_column(Text, nullable=False)
+    definition_hi: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+
+    curriculum: Mapped["Curriculum | None"] = relationship()
+
+    __table_args__ = (UniqueConstraint("term_en", "category", name="uq_glossary_term_category"),)

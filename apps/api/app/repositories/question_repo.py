@@ -31,6 +31,8 @@ class QuestionRepository(BaseRepository[Question]):
     async def list_by_skill(
         self,
         skill_id: uuid.UUID,
+        status: str | None = None,
+        needs_teacher_review: bool | None = None,
         skip: int = 0,
         limit: int = 20,
     ) -> Sequence[Question]:
@@ -43,9 +45,41 @@ class QuestionRepository(BaseRepository[Question]):
                 Question.is_deleted == False,  # noqa: E712
             )
             .options(selectinload(Question.translations))
-            .offset(skip)
-            .limit(limit)
         )
+        if status is not None:
+            statement = statement.where(Question.status == status)
+        if needs_teacher_review is not None:
+            statement = statement.where(Question.needs_teacher_review == needs_teacher_review)
+
+        statement = statement.offset(skip).limit(limit)
+        result = await self.session.execute(statement)
+        return result.scalars().all()
+
+    async def list_questions(
+        self,
+        skill_id: uuid.UUID | None = None,
+        status: str | None = None,
+        needs_teacher_review: bool | None = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> Sequence[Question]:
+        """List questions across the bank with optional status and review filters."""
+        statement = (
+            select(Question)
+            .where(
+                Question.is_active == True,  # noqa: E712
+                Question.is_deleted == False,  # noqa: E712
+            )
+            .options(selectinload(Question.translations))
+        )
+        if skill_id is not None:
+            statement = statement.where(Question.skill_id == skill_id)
+        if status is not None:
+            statement = statement.where(Question.status == status)
+        if needs_teacher_review is not None:
+            statement = statement.where(Question.needs_teacher_review == needs_teacher_review)
+
+        statement = statement.order_by(Question.created_at.desc()).offset(skip).limit(limit)
         result = await self.session.execute(statement)
         return result.scalars().all()
 

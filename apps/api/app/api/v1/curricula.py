@@ -1,7 +1,7 @@
 """Curricula and topics API v1 routes."""
 
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,14 @@ from app.api.deps import get_db, require_role
 from app.core.errors import NotFoundError
 from app.models.auth import User
 from app.repositories.curriculum_repo import CurriculumRepository
-from app.schemas.curriculum import CurriculumResponse, TopicResponse
+from app.schemas.curriculum import (
+    ContentImportResponse,
+    CurriculumResponse,
+    GraphEdge,
+    GraphNode,
+    SkillGraphResponse,
+    TopicResponse,
+)
 
 router = APIRouter(prefix="/curricula", tags=["Curriculum"])
 
@@ -107,3 +114,143 @@ async def get_curriculum_topics(
         )
         for t in topics
     ]
+
+
+@router.get(
+    "/{code}/graph", response_model=SkillGraphResponse, summary="Get Skill Dependency Graph"
+)
+async def get_curriculum_graph(
+    code: str,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
+) -> SkillGraphResponse:
+    """Retrieve full curriculum topic and skill nodes with directed prerequisite DAG edges."""
+    from sqlalchemy import select
+
+    from app.models.curriculum import Prerequisite, Skill, Topic
+
+    repo = CurriculumRepository(session)
+    curriculum = await repo.get_by_code(code)
+    if curriculum is None:
+        raise NotFoundError("Curriculum", code)
+
+    # 1. Fetch topics
+    t_stmt = (
+        select(Topic).where(Topic.curriculum_id == curriculum.id).order_by(Topic.sequence_order)
+    )
+    t_res = await session.execute(t_stmt)
+    topics = t_res.scalars().all()
+    topic_map = {t.id: t for t in topics}
+
+    # 2. Fetch skills
+    topic_ids = list(topic_map.keys())
+    skills: list[Skill] = []
+    if topic_ids:
+        s_stmt = select(Skill).where(Skill.topic_id.in_(topic_ids))
+        s_res = await session.execute(s_stmt)
+        skills = list(s_res.scalars().all())
+
+    skill_ids = [s.id for s in skills]
+
+    # 3. Fetch prerequisites
+    edges: list[GraphEdge] = []
+    if skill_ids:
+        p_stmt = select(Prerequisite).where(
+            Prerequisite.child_skill_id.in_(skill_ids) | Prerequisite.parent_skill_id.in_(skill_ids)
+        )
+        p_res = await session.execute(p_stmt)
+        prereqs = p_res.scalars().all()
+        for p in prereqs:
+            edges.append(
+                GraphEdge(
+                    id=str(p.id),
+                    source=str(p.parent_skill_id),
+                    target=str(p.child_skill_id),
+                    relation_type=p.relation_type,
+                )
+            )
+
+    # 4. Build nodes
+    nodes: list[GraphNode] = []
+    # Topic nodes
+    for t in topics:
+        nodes.append(
+            GraphNode(
+                id=str(t.id),
+                code=t.code,
+                name=t.name,
+                type="topic",
+                topic_code=t.code,
+                topic_name=t.name,
+            )
+        )
+    # Skill nodes
+    for s in skills:
+        parent_topic = topic_map.get(s.topic_id)
+        nodes.append(
+            GraphNode(
+                id=str(s.id),
+                code=s.code,
+                name=s.name,
+                type="skill",
+                topic_code=parent_topic.code if parent_topic else None,
+                topic_name=parent_topic.name if parent_topic else None,
+                difficulty=s.difficulty,
+                blooms_level=s.blooms_level,
+            )
+        )
+
+    return SkillGraphResponse(
+        curriculum_code=curriculum.code,
+        curriculum_name=f"{curriculum.board} Grade {curriculum.grade} {curriculum.subject.title()}",
+        nodes=nodes,
+        edges=edges,
+    )
+
+
+@router.post("/import", response_model=ContentImportResponse, summary="Bulk Import Content Pack")
+async def import_content_pack(
+    pack_data: dict[str, Any],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("teacher", "admin"))],
+    dry_run: Annotated[
+        bool, Query(description="Simulate import without persisting changes")
+    ] = False,
+) -> ContentImportResponse:
+    """Import and idempotently upsert a complete curriculum content pack (Admin/Teacher only)."""
+    from fastapi import HTTPException, status
+
+    from app.core.content_importer import ContentImporter, ContentValidationError
+
+    importer = ContentImporter(session)
+    try:
+        diff = await importer.import_pack(pack_data, dry_run=dry_run)
+    except ContentValidationError as err:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"message": str(err), "errors": err.errors},
+        ) from err
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Content import failed: {exc}",
+        ) from exc
+
+    curr_code = pack_data.get("curriculum", {}).get("code", "")
+    return ContentImportResponse(
+        curriculum_code=curr_code,
+        curriculum_created=diff.curriculum_created,
+        curriculum_updated=diff.curriculum_updated,
+        topics_created=diff.topics_created,
+        topics_updated=diff.topics_updated,
+        skills_created=diff.skills_created,
+        skills_updated=diff.skills_updated,
+        prerequisites_created=diff.prerequisites_created,
+        prerequisites_updated=diff.prerequisites_updated,
+        glossary_created=diff.glossary_created,
+        glossary_updated=diff.glossary_updated,
+        questions_created=diff.questions_created,
+        questions_updated=diff.questions_updated,
+        total_mutations=diff.total_mutations,
+        details=diff.details,
+    )

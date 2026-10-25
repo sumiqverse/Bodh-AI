@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,15 +15,60 @@ class QuestionOptionResponse(BaseModel):
 
 
 class QuestionResponse(BaseModel):
-    """Calibrated question item presented to student."""
+    """Calibrated question item presented to student (answer-leak safe)."""
 
     id: uuid.UUID
+    code: str
     skill_id: uuid.UUID
-    difficulty: float
+    difficulty: int
     question_type: str
     prompt: str
-    options: list[QuestionOptionResponse]
+    options: list[QuestionOptionResponse] | None = None
     hints: list[str] = Field(default_factory=list)
+
+
+class QuestionDetailResponse(BaseModel):
+    """Full question details for educators/teachers/admins including solutions and audit fields."""
+
+    id: uuid.UUID
+    code: str
+    skill_id: uuid.UUID
+    difficulty: int
+    question_type: str
+    status: str
+    needs_teacher_review: bool
+    version: int
+    reviewer_id: uuid.UUID | None = None
+    prompt: str
+    options: list[dict[str, Any]] | None = None
+    verified_answer: str
+    worked_solution: str
+    explanation: str | None = None
+    hints: list[str] = Field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class QuestionStatusUpdateRequest(BaseModel):
+    """Request payload to transition question editorial review state."""
+
+    status: str = Field(pattern="^(draft|reviewed|published)$")
+    needs_teacher_review: bool | None = None
+
+
+class QuestionUpdateRequest(BaseModel):
+    """Teacher/Admin edit payload for question items."""
+
+    difficulty: int | None = Field(default=None, ge=1, le=5)
+    question_type: str | None = None
+    needs_teacher_review: bool | None = None
+    prompt: str | None = None
+    options: list[dict[str, Any]] | None = None
+    verified_answer: str | None = None
+    worked_solution: str | None = None
+    explanation: str | None = None
+    hints: list[str] | None = None
+    language: str = "en"
 
 
 class AttemptSubmitRequest(BaseModel):

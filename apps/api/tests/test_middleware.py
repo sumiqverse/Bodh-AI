@@ -66,11 +66,14 @@ async def test_rate_limiter_allows_under_limit() -> None:
     """Test RedisRateLimiter allows requests within the rate limit."""
     mock_redis = MockRedis()
     limiter = RedisRateLimiter()
-    limiter.settings.rate_limit_per_minute = 5
-
-    req = _make_request("/api/v1/curricula", "192.168.1.100", mock_redis)
-    for _ in range(5):
-        await limiter.check_rate_limit(req)
+    original_rate = limiter.settings.rate_limit_per_minute
+    try:
+        limiter.settings.rate_limit_per_minute = 5
+        req = _make_request("/api/v1/curricula", "192.168.1.100", mock_redis)
+        for _ in range(5):
+            await limiter.check_rate_limit(req)
+    finally:
+        limiter.settings.rate_limit_per_minute = original_rate
 
 
 @pytest.mark.asyncio
@@ -78,15 +81,18 @@ async def test_rate_limiter_blocks_over_limit() -> None:
     """Test RedisRateLimiter raises RateLimitExceededError when limit is exceeded."""
     mock_redis = MockRedis()
     limiter = RedisRateLimiter()
-    limiter.settings.rate_limit_per_minute = 3
+    original_rate = limiter.settings.rate_limit_per_minute
+    try:
+        limiter.settings.rate_limit_per_minute = 3
+        req = _make_request("/api/v1/attempts", "192.168.1.101", mock_redis)
+        for _ in range(3):
+            await limiter.check_rate_limit(req)
 
-    req = _make_request("/api/v1/attempts", "192.168.1.101", mock_redis)
-    for _ in range(3):
-        await limiter.check_rate_limit(req)
-
-    with pytest.raises(RateLimitExceededError) as exc_info:
-        await limiter.check_rate_limit(req)
-    assert exc_info.value.status_code == 429
+        with pytest.raises(RateLimitExceededError) as exc_info:
+            await limiter.check_rate_limit(req)
+        assert exc_info.value.status_code == 429
+    finally:
+        limiter.settings.rate_limit_per_minute = original_rate
 
 
 @pytest.mark.asyncio
@@ -94,13 +100,16 @@ async def test_rate_limiter_skips_excluded_paths() -> None:
     """Test RedisRateLimiter bypasses excluded probe endpoints."""
     mock_redis = MockRedis()
     limiter = RedisRateLimiter()
-    limiter.settings.rate_limit_per_minute = 1
-
-    for path in ["/health", "/ready"]:
-        req = _make_request(path, "192.168.1.102", mock_redis)
-        # Should never raise even if called repeatedly
-        await limiter.check_rate_limit(req)
-        await limiter.check_rate_limit(req)
+    original_rate = limiter.settings.rate_limit_per_minute
+    try:
+        limiter.settings.rate_limit_per_minute = 1
+        for path in ["/health", "/ready"]:
+            req = _make_request(path, "192.168.1.102", mock_redis)
+            # Should never raise even if called repeatedly
+            await limiter.check_rate_limit(req)
+            await limiter.check_rate_limit(req)
+    finally:
+        limiter.settings.rate_limit_per_minute = original_rate
 
 
 @pytest.mark.asyncio

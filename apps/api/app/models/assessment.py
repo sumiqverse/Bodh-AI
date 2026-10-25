@@ -26,18 +26,38 @@ class Question(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "questions"
 
+    code: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     skill_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("skills.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    difficulty: Mapped[float] = mapped_column(Float, default=0.5, nullable=False)
+    difficulty: Mapped[int] = mapped_column(
+        Integer, default=3, nullable=False, comment="Difficulty level 1-5"
+    )
     question_type: Mapped[str] = mapped_column(
         String(30),
         default="mcq",
         nullable=False,
-        comment="mcq, numeric, multi_step",
+        comment="mcq, numeric, short_text",
+    )
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="draft",
+        nullable=False,
+        index=True,
+        comment="draft, reviewed, published",
+    )
+    needs_teacher_review: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False, index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     default_language: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -45,6 +65,11 @@ class Question(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     translations: Mapped[list["QuestionTranslation"]] = relationship(
         back_populates="question",
         cascade="all, delete-orphan",
+    )
+    version_history: Mapped[list["QuestionVersion"]] = relationship(
+        back_populates="question",
+        cascade="all, delete-orphan",
+        order_by="QuestionVersion.version_number.desc()",
     )
 
 
@@ -61,17 +86,29 @@ class QuestionTranslation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     language: Mapped[str] = mapped_column(String(10), nullable=False, comment="en, hi, etc.")
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
-    options: Mapped[list[dict[str, Any]]] = mapped_column(
+    options: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
-        nullable=False,
+        nullable=True,
         comment="Array of option objects: [{id: 'A', text: '...', is_correct: true}]",
     )
-    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    verified_answer: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+        default="",
+        comment="Exact canonical verified answer for automated evaluation",
+    )
+    worked_solution: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
+        comment="Step-by-step worked mathematical solution",
+    )
+    explanation: Mapped[str] = mapped_column(Text, nullable=False, default="")
     hints: Mapped[list[str]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
-        comment="Ordered progressive scaffold hints",
+        comment="Ordered progressive scaffold hints (exactly 3)",
     )
 
     question: Mapped["Question"] = relationship(back_populates="translations")
@@ -79,6 +116,35 @@ class QuestionTranslation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __table_args__ = (
         UniqueConstraint("question_id", "language", name="uq_question_translation_lang"),
         Index("idx_translations_question_lang", "question_id", "language"),
+    )
+
+
+class QuestionVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Immutable audit snapshot of question and translations per version update."""
+
+    __tablename__ = "question_versions"
+
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("questions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    changed_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    change_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    question: Mapped["Question"] = relationship(back_populates="version_history")
+
+    __table_args__ = (
+        UniqueConstraint("question_id", "version_number", name="uq_question_version"),
+        Index("idx_question_versions_qid_v", "question_id", "version_number"),
     )
 
 

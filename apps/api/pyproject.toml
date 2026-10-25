@@ -20,7 +20,12 @@ dependencies = [
     "greenlet>=3.1.1",
     "argon2-cffi>=23.1.0",
     "pyjwt[crypto]>=2.10.0",
+    "jsonschema>=4.26.0",
+    "pyyaml>=6.0.3",
 ]
+
+[project.scripts]
+bodhai = "app.cli.main:main"
 
 [dependency-groups]
 dev = [
@@ -33,6 +38,8 @@ dev = [
     "factory-boy>=3.3.3",
     "aiosqlite>=0.20.0",
     "testcontainers[postgres]>=4.9.1",
+    "types-pyyaml>=6.0.12.20260906",
+    "types-jsonschema>=4.26.0.20261006",
 ]
 
 [tool.ruff]

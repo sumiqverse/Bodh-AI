@@ -181,9 +181,13 @@ class QuestionFactory(factory.Factory):
 
     id = factory.LazyFunction(uuid.uuid4)
     skill_id = factory.LazyFunction(uuid.uuid4)
-    difficulty = 0.5
+    code = factory.Sequence(lambda n: f"Q_{n:05d}")
+    difficulty = 3
     question_type = "mcq"
     default_language = "en"
+    status = "published"
+    needs_teacher_review = False
+    version = 1
     is_active = True
     created_at = factory.LazyFunction(lambda: datetime.now(UTC))
     updated_at = factory.LazyFunction(lambda: datetime.now(UTC))
