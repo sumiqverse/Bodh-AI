@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError
 from app.models.curriculum import Curriculum, Topic
 from app.repositories.base import BaseRepository
+from app.repositories.consent_repo import ConsentRepository
 from app.repositories.mastery_repo import MasteryRepository
 from app.repositories.question_repo import QuestionRepository
 from app.repositories.skill_repo import SkillRepository
@@ -95,6 +96,9 @@ async def test_attempt_submission_and_idempotency(db_session: AsyncSession) -> N
 
     attempt_service = AttemptService(db_session)
     student_id = uuid.uuid4()
+    consent_repo = ConsentRepository(db_session)
+    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2024.1")
+
     idempotency_key = f"test_submission_{uuid.uuid4()}"
 
     # 1. Submit correct answer
@@ -132,6 +136,9 @@ async def test_attempt_submission_and_idempotency(db_session: AsyncSession) -> N
 async def test_attempt_submission_non_existent_question(db_session: AsyncSession) -> None:
     """Test submitting an attempt for a missing question raises NotFoundError."""
     attempt_service = AttemptService(db_session)
+    student_id = uuid.uuid4()
+    consent_repo = ConsentRepository(db_session)
+    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2024.1")
 
     req = AttemptSubmitRequest(
         question_id=uuid.uuid4(),
@@ -143,7 +150,28 @@ async def test_attempt_submission_non_existent_question(db_session: AsyncSession
     )
 
     with pytest.raises(NotFoundError):
-        await attempt_service.submit_attempt(uuid.uuid4(), req)
+        await attempt_service.submit_attempt(student_id, req)
+
+
+@pytest.mark.asyncio
+async def test_attempt_submission_requires_consent(db_session: AsyncSession) -> None:
+    """Test submitting an attempt without active consent raises ConsentRequiredError."""
+    from app.core.errors import ConsentRequiredError
+
+    attempt_service = AttemptService(db_session)
+    student_without_consent = uuid.uuid4()
+
+    req = AttemptSubmitRequest(
+        question_id=uuid.uuid4(),
+        skill_id=uuid.uuid4(),
+        selected_answer="A",
+        idempotency_key="consent_check_idem",
+        time_spent_ms=1000,
+        client_timestamp=datetime.now(UTC),
+    )
+
+    with pytest.raises(ConsentRequiredError):
+        await attempt_service.submit_attempt(student_without_consent, req)
 
 
 @pytest.mark.asyncio
@@ -167,6 +195,9 @@ async def test_sync_service_process_batch(db_session: AsyncSession) -> None:
     )
 
     student_id = uuid.uuid4()
+    consent_repo = ConsentRepository(db_session)
+    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2024.1")
+
     sync_service = SyncService(db_session)
 
     client_event_id = f"evt_{uuid.uuid4()}"

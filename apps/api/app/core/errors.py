@@ -100,6 +100,60 @@ class RateLimitExceededError(AppException):
         )
 
 
+class AuthenticationError(AppException):
+    """Authentication failed or credentials missing/invalid (401)."""
+
+    def __init__(self, detail: str = "Invalid authentication credentials.") -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            title="Authentication Failed",
+            detail=detail,
+            type_uri="urn:bodhai:error:unauthorized",
+        )
+
+
+class AuthorizationError(AppException):
+    """Forbidden from accessing resource due to insufficient permissions or ownership (403)."""
+
+    def __init__(self, detail: str = "You do not have permission to access this resource.") -> None:
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            title="Access Denied",
+            detail=detail,
+            type_uri="urn:bodhai:error:forbidden",
+        )
+
+
+class ConsentRequiredError(AppException):
+    """Guardian DPDP consent required before attempting assessment questions (403)."""
+
+    def __init__(
+        self,
+        detail: str = "Parental or guardian consent is required under DPDP Act 2023.",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            title="Guardian Consent Required",
+            detail=detail,
+            type_uri="urn:bodhai:error:consent-required",
+        )
+
+
+class AccountLockedError(AppException):
+    """Account locked due to consecutive failed login attempts (429)."""
+
+    def __init__(
+        self,
+        detail: str = "Account temporarily locked due to repeated failed login attempts.",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            title="Account Temporarily Locked",
+            detail=detail,
+            type_uri="urn:bodhai:error:account-locked",
+        )
+
+
 def _extract_request_id(request: Request) -> str:
     """Safely extract request ID from state or header."""
     req_id = getattr(request.state, "request_id", None)

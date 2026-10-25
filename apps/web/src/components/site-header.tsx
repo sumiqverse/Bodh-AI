@@ -36,11 +36,28 @@ export function SiteHeader(): React.JSX.Element {
       languageSwitcher={<LanguageSwitcher />}
       themeToggle={<ThemeToggle label={tCommon('theme')} />}
       actions={
-        <Link href="/contact">
-          <Button variant="primary" size="sm" className="font-semibold shadow-xs">
-            {tCommon('tryDiagnostic')}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <Button variant="ghost" size="sm" className="font-medium text-xs sm:text-sm">
+              {tNav('login')}
+            </Button>
+          </Link>
+          <Link href="/classes">
+            <Button variant="outline" size="sm" className="font-medium text-xs sm:text-sm">
+              {tNav('classes')}
+            </Button>
+          </Link>
+          <Link href="/settings">
+            <Button variant="ghost" size="sm" className="font-medium text-xs sm:text-sm">
+              {tNav('settings')}
+            </Button>
+          </Link>
+          <Link href="/contact" className="hidden sm:inline-flex">
+            <Button variant="primary" size="sm" className="font-semibold shadow-xs">
+              {tCommon('tryDiagnostic')}
+            </Button>
+          </Link>
+        </div>
       }
     />
   );

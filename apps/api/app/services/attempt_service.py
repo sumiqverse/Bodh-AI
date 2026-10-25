@@ -4,8 +4,9 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import NotFoundError
+from app.core.errors import ConsentRequiredError, NotFoundError
 from app.repositories.attempt_repo import AttemptRepository
+from app.repositories.consent_repo import ConsentRepository
 from app.repositories.mastery_repo import MasteryRepository
 from app.repositories.question_repo import QuestionRepository
 from app.schemas.assessment import AttemptResponse, AttemptSubmitRequest
@@ -21,6 +22,7 @@ class AttemptService:
         self.question_repo = QuestionRepository(session)
         self.mastery_repo = MasteryRepository(session)
         self.mastery_service = MasteryService(session)
+        self.consent_repo = ConsentRepository(session)
 
     async def submit_attempt(
         self,
@@ -28,7 +30,15 @@ class AttemptService:
         request: AttemptSubmitRequest,
     ) -> AttemptResponse:
         """Process an attempt with idempotency guard and Bayesian posterior update."""
-        # 1. Idempotency Check
+        # 1. Enforce Guardian Consent under DPDP Act 2023
+        has_consent = await self.consent_repo.has_consent(student_id)
+        if not has_consent:
+            raise ConsentRequiredError(
+                f"Valid parental or guardian consent is required for student '{student_id}' "
+                "before recording assessment attempts under DPDP Act 2023."
+            )
+
+        # 2. Idempotency Check
         existing_attempt = await self.attempt_repo.get_by_idempotency_key(request.idempotency_key)
         if existing_attempt is not None:
             mastery = await self.mastery_repo.get_by_student_and_skill(student_id, request.skill_id)

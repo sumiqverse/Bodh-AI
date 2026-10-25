@@ -44,6 +44,390 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/auth/teacher/signup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Register a new teacher account
+     * @description Create a verified teacher account using Argon2 hashed password.
+     */
+    post: operations['teacher_signup_api_v1_auth_teacher_signup_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/teacher/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Authenticate a teacher or administrator with email and password
+     * @description Validate teacher credentials against Argon2 hash with lockout protection.
+     */
+    post: operations['teacher_login_api_v1_auth_teacher_login_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/student/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Student sign-in via class join code, username, and PIN
+     * @description Minor students sign in using only teacher-issued join code + username + PIN (no email).
+     */
+    post: operations['student_login_api_v1_auth_student_login_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/student/join': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Student onboarding with join code, chosen username, and PIN
+     * @description Self-onboarding for students: joins classroom with join code (no personal email).
+     */
+    post: operations['student_join_api_v1_auth_student_join_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/supabase': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Authenticate via Supabase OAuth (Google / email) and exchange for BodhAI session
+     * @description Validate Supabase JWT and synchronize teacher account into BodhAI.
+     */
+    post: operations['supabase_auth_callback_api_v1_auth_supabase_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/refresh': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rotate refresh token and issue new 15-minute access token
+     * @description Rotate tokens using refresh token rotation.
+     */
+    post: operations['refresh_token_api_v1_auth_refresh_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/logout': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Clear session cookies and terminate active authentication
+     * @description Clear access, refresh, and CSRF cookies.
+     */
+    post: operations['logout_api_v1_auth_logout_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Fetch profile of the currently authenticated user
+     * @description Return identity and role claims derived strictly from server-side database records.
+     */
+    get: operations['get_me_api_v1_auth_me_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/classes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List classes owned by current teacher
+     * @description Retrieve all classrooms accessible to the authenticated educator.
+     */
+    get: operations['list_classes_api_v1_classes_get'];
+    put?: never;
+    /**
+     * Create a new classroom and generate unique student join code
+     * @description Teacher creates a classroom section with an auto-generated unique join code.
+     */
+    post: operations['create_class_api_v1_classes_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/classes/{class_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get classroom details and full student roster
+     * @description Fetch classroom details and enrolled student roster, enforcing ownership check.
+     */
+    get: operations['get_class_details_api_v1_classes__class_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/classes/{class_id}/rotate-code': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rotate class join code, invalidating previous code
+     * @description Teacher invalidates existing join code and generates a new active code.
+     */
+    post: operations['rotate_join_code_api_v1_classes__class_id__rotate_code_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/classes/{class_id}/approve/{student_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Approve a student's pending class enrollment
+     * @description Teacher approves a student's membership in the classroom roster.
+     */
+    post: operations['approve_student_api_v1_classes__class_id__approve__student_id__post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/classes/{class_id}/students/{student_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove a student from classroom roster
+     * @description Teacher removes a student from the classroom roster.
+     */
+    delete: operations['remove_student_api_v1_classes__class_id__students__student_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Fetch school-level aggregate statistics (zero student PII)
+     * @description Administrator view of system metrics: schools, classes, student counts, and mastery.
+     */
+    get: operations['get_admin_stats_api_v1_admin_stats_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/consents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Record verified guardian consent under DPDP Act 2023
+     * @description Capture verifiable parental consent with version, timestamps, and guardian contact.
+     */
+    post: operations['record_guardian_consent_api_v1_consents_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/consents/withdraw': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Withdraw previously granted parental or student consent
+     * @description Withdraw processing permissions for a specific scope or all scopes under DPDP Act.
+     */
+    post: operations['withdraw_consent_api_v1_consents_withdraw_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/consents/student/{student_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get all consent records for a student
+     * @description Retrieve active and historical consent records for a student.
+     */
+    get: operations['get_student_consents_api_v1_consents_student__student_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/data-rights/export/{student_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export all student data in machine-readable JSON format
+     * @description Export complete student profile, guardian details, consents, and learning history.
+     */
+    get: operations['export_student_data_api_v1_data_rights_export__student_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/data-rights/delete/{student_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Delete / anonymize student data on request (DPDP Right to Erasure)
+     * @description Anonymize and soft-delete student profile, revoking consent under DPDP Act 2023.
+     */
+    post: operations['delete_student_data_api_v1_data_rights_delete__student_id__post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/curricula': {
     parameters: {
       query?: never;
@@ -224,6 +608,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/attempts/student/{student_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Student Attempts
+     * @description Retrieve attempt history for an individual student.
+     */
+    get: operations['get_student_attempts_api_v1_attempts_student__student_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/mastery': {
     parameters: {
       query?: never;
@@ -264,30 +668,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/consents': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List Active Consents
-     * @description List all currently active granted consents for a student.
-     */
-    get: operations['list_active_consents_api_v1_consents_get'];
-    put?: never;
-    /**
-     * Record Granted Consent
-     * @description Record parental or student consent for DPDP Act compliance.
-     */
-    post: operations['create_consent_api_v1_consents_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/sync': {
     parameters: {
       query?: never;
@@ -297,10 +677,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /**
-     * Batch Offline Sync
-     * @description Process queued offline events idempotently upon network reconnect.
-     */
+    /** Batch Offline Sync */
     post: operations['sync_offline_events_api_v1_sync_post'];
     delete?: never;
     options?: never;
@@ -312,6 +689,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /**
+     * AdminSchoolStatsResponse
+     * @description Aggregate school analytics without student PII.
+     */
+    AdminSchoolStatsResponse: {
+      /** Total Schools */
+      total_schools: number;
+      /** Total Classes */
+      total_classes: number;
+      /** Total Students */
+      total_students: number;
+      /** Total Attempts */
+      total_attempts: number;
+      /** Average Mastery */
+      average_mastery: number;
+      /** Grade Distribution */
+      grade_distribution: {
+        [key: string]: number;
+      };
+    };
     /**
      * AttemptResponse
      * @description Evaluation result for a submitted attempt.
@@ -379,32 +776,115 @@ export interface components {
       client_timestamp: string;
     };
     /**
-     * ConsentCreateRequest
-     * @description Parental/student consent registration payload.
+     * ClassCreateRequest
+     * @description Payload for teacher creating a new classroom.
      */
-    ConsentCreateRequest: {
+    ClassCreateRequest: {
       /**
-       * Scope
-       * @description Consent scope, e.g. 'diagnostic', 'learning', 'data_sharing', 'offline_sync'
+       * Name
+       * @description e.g. Class 8-A Mathematics
        */
-      scope: string;
+      name: string;
       /**
-       * Version
-       * @description Policy version consented to
-       * @default 2024.1
+       * Grade
+       * @description Grade level (Classes 6 to 10)
        */
-      version: string;
+      grade: number;
       /**
-       * Guardian Id
-       * @description Guardian UUID if student is minor
+       * Section
+       * @description e.g. 'A', 'B'
        */
-      guardian_id?: string | null;
+      section: string;
+      /**
+       * Academic Year
+       * @description Academic session
+       * @default 2024-2025
+       */
+      academic_year: string;
+      /** School Id */
+      school_id?: string | null;
     };
     /**
-     * ConsentResponse
-     * @description Consent status confirmation.
+     * ClassDetailResponse
+     * @description Detailed classroom information with student roster.
      */
-    ConsentResponse: {
+    ClassDetailResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Grade */
+      grade: number;
+      /** Section */
+      section: string;
+      /** Academic Year */
+      academic_year: string;
+      /** Join Code */
+      join_code: string;
+      /**
+       * School Id
+       * Format: uuid
+       */
+      school_id: string;
+      /**
+       * Teacher Id
+       * Format: uuid
+       */
+      teacher_id: string;
+      /** Students */
+      students: components['schemas']['StudentRosterItem'][];
+      /** Total Students */
+      total_students: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
+     * ClassResponse
+     * @description Class summary response.
+     */
+    ClassResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Grade */
+      grade: number;
+      /** Section */
+      section: string;
+      /** Academic Year */
+      academic_year: string;
+      /** Join Code */
+      join_code: string;
+      /**
+       * School Id
+       * Format: uuid
+       */
+      school_id: string;
+      /**
+       * Teacher Id
+       * Format: uuid
+       */
+      teacher_id: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
+     * ConsentDetailResponse
+     * @description Comprehensive consent record including guardian information.
+     */
+    ConsentDetailResponse: {
       /**
        * Id
        * Format: uuid
@@ -428,6 +908,25 @@ export interface components {
       timestamp: string;
       /** Revoked At */
       revoked_at?: string | null;
+      /** Guardian Name */
+      guardian_name?: string | null;
+      /** Guardian Phone */
+      guardian_phone?: string | null;
+      /** Guardian Relationship */
+      guardian_relationship?: string | null;
+    };
+    /**
+     * ConsentWithdrawRequest
+     * @description Payload to withdraw granted consents under DPDP rights.
+     */
+    ConsentWithdrawRequest: {
+      /** Student Id */
+      student_id?: string | null;
+      /**
+       * Scope
+       * @description Specific scope to withdraw, or null to withdraw all scopes
+       */
+      scope?: string | null;
     };
     /**
      * CurriculumResponse
@@ -451,6 +950,80 @@ export interface components {
       version: string;
       /** Topics */
       topics?: components['schemas']['TopicResponse'][];
+    };
+    /**
+     * DataDeleteResponse
+     * @description Confirmation of student account anonymization and data erasure.
+     */
+    DataDeleteResponse: {
+      /**
+       * Student Id
+       * Format: uuid
+       */
+      student_id: string;
+      /** Status */
+      status: string;
+      /** Message */
+      message: string;
+      /**
+       * Anonymized At
+       * Format: date-time
+       */
+      anonymized_at: string;
+    };
+    /**
+     * EnrollmentActionResponse
+     * @description Result of teacher approving or removing a student from a class.
+     */
+    EnrollmentActionResponse: {
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      /**
+       * Student Id
+       * Format: uuid
+       */
+      student_id: string;
+      /** Status */
+      status: string;
+      /** Message */
+      message: string;
+    };
+    /**
+     * GuardianConsentCreateRequest
+     * @description Guardian verifiable consent submission under DPDP Act 2023.
+     */
+    GuardianConsentCreateRequest: {
+      /** Student Id */
+      student_id?: string | null;
+      /** Guardian Name */
+      guardian_name: string;
+      /** Guardian Phone */
+      guardian_phone: string;
+      /**
+       * Guardian Relationship
+       * @description e.g. 'Mother', 'Father', 'Legal Guardian'
+       * @default Parent
+       */
+      guardian_relationship: string;
+      /**
+       * Scopes
+       * @description List of consented processing scopes
+       * @default [
+       *       "diagnostic",
+       *       "learning",
+       *       "data_sharing"
+       *     ]
+       */
+      scopes: string[];
+      /**
+       * Version
+       * @description DPDP notice version
+       * @default 2024.1
+       */
+      version: string;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -590,6 +1163,32 @@ export interface components {
       timestamp: string;
     };
     /**
+     * RefreshTokenRequest
+     * @description Payload for rotating access tokens.
+     */
+    RefreshTokenRequest: {
+      /**
+       * Refresh Token
+       * @description JWT refresh token
+       */
+      refresh_token?: string | null;
+    };
+    /**
+     * RotateCodeResponse
+     * @description Response returned upon generating a new join code.
+     */
+    RotateCodeResponse: {
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      /** Join Code */
+      join_code: string;
+      /** Message */
+      message: string;
+    };
+    /**
      * SkillResponse
      * @description Atomic competency node details.
      */
@@ -614,6 +1213,133 @@ export interface components {
       difficulty: number;
       /** Blooms Level */
       blooms_level: string;
+    };
+    /**
+     * StudentDataExportResponse
+     * @description Complete portable JSON data export for a student.
+     */
+    StudentDataExportResponse: {
+      /**
+       * Student Id
+       * Format: uuid
+       */
+      student_id: string;
+      /**
+       * Exported At
+       * Format: date-time
+       */
+      exported_at: string;
+      /** Profile */
+      profile: {
+        [key: string]: unknown;
+      };
+      /** Guardian */
+      guardian: {
+        [key: string]: unknown;
+      } | null;
+      /** Consents */
+      consents: {
+        [key: string]: unknown;
+      }[];
+      /** Enrollments */
+      enrollments: {
+        [key: string]: unknown;
+      }[];
+      /** Attempts */
+      attempts: {
+        [key: string]: unknown;
+      }[];
+      /** Mastery */
+      mastery: {
+        [key: string]: unknown;
+      }[];
+    };
+    /**
+     * StudentJoinRequest
+     * @description Self-registration payload for students joining a class with code.
+     */
+    StudentJoinRequest: {
+      /**
+       * Join Code
+       * @description Teacher-issued class code
+       */
+      join_code: string;
+      /**
+       * Username
+       * @description Unique username
+       */
+      username: string;
+      /**
+       * Pin
+       * @description 4 to 8 digit secret PIN
+       */
+      pin: string;
+      /**
+       * Full Name
+       * @description Student display name
+       */
+      full_name: string;
+      /**
+       * Preferred Language
+       * @default en
+       */
+      preferred_language: string;
+    };
+    /**
+     * StudentLoginRequest
+     * @description Sign-in payload for minor students using class join code and PIN.
+     */
+    StudentLoginRequest: {
+      /**
+       * Join Code
+       * @description Teacher-issued class code
+       */
+      join_code: string;
+      /**
+       * Username
+       * @description Student unique username
+       */
+      username: string;
+      /**
+       * Pin
+       * @description Student PIN
+       */
+      pin: string;
+    };
+    /**
+     * StudentRosterItem
+     * @description Student roster entry within a classroom.
+     */
+    StudentRosterItem: {
+      /**
+       * Student Id
+       * Format: uuid
+       */
+      student_id: string;
+      /** Full Name */
+      full_name: string;
+      /** Username */
+      username: string | null;
+      /** Roll Number */
+      roll_number: string | null;
+      /** Status */
+      status: string;
+      /**
+       * Enrolled At
+       * Format: date-time
+       */
+      enrolled_at: string;
+    };
+    /**
+     * SupabaseAuthRequest
+     * @description Payload for validating external Supabase / Google OAuth JWT.
+     */
+    SupabaseAuthRequest: {
+      /**
+       * Access Token
+       * @description Supabase access token
+       */
+      access_token: string;
     };
     /**
      * SyncBatchRequest
@@ -680,6 +1406,62 @@ export interface components {
       error?: string | null;
     };
     /**
+     * TeacherLoginRequest
+     * @description Login payload for teachers and school administrators.
+     */
+    TeacherLoginRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Password */
+      password: string;
+    };
+    /**
+     * TeacherSignupRequest
+     * @description Registration payload for teachers.
+     */
+    TeacherSignupRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /**
+       * Password
+       * @description Minimum 8 characters password
+       */
+      password: string;
+      /** Full Name */
+      full_name: string;
+      /** School Id */
+      school_id?: string | null;
+      /**
+       * Preferred Language
+       * @default en
+       */
+      preferred_language: string;
+    };
+    /**
+     * TokenResponse
+     * @description Token payload returned on successful authentication.
+     */
+    TokenResponse: {
+      /** Access Token */
+      access_token: string;
+      /** Refresh Token */
+      refresh_token: string;
+      /**
+       * Token Type
+       * @default bearer
+       */
+      token_type: string;
+      /** Csrf Token */
+      csrf_token: string;
+      user: components['schemas']['UserResponse'];
+    };
+    /**
      * TopicResponse
      * @description Curriculum topic summary.
      */
@@ -697,6 +1479,34 @@ export interface components {
       description?: string | null;
       /** Sequence Order */
       sequence_order: number;
+    };
+    /**
+     * UserResponse
+     * @description User account entity view.
+     */
+    UserResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Email */
+      email?: string | null;
+      /** Username */
+      username?: string | null;
+      /** Full Name */
+      full_name: string;
+      /** Role */
+      role: string;
+      /** Preferred Language */
+      preferred_language: string;
+      /** Is Minor */
+      is_minor: boolean;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -764,6 +1574,608 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  teacher_signup_api_v1_auth_teacher_signup_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TeacherSignupRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  teacher_login_api_v1_auth_teacher_login_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TeacherLoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  student_login_api_v1_auth_student_login_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StudentLoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  student_join_api_v1_auth_student_join_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StudentJoinRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  supabase_auth_callback_api_v1_auth_supabase_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SupabaseAuthRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  refresh_token_api_v1_auth_refresh_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: {
+        refresh_token?: string | null;
+      };
+    };
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['RefreshTokenRequest'] | null;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  logout_api_v1_auth_logout_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
+  get_me_api_v1_auth_me_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserResponse'];
+        };
+      };
+    };
+  };
+  list_classes_api_v1_classes_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClassResponse'][];
+        };
+      };
+    };
+  };
+  create_class_api_v1_classes_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClassCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClassResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_class_details_api_v1_classes__class_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClassDetailResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  rotate_join_code_api_v1_classes__class_id__rotate_code_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RotateCodeResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  approve_student_api_v1_classes__class_id__approve__student_id__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+        student_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EnrollmentActionResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  remove_student_api_v1_classes__class_id__students__student_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+        student_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EnrollmentActionResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_admin_stats_api_v1_admin_stats_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminSchoolStatsResponse'];
+        };
+      };
+    };
+  };
+  record_guardian_consent_api_v1_consents_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GuardianConsentCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConsentDetailResponse'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  withdraw_consent_api_v1_consents_withdraw_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConsentWithdrawRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_student_consents_api_v1_consents_student__student_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        student_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConsentDetailResponse'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  export_student_data_api_v1_data_rights_export__student_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        student_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StudentDataExportResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_student_data_api_v1_data_rights_delete__student_id__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        student_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DataDeleteResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
       };
     };
   };
@@ -1029,10 +2441,7 @@ export interface operations {
   submit_attempt_api_v1_attempts_post: {
     parameters: {
       query?: never;
-      header?: {
-        /** @description Authenticated student UUID or guest profile identifier */
-        'x-student-id'?: string | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -1049,6 +2458,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['AttemptResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_student_attempts_api_v1_attempts_student__student_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        student_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: unknown;
+          }[];
         };
       };
       /** @description Validation Error */
@@ -1115,74 +2557,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['MasteryResponse'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  list_active_consents_api_v1_consents_get: {
-    parameters: {
-      query: {
-        /** @description Student UUID */
-        student_id: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConsentResponse'][];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  create_consent_api_v1_consents_post: {
-    parameters: {
-      query?: never;
-      header?: {
-        /** @description Student UUID */
-        'x-student-id'?: string | null;
-      };
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConsentCreateRequest'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ConsentResponse'];
         };
       };
       /** @description Validation Error */

@@ -6,8 +6,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_db, require_role
 from app.core.errors import NotFoundError
-from app.db.session import get_db
+from app.models.auth import User
 from app.repositories.curriculum_repo import CurriculumRepository
 from app.schemas.curriculum import CurriculumResponse, TopicResponse
 
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/curricula", tags=["Curriculum"])
 @router.get("", response_model=list[CurriculumResponse], summary="List Curricula")
 async def list_curricula(
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
     grade: Annotated[
         int | None, Query(ge=6, le=10, description="Grade filter (Classes 6-10)")
     ] = None,
@@ -54,6 +56,7 @@ async def list_curricula(
 async def get_curriculum(
     code: str,
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> CurriculumResponse:
     """Retrieve curriculum by its unique code identifier."""
     repo = CurriculumRepository(session)
@@ -85,6 +88,7 @@ async def get_curriculum(
 async def get_curriculum_topics(
     code: str,
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> Sequence[TopicResponse]:
     """Retrieve ordered topics for a specific curriculum framework."""
     repo = CurriculumRepository(session)

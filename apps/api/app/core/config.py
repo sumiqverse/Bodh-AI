@@ -28,6 +28,19 @@ class Settings(BaseSettings):
         default="http://localhost:3000,http://127.0.0.1:3000",
         description="Comma-separated allow-list of origin URLs for CORS",
     )
+    jwt_algorithm: str = Field(default="HS256", description="Algorithm for signing JWTs")
+    access_token_expire_minutes: int = Field(
+        default=15,
+        description="Access token lifespan in minutes",
+    )
+    refresh_token_expire_days: int = Field(
+        default=7,
+        description="Refresh token lifespan in days",
+    )
+    supabase_jwt_secret: str = Field(
+        default="",
+        description="Supabase JWT secret for validating external OAuth tokens",
+    )
 
     # Database & Cache
     database_url: str = Field(

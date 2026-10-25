@@ -1,13 +1,15 @@
-"""Schools, classes, enrollments, guardians, and consent models."""
-
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from app.models.auth import User
 
 
 class School(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -32,17 +34,26 @@ class SchoolClass(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "classes"
 
+    name: Mapped[str] = mapped_column(String(100), default="Class Section", nullable=False)
     school_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("schools.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
+    teacher_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     grade: Mapped[int] = mapped_column(Integer, nullable=False)
     section: Mapped[str] = mapped_column(String(10), nullable=False)
     academic_year: Mapped[str] = mapped_column(String(20), nullable=False)
+    join_code: Mapped[str] = mapped_column(String(12), unique=True, nullable=False, index=True)
 
     school: Mapped["School"] = relationship(back_populates="classes")
+    teacher: Mapped["User"] = relationship(foreign_keys=[teacher_id])
     enrollments: Mapped[list["Enrollment"]] = relationship(
         back_populates="school_class", cascade="all, delete-orphan"
     )
@@ -52,6 +63,7 @@ class SchoolClass(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
             "school_id", "grade", "section", "academic_year", name="uq_school_class_year"
         ),
         Index("idx_classes_school_grade", "school_id", "grade"),
+        Index("idx_classes_teacher", "teacher_id"),
     )
 
 
@@ -76,6 +88,7 @@ class Enrollment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
 
     school_class: Mapped["SchoolClass"] = relationship(back_populates="enrollments")
+    student: Mapped["User"] = relationship(foreign_keys=[student_id])
 
     __table_args__ = (
         UniqueConstraint("student_id", "class_id", name="uq_student_class_enrollment"),
@@ -87,6 +100,7 @@ class Guardian(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     __tablename__ = "guardians"
 
+    name: Mapped[str] = mapped_column(String(150), default="", nullable=False)
     student_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),

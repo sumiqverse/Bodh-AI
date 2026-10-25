@@ -65,14 +65,28 @@ async def test_base_repository_crud(db_session: AsyncSession) -> None:
     after_delete = await repo.get_by_id(role.id)
     assert after_delete is None
 
+    # 6. Soft delete on model with is_deleted
+    from app.models.auth import User
+
+    user_repo_base = BaseRepository[User](User, db_session)
+    temp_user = await user_repo_base.create(UserFactory.build(role_id=role.id))
+    await user_repo_base.delete(temp_user, soft=True)
+    assert temp_user.is_deleted is True
+    assert temp_user.deleted_at is not None
+    # Count with filters
+    c_filtered = await user_repo_base.count(filters=[User.id == temp_user.id])
+    assert c_filtered == 0
+
 
 @pytest.mark.asyncio
 async def test_user_repository(db_session: AsyncSession) -> None:
     """Test UserRepository lookups: email, phone, and default role."""
     user_repo = UserRepository(db_session)
 
-    role = await user_repo.get_or_create_default_role("student")
-    assert role.name == "student"
+    # Retrieve existing or create custom role
+    custom_role_name = f"role_{uuid.uuid4().hex[:6]}"
+    role = await user_repo.get_or_create_default_role(custom_role_name)
+    assert role.name == custom_role_name
 
     user = UserFactory.build(
         email="unique_student@bodhai.org",

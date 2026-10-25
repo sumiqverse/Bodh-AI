@@ -49,6 +49,803 @@
         }
       }
     },
+    "/api/v1/auth/teacher/signup": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new teacher account",
+        "description": "Create a verified teacher account using Argon2 hashed password.",
+        "operationId": "teacher_signup_api_v1_auth_teacher_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeacherSignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/teacher/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Authenticate a teacher or administrator with email and password",
+        "description": "Validate teacher credentials against Argon2 hash with lockout protection.",
+        "operationId": "teacher_login_api_v1_auth_teacher_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeacherLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/student/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Student sign-in via class join code, username, and PIN",
+        "description": "Minor students sign in using only teacher-issued join code + username + PIN (no email).",
+        "operationId": "student_login_api_v1_auth_student_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/student/join": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Student onboarding with join code, chosen username, and PIN",
+        "description": "Self-onboarding for students: joins classroom with join code (no personal email).",
+        "operationId": "student_join_api_v1_auth_student_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentJoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/supabase": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Authenticate via Supabase OAuth (Google / email) and exchange for BodhAI session",
+        "description": "Validate Supabase JWT and synchronize teacher account into BodhAI.",
+        "operationId": "supabase_auth_callback_api_v1_auth_supabase_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupabaseAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Rotate refresh token and issue new 15-minute access token",
+        "description": "Rotate tokens using refresh token rotation.",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Refresh Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RefreshTokenRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Clear session cookies and terminate active authentication",
+        "description": "Clear access, refresh, and CSRF cookies.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Logout Api V1 Auth Logout Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Fetch profile of the currently authenticated user",
+        "description": "Return identity and role claims derived strictly from server-side database records.",
+        "operationId": "get_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classes": {
+      "get": {
+        "tags": ["Classes"],
+        "summary": "List classes owned by current teacher",
+        "description": "Retrieve all classrooms accessible to the authenticated educator.",
+        "operationId": "list_classes_api_v1_classes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClassResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Classes Api V1 Classes Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Classes"],
+        "summary": "Create a new classroom and generate unique student join code",
+        "description": "Teacher creates a classroom section with an auto-generated unique join code.",
+        "operationId": "create_class_api_v1_classes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classes/{class_id}": {
+      "get": {
+        "tags": ["Classes"],
+        "summary": "Get classroom details and full student roster",
+        "description": "Fetch classroom details and enrolled student roster, enforcing ownership check.",
+        "operationId": "get_class_details_api_v1_classes__class_id__get",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classes/{class_id}/rotate-code": {
+      "post": {
+        "tags": ["Classes"],
+        "summary": "Rotate class join code, invalidating previous code",
+        "description": "Teacher invalidates existing join code and generates a new active code.",
+        "operationId": "rotate_join_code_api_v1_classes__class_id__rotate_code_post",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RotateCodeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classes/{class_id}/approve/{student_id}": {
+      "post": {
+        "tags": ["Classes"],
+        "summary": "Approve a student's pending class enrollment",
+        "description": "Teacher approves a student's membership in the classroom roster.",
+        "operationId": "approve_student_api_v1_classes__class_id__approve__student_id__post",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Class Id"
+            }
+          },
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentActionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classes/{class_id}/students/{student_id}": {
+      "delete": {
+        "tags": ["Classes"],
+        "summary": "Remove a student from classroom roster",
+        "description": "Teacher removes a student from the classroom roster.",
+        "operationId": "remove_student_api_v1_classes__class_id__students__student_id__delete",
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Class Id"
+            }
+          },
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentActionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stats": {
+      "get": {
+        "tags": ["Administration"],
+        "summary": "Fetch school-level aggregate statistics (zero student PII)",
+        "description": "Administrator view of system metrics: schools, classes, student counts, and mastery.",
+        "operationId": "get_admin_stats_api_v1_admin_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSchoolStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/consents": {
+      "post": {
+        "tags": ["Consent"],
+        "summary": "Record verified guardian consent under DPDP Act 2023",
+        "description": "Capture verifiable parental consent with version, timestamps, and guardian contact.",
+        "operationId": "record_guardian_consent_api_v1_consents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianConsentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentDetailResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Record Guardian Consent Api V1 Consents Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/consents/withdraw": {
+      "post": {
+        "tags": ["Consent"],
+        "summary": "Withdraw previously granted parental or student consent",
+        "description": "Withdraw processing permissions for a specific scope or all scopes under DPDP Act.",
+        "operationId": "withdraw_consent_api_v1_consents_withdraw_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentWithdrawRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Withdraw Consent Api V1 Consents Withdraw Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/consents/student/{student_id}": {
+      "get": {
+        "tags": ["Consent"],
+        "summary": "Get all consent records for a student",
+        "description": "Retrieve active and historical consent records for a student.",
+        "operationId": "get_student_consents_api_v1_consents_student__student_id__get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentDetailResponse"
+                  },
+                  "title": "Response Get Student Consents Api V1 Consents Student  Student Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-rights/export/{student_id}": {
+      "get": {
+        "tags": ["Data Rights"],
+        "summary": "Export all student data in machine-readable JSON format",
+        "description": "Export complete student profile, guardian details, consents, and learning history.",
+        "operationId": "export_student_data_api_v1_data_rights_export__student_id__get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDataExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-rights/delete/{student_id}": {
+      "post": {
+        "tags": ["Data Rights"],
+        "summary": "Delete / anonymize student data on request (DPDP Right to Erasure)",
+        "description": "Anonymize and soft-delete student profile, revoking consent under DPDP Act 2023.",
+        "operationId": "delete_student_data_api_v1_data_rights_delete__student_id__post",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/curricula": {
       "get": {
         "tags": ["Curriculum"],
@@ -486,36 +1283,15 @@
         "summary": "Submit Question Attempt",
         "description": "Submit a question answer for Bayesian evaluation with strict idempotency.",
         "operationId": "submit_attempt_api_v1_attempts_post",
-        "parameters": [
-          {
-            "name": "x-student-id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Authenticated student UUID or guest profile identifier",
-              "title": "X-Student-Id"
-            },
-            "description": "Authenticated student UUID or guest profile identifier"
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AttemptSubmitRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -524,6 +1300,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AttemptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/student/{student_id}": {
+      "get": {
+        "tags": ["Attempts"],
+        "summary": "Get Student Attempts",
+        "description": "Retrieve attempt history for an individual student.",
+        "operationId": "get_student_attempts_api_v1_attempts_student__student_id__get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get Student Attempts Api V1 Attempts Student  Student Id  Get"
                 }
               }
             }
@@ -643,118 +1466,10 @@
         }
       }
     },
-    "/api/v1/consents": {
-      "post": {
-        "tags": ["Consent"],
-        "summary": "Record Granted Consent",
-        "description": "Record parental or student consent for DPDP Act compliance.",
-        "operationId": "create_consent_api_v1_consents_post",
-        "parameters": [
-          {
-            "name": "x-student-id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Student UUID",
-              "title": "X-Student-Id"
-            },
-            "description": "Student UUID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConsentCreateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConsentResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": ["Consent"],
-        "summary": "List Active Consents",
-        "description": "List all currently active granted consents for a student.",
-        "operationId": "list_active_consents_api_v1_consents_get",
-        "parameters": [
-          {
-            "name": "student_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Student UUID",
-              "title": "Student Id"
-            },
-            "description": "Student UUID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ConsentResponse"
-                  },
-                  "title": "Response List Active Consents Api V1 Consents Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/sync": {
       "post": {
         "tags": ["Sync"],
         "summary": "Batch Offline Sync",
-        "description": "Process queued offline events idempotently upon network reconnect.",
         "operationId": "sync_offline_events_api_v1_sync_post",
         "parameters": [
           {
@@ -814,6 +1529,48 @@
   },
   "components": {
     "schemas": {
+      "AdminSchoolStatsResponse": {
+        "properties": {
+          "total_schools": {
+            "type": "integer",
+            "title": "Total Schools"
+          },
+          "total_classes": {
+            "type": "integer",
+            "title": "Total Classes"
+          },
+          "total_students": {
+            "type": "integer",
+            "title": "Total Students"
+          },
+          "total_attempts": {
+            "type": "integer",
+            "title": "Total Attempts"
+          },
+          "average_mastery": {
+            "type": "number",
+            "title": "Average Mastery"
+          },
+          "grade_distribution": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Grade Distribution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_schools",
+          "total_classes",
+          "total_students",
+          "total_attempts",
+          "average_mastery",
+          "grade_distribution"
+        ],
+        "title": "AdminSchoolStatsResponse",
+        "description": "Aggregate school analytics without student PII."
+      },
       "AttemptResponse": {
         "properties": {
           "attempt_id": {
@@ -896,20 +1653,38 @@
         "title": "AttemptSubmitRequest",
         "description": "Practice question response submission payload."
       },
-      "ConsentCreateRequest": {
+      "ClassCreateRequest": {
         "properties": {
-          "scope": {
+          "name": {
             "type": "string",
-            "title": "Scope",
-            "description": "Consent scope, e.g. 'diagnostic', 'learning', 'data_sharing', 'offline_sync'"
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Name",
+            "description": "e.g. Class 8-A Mathematics"
           },
-          "version": {
+          "grade": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 6.0,
+            "title": "Grade",
+            "description": "Grade level (Classes 6 to 10)"
+          },
+          "section": {
             "type": "string",
-            "title": "Version",
-            "description": "Policy version consented to",
-            "default": "2024.1"
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Section",
+            "description": "e.g. 'A', 'B'"
           },
-          "guardian_id": {
+          "academic_year": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 4,
+            "title": "Academic Year",
+            "description": "Academic session",
+            "default": "2024-2025"
+          },
+          "school_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -919,16 +1694,144 @@
                 "type": "null"
               }
             ],
-            "title": "Guardian Id",
-            "description": "Guardian UUID if student is minor"
+            "title": "School Id"
           }
         },
         "type": "object",
-        "required": ["scope"],
-        "title": "ConsentCreateRequest",
-        "description": "Parental/student consent registration payload."
+        "required": ["name", "grade", "section"],
+        "title": "ClassCreateRequest",
+        "description": "Payload for teacher creating a new classroom."
       },
-      "ConsentResponse": {
+      "ClassDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "grade": {
+            "type": "integer",
+            "title": "Grade"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "academic_year": {
+            "type": "string",
+            "title": "Academic Year"
+          },
+          "join_code": {
+            "type": "string",
+            "title": "Join Code"
+          },
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "teacher_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Teacher Id"
+          },
+          "students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentRosterItem"
+            },
+            "type": "array",
+            "title": "Students"
+          },
+          "total_students": {
+            "type": "integer",
+            "title": "Total Students"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "grade",
+          "section",
+          "academic_year",
+          "join_code",
+          "school_id",
+          "teacher_id",
+          "students",
+          "total_students",
+          "created_at"
+        ],
+        "title": "ClassDetailResponse",
+        "description": "Detailed classroom information with student roster."
+      },
+      "ClassResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "grade": {
+            "type": "integer",
+            "title": "Grade"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "academic_year": {
+            "type": "string",
+            "title": "Academic Year"
+          },
+          "join_code": {
+            "type": "string",
+            "title": "Join Code"
+          },
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "teacher_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Teacher Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "grade",
+          "section",
+          "academic_year",
+          "join_code",
+          "school_id",
+          "teacher_id",
+          "created_at"
+        ],
+        "title": "ClassResponse",
+        "description": "Class summary response."
+      },
+      "ConsentDetailResponse": {
         "properties": {
           "id": {
             "type": "string",
@@ -968,12 +1871,76 @@
               }
             ],
             "title": "Revoked At"
+          },
+          "guardian_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Name"
+          },
+          "guardian_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Phone"
+          },
+          "guardian_relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Relationship"
           }
         },
         "type": "object",
         "required": ["id", "student_id", "scope", "version", "is_granted", "timestamp"],
-        "title": "ConsentResponse",
-        "description": "Consent status confirmation."
+        "title": "ConsentDetailResponse",
+        "description": "Comprehensive consent record including guardian information."
+      },
+      "ConsentWithdrawRequest": {
+        "properties": {
+          "student_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Id"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope",
+            "description": "Specific scope to withdraw, or null to withdraw all scopes"
+          }
+        },
+        "type": "object",
+        "title": "ConsentWithdrawRequest",
+        "description": "Payload to withdraw granted consents under DPDP rights."
       },
       "CurriculumResponse": {
         "properties": {
@@ -1014,6 +1981,111 @@
         "required": ["id", "code", "board", "grade", "subject", "version"],
         "title": "CurriculumResponse",
         "description": "Board curriculum response with associated topics."
+      },
+      "DataDeleteResponse": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "anonymized_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Anonymized At"
+          }
+        },
+        "type": "object",
+        "required": ["student_id", "status", "message", "anonymized_at"],
+        "title": "DataDeleteResponse",
+        "description": "Confirmation of student account anonymization and data erasure."
+      },
+      "EnrollmentActionResponse": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Class Id"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": ["class_id", "student_id", "status", "message"],
+        "title": "EnrollmentActionResponse",
+        "description": "Result of teacher approving or removing a student from a class."
+      },
+      "GuardianConsentCreateRequest": {
+        "properties": {
+          "student_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Id"
+          },
+          "guardian_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Guardian Name"
+          },
+          "guardian_phone": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 8,
+            "title": "Guardian Phone"
+          },
+          "guardian_relationship": {
+            "type": "string",
+            "title": "Guardian Relationship",
+            "description": "e.g. 'Mother', 'Father', 'Legal Guardian'",
+            "default": "Parent"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopes",
+            "description": "List of consented processing scopes",
+            "default": ["diagnostic", "learning", "data_sharing"]
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "DPDP notice version",
+            "default": "2024.1"
+          }
+        },
+        "type": "object",
+        "required": ["guardian_name", "guardian_phone"],
+        "title": "GuardianConsentCreateRequest",
+        "description": "Guardian verifiable consent submission under DPDP Act 2023."
       },
       "HTTPValidationError": {
         "properties": {
@@ -1208,6 +2280,46 @@
         "title": "ReadyResponse",
         "description": "Readiness probe status payload indicating database and cache health."
       },
+      "RefreshTokenRequest": {
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token",
+            "description": "JWT refresh token"
+          }
+        },
+        "type": "object",
+        "title": "RefreshTokenRequest",
+        "description": "Payload for rotating access tokens."
+      },
+      "RotateCodeResponse": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Class Id"
+          },
+          "join_code": {
+            "type": "string",
+            "title": "Join Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": ["class_id", "join_code", "message"],
+        "title": "RotateCodeResponse",
+        "description": "Response returned upon generating a new join code."
+      },
       "SkillResponse": {
         "properties": {
           "id": {
@@ -1245,6 +2357,214 @@
         "required": ["id", "topic_id", "code", "name", "description", "difficulty", "blooms_level"],
         "title": "SkillResponse",
         "description": "Atomic competency node details."
+      },
+      "StudentDataExportResponse": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "exported_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Exported At"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Profile"
+          },
+          "guardian": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian"
+          },
+          "consents": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Consents"
+          },
+          "enrollments": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Enrollments"
+          },
+          "attempts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Attempts"
+          },
+          "mastery": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Mastery"
+          }
+        },
+        "type": "object",
+        "required": [
+          "student_id",
+          "exported_at",
+          "profile",
+          "guardian",
+          "consents",
+          "enrollments",
+          "attempts",
+          "mastery"
+        ],
+        "title": "StudentDataExportResponse",
+        "description": "Complete portable JSON data export for a student."
+      },
+      "StudentJoinRequest": {
+        "properties": {
+          "join_code": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 4,
+            "title": "Join Code",
+            "description": "Teacher-issued class code"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "title": "Username",
+            "description": "Unique username"
+          },
+          "pin": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 4,
+            "title": "Pin",
+            "description": "4 to 8 digit secret PIN"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Full Name",
+            "description": "Student display name"
+          },
+          "preferred_language": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Preferred Language",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": ["join_code", "username", "pin", "full_name"],
+        "title": "StudentJoinRequest",
+        "description": "Self-registration payload for students joining a class with code."
+      },
+      "StudentLoginRequest": {
+        "properties": {
+          "join_code": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 4,
+            "title": "Join Code",
+            "description": "Teacher-issued class code"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "title": "Username",
+            "description": "Student unique username"
+          },
+          "pin": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 4,
+            "title": "Pin",
+            "description": "Student PIN"
+          }
+        },
+        "type": "object",
+        "required": ["join_code", "username", "pin"],
+        "title": "StudentLoginRequest",
+        "description": "Sign-in payload for minor students using class join code and PIN."
+      },
+      "StudentRosterItem": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "roll_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roll Number"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "enrolled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Enrolled At"
+          }
+        },
+        "type": "object",
+        "required": ["student_id", "full_name", "username", "roll_number", "status", "enrolled_at"],
+        "title": "StudentRosterItem",
+        "description": "Student roster entry within a classroom."
+      },
+      "SupabaseAuthRequest": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "Supabase access token"
+          }
+        },
+        "type": "object",
+        "required": ["access_token"],
+        "title": "SupabaseAuthRequest",
+        "description": "Payload for validating external Supabase / Google OAuth JWT."
       },
       "SyncBatchRequest": {
         "properties": {
@@ -1342,6 +2662,94 @@
         "title": "SyncItemResult",
         "description": "Individual synchronization outcome."
       },
+      "TeacherLoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": ["email", "password"],
+        "title": "TeacherLoginRequest",
+        "description": "Login payload for teachers and school administrators."
+      },
+      "TeacherSignupRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "Minimum 8 characters password"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Full Name"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Id"
+          },
+          "preferred_language": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Preferred Language",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": ["email", "password", "full_name"],
+        "title": "TeacherSignupRequest",
+        "description": "Registration payload for teachers."
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "type": "object",
+        "required": ["access_token", "refresh_token", "csrf_token", "user"],
+        "title": "TokenResponse",
+        "description": "Token payload returned on successful authentication."
+      },
       "TopicResponse": {
         "properties": {
           "id": {
@@ -1377,6 +2785,62 @@
         "required": ["id", "code", "name", "sequence_order"],
         "title": "TopicResponse",
         "description": "Curriculum topic summary."
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "preferred_language": {
+            "type": "string",
+            "title": "Preferred Language"
+          },
+          "is_minor": {
+            "type": "boolean",
+            "title": "Is Minor"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": ["id", "full_name", "role", "preferred_language", "is_minor", "created_at"],
+        "title": "UserResponse",
+        "description": "User account entity view."
       },
       "ValidationError": {
         "properties": {

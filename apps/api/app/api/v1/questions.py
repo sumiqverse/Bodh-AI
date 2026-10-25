@@ -7,8 +7,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_db, require_role
 from app.core.errors import NotFoundError
-from app.db.session import get_db
+from app.models.auth import User
 from app.repositories.question_repo import QuestionRepository
 from app.schemas.assessment import QuestionOptionResponse, QuestionResponse
 
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/questions", tags=["Questions"])
 @router.get("", response_model=list[QuestionResponse], summary="List Questions for Skill")
 async def list_questions(
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
     skill_id: Annotated[uuid.UUID, Query(description="Skill competency UUID")],
     language: Annotated[str, Query(description="Language code ('en', 'hi')")] = "en",
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -64,6 +66,7 @@ async def list_questions(
 async def get_question(
     question_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
     language: Annotated[str, Query(description="Language code ('en', 'hi')")] = "en",
 ) -> QuestionResponse:
     """Retrieve a single calibrated question by UUID."""

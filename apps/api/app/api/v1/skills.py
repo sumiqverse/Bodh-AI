@@ -7,8 +7,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_db, require_role
 from app.core.errors import NotFoundError
-from app.db.session import get_db
+from app.models.auth import User
 from app.repositories.skill_repo import SkillRepository
 from app.schemas.curriculum import PrerequisiteResponse, SkillResponse
 
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/skills", tags=["Skills"])
 async def get_skill(
     skill_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> SkillResponse:
     """Retrieve atomic competency node by UUID."""
     repo = SkillRepository(session)
@@ -45,6 +47,7 @@ async def get_skill(
 async def get_skill_prerequisites(
     skill_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> Sequence[PrerequisiteResponse]:
     """Retrieve incoming prerequisite dependency graph edges for a skill."""
     repo = SkillRepository(session)
@@ -67,6 +70,7 @@ async def get_skill_prerequisites(
 async def list_skills_by_topic(
     topic_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> Sequence[SkillResponse]:
     """Retrieve all skills under a curriculum topic."""
     repo = SkillRepository(session)

@@ -18,11 +18,18 @@ def test_alembic_config_and_revisions() -> None:
     # Verify head revision
     heads = script_dir.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "0001_initial_schema"
+    assert heads[0] == "0002_auth_classes_rls"
 
-    # Verify script can be retrieved and has upgrade / downgrade functions
-    rev = script_dir.get_revision("0001_initial_schema")
-    assert rev is not None
-    assert rev.module is not None
-    assert hasattr(rev.module, "upgrade")
-    assert hasattr(rev.module, "downgrade")
+    # Verify script 0001 can be retrieved and has upgrade / downgrade functions
+    rev1 = script_dir.get_revision("0001_initial_schema")
+    assert rev1 is not None
+    assert rev1.module is not None
+    assert hasattr(rev1.module, "upgrade")
+    assert hasattr(rev1.module, "downgrade")
+
+    # Verify script 0002 can be retrieved and has upgrade / downgrade functions
+    rev2 = script_dir.get_revision("0002_auth_classes_rls")
+    assert rev2 is not None
+    assert rev2.module is not None
+    assert hasattr(rev2.module, "upgrade")
+    assert hasattr(rev2.module, "downgrade")

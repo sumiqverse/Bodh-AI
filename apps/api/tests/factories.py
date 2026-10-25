@@ -29,8 +29,13 @@ class UserFactory(factory.Factory):
 
     id = factory.LazyFunction(uuid.uuid4)
     email = factory.Sequence(lambda n: f"student_{n}@example.com")
+    username = factory.Sequence(lambda n: f"user_{n}_{uuid.uuid4().hex[:6]}")
     phone = factory.Sequence(lambda n: f"+9198765{n:05d}")
-    hashed_password = "mock_scrypt_hash"
+    hashed_password = "mock_argon2_hash"
+    pin_hash = None
+    is_minor = False
+    failed_login_attempts = 0
+    locked_until = None
     full_name = factory.Sequence(lambda n: f"Test Student {n}")
     preferred_language = "en"
     is_active = True
@@ -60,10 +65,13 @@ class SchoolClassFactory(factory.Factory):
         model = SchoolClass
 
     id = factory.LazyFunction(uuid.uuid4)
+    name = factory.Sequence(lambda n: f"Class 8-A Mathematics {n}")
     school_id = factory.LazyFunction(uuid.uuid4)
+    teacher_id = factory.LazyFunction(uuid.uuid4)
     grade = 8
     section = "A"
     academic_year = "2024-2025"
+    join_code = factory.Sequence(lambda n: f"CODE{n:02d}{uuid.uuid4().hex[:4].upper()}")
     created_at = factory.LazyFunction(lambda: datetime.now(UTC))
     updated_at = factory.LazyFunction(lambda: datetime.now(UTC))
 
@@ -86,6 +94,7 @@ class GuardianFactory(factory.Factory):
         model = Guardian
 
     id = factory.LazyFunction(uuid.uuid4)
+    name = factory.Sequence(lambda n: f"Guardian {n}")
     student_id = factory.LazyFunction(uuid.uuid4)
     relation_type = "Parent"
     phone = factory.Sequence(lambda n: f"+9199887{n:05d}")
