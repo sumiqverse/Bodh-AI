@@ -88,9 +88,11 @@ class QuestionRepository(BaseRepository[Question]):
         question_id: uuid.UUID,
         language: str,
         prompt: str,
-        options: list[dict[str, Any]],
-        explanation: str,
+        options: list[dict[str, Any]] | None = None,
+        explanation: str = "",
         hints: list[str] | None = None,
+        verified_answer: str = "",
+        worked_solution: str = "",
     ) -> QuestionTranslation:
         """Attach a localized translation to an existing question."""
         translation = QuestionTranslation(
@@ -100,6 +102,8 @@ class QuestionRepository(BaseRepository[Question]):
             options=options,
             explanation=explanation,
             hints=hints or [],
+            verified_answer=verified_answer,
+            worked_solution=worked_solution,
         )
         self.session.add(translation)
         await self.session.flush()

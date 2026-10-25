@@ -93,6 +93,9 @@ class AttemptResponse(BaseModel):
     is_correct: bool
     p_mastery_after: float = Field(description="Updated Bayesian mastery probability [0.0 - 1.0]")
     explanation: str = Field(description="Step-by-step conceptual solution")
+    rationale: str = Field(
+        default="", description="Pedagogical rationale explaining mastery update"
+    )
     is_duplicate: bool = Field(
         default=False, description="Flag indicating if idempotency deduplicated this request"
     )
@@ -107,3 +110,79 @@ class MasteryResponse(BaseModel):
     attempts_count: int
     correct_count: int
     last_attempted_at: datetime | None = None
+    state: str = Field(default="not_learned", description="not_learned, partial, mastered")
+    rationale: str = Field(default="", description="Pedagogical explanation of current state")
+
+
+class DiagnosticStartRequest(BaseModel):
+    """Payload to start a CAT diagnostic assessment session."""
+
+    curriculum_code: str = Field(default="NCERT-MATH-C8", description="Target curriculum code")
+    initial_skills: list[str] | None = Field(
+        default=None, description="Optional subset of skill codes to assess"
+    )
+
+
+class DiagnosticProgressRequest(BaseModel):
+    """Payload to submit answer and advance CAT diagnostic session."""
+
+    session_id: str = Field(description="Unique session identifier")
+    question_id: str = Field(description="Question identifier")
+    selected_answer: str = Field(description="Selected answer option ID")
+    time_spent_ms: int = Field(ge=0, description="Time spent solving in milliseconds")
+    hint_level: int = Field(default=0, ge=0, le=3, description="Hint scaffold level requested")
+
+
+class DiagnosticItemResponse(BaseModel):
+    """Question item returned within diagnostic session."""
+
+    question_id: str
+    code: str
+    skill_id: str
+    skill_code: str
+    difficulty: int
+    prompt: str
+    options: list[dict[str, Any]] | None = None
+
+
+class DiagnosticResponse(BaseModel):
+    """Diagnostic response with next question or termination summary."""
+
+    session_id: str
+    is_completed: bool
+    questions_answered: int
+    next_item: DiagnosticItemResponse | None = None
+    rationale: str = Field(
+        default="", description="Why this item was selected or why diagnostic stopped"
+    )
+    stop_reason: str | None = None
+    summary: dict[str, Any] | None = None
+
+
+class NextItemResponse(BaseModel):
+    """Recommended learning item with pedagogical justification."""
+
+    question_id: uuid.UUID
+    code: str
+    skill_id: uuid.UUID
+    skill_code: str
+    difficulty: int
+    question_type: str
+    prompt: str
+    options: list[dict[str, Any]] | None = None
+    hints: list[str] = Field(default_factory=list)
+    predicted_success: float = Field(
+        default=0.75, description="Predicted success probability [0.0 - 1.0]"
+    )
+    score: float = Field(default=0.0, description="Composite recommendation ranking score")
+    score_breakdown: dict[str, float] = Field(default_factory=dict)
+    hint_ladder: int = Field(
+        default=0, description="0=none, 1=hint, 2=worked example, 3=prerequisite review"
+    )
+    is_test_gate: bool = Field(
+        default=False, description="Flag indicating 3-item hint-free test gate verification"
+    )
+    is_skip_ahead: bool = Field(default=False, description="Flag indicating skip-ahead triggered")
+    rationale: str = Field(
+        description="Transparent pedagogical rationale explaining why this item was selected"
+    )

@@ -63,7 +63,7 @@ class AttemptService:
             # Check options in the default translation
             trans = question.translations[0]
             explanation = trans.explanation
-            for opt in trans.options:
+            for opt in trans.options or []:
                 if str(
                     opt.get("id")
                 ).strip().upper() == request.selected_answer.strip().upper() and bool(

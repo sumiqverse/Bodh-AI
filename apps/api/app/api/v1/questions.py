@@ -91,7 +91,7 @@ async def list_questions(
         results.append(
             QuestionResponse(
                 id=q.id,
-                code=q.code,
+                code=q.code or "",
                 skill_id=q.skill_id,
                 difficulty=q.difficulty,
                 question_type=q.question_type,
@@ -151,7 +151,7 @@ async def list_questions_for_management(
         results.append(
             QuestionDetailResponse(
                 id=q.id,
-                code=q.code,
+                code=q.code or "",
                 skill_id=q.skill_id,
                 difficulty=q.difficulty,
                 question_type=q.question_type,
@@ -217,7 +217,7 @@ async def get_question(
 
     return QuestionResponse(
         id=question.id,
-        code=question.code,
+        code=question.code or "",
         skill_id=question.skill_id,
         difficulty=question.difficulty,
         question_type=question.question_type,
@@ -253,7 +253,7 @@ async def get_question_detail(
 
     return QuestionDetailResponse(
         id=question.id,
-        code=question.code,
+        code=question.code or "",
         skill_id=question.skill_id,
         difficulty=question.difficulty,
         question_type=question.question_type,
@@ -354,7 +354,7 @@ async def update_question_status(
 
     resp = QuestionDetailResponse(
         id=question.id,
-        code=question.code,
+        code=question.code or "",
         skill_id=question.skill_id,
         difficulty=question.difficulty,
         question_type=question.question_type,
@@ -461,7 +461,7 @@ async def update_question(
 
     resp = QuestionDetailResponse(
         id=question.id,
-        code=question.code,
+        code=question.code or "",
         skill_id=question.skill_id,
         difficulty=question.difficulty,
         question_type=question.question_type,

@@ -81,6 +81,9 @@ def create_app() -> FastAPI:
     # 5. Include system and domain routers
     application.include_router(health_router)
     application.include_router(api_v1_router)
+    from app.api.v1.adaptive import router as adaptive_direct_router
+
+    application.include_router(adaptive_direct_router, prefix="/v1")
 
     return application
 

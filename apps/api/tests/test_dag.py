@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 
 from app.core.content_importer import validate_content_pack
@@ -66,7 +68,7 @@ def test_valid_dag_passes(base_valid_pack: dict[str, object]) -> None:
 def test_reject_self_loop_cycle(base_valid_pack: dict[str, object]) -> None:
     """A skill listing itself as a prerequisite must be rejected."""
     pack = dict(base_valid_pack)
-    skills = list(pack["skills"])  # type: ignore[arg-type]
+    skills = list(cast(list[dict[str, Any]], pack["skills"]))
     skills[0] = {
         "code": "SKILL-A",
         "topic_code": "TOPIC-1",
@@ -86,7 +88,7 @@ def test_reject_self_loop_cycle(base_valid_pack: dict[str, object]) -> None:
 def test_reject_direct_two_node_cycle(base_valid_pack: dict[str, object]) -> None:
     """A -> B and B -> A forms a directed cycle and must be rejected."""
     pack = dict(base_valid_pack)
-    skills = list(pack["skills"])  # type: ignore[arg-type]
+    skills = list(cast(list[dict[str, Any]], pack["skills"]))
     # Make A depend on B, while B depends on A
     skills[0] = {
         "code": "SKILL-A",
@@ -107,7 +109,7 @@ def test_reject_direct_two_node_cycle(base_valid_pack: dict[str, object]) -> Non
 def test_reject_three_node_cycle(base_valid_pack: dict[str, object]) -> None:
     """A -> B -> C -> A forms a directed cycle and must be rejected."""
     pack = dict(base_valid_pack)
-    skills = list(pack["skills"])  # type: ignore[arg-type]
+    skills = list(cast(list[dict[str, Any]], pack["skills"]))
     # A depends on C, while C depends on B and B depends on A
     skills[0] = {
         "code": "SKILL-A",
@@ -128,7 +130,7 @@ def test_reject_three_node_cycle(base_valid_pack: dict[str, object]) -> None:
 def test_reject_orphan_topic_reference(base_valid_pack: dict[str, object]) -> None:
     """A skill referencing a non-existent topic code must be rejected."""
     pack = dict(base_valid_pack)
-    skills = list(pack["skills"])  # type: ignore[arg-type]
+    skills = list(cast(list[dict[str, Any]], pack["skills"]))
     skills[0] = {
         "code": "SKILL-A",
         "topic_code": "NON_EXISTENT_TOPIC",
@@ -148,7 +150,7 @@ def test_reject_orphan_topic_reference(base_valid_pack: dict[str, object]) -> No
 def test_reject_orphan_prerequisite_reference(base_valid_pack: dict[str, object]) -> None:
     """A skill referencing an undeclared prerequisite skill must be rejected."""
     pack = dict(base_valid_pack)
-    skills = list(pack["skills"])  # type: ignore[arg-type]
+    skills = list(cast(list[dict[str, Any]], pack["skills"]))
     skills[1] = {
         "code": "SKILL-B",
         "topic_code": "TOPIC-1",

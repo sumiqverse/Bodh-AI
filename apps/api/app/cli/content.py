@@ -44,8 +44,8 @@ async def _run_import(pack_path: str, dry_run: bool, verbose: bool) -> int:
         print(
             f"\n[ERROR] Validation FAILED with {len(validation.errors)} error(s):", file=sys.stderr
         )
-        for idx, err in enumerate(validation.errors, 1):
-            print(f"   {idx}. {err}", file=sys.stderr)
+        for idx, error_item in enumerate(validation.errors, 1):
+            print(f"   {idx}. {error_item}", file=sys.stderr)
         return 1
 
     print("[OK] Content pack schema and DAG invariants validated successfully.")

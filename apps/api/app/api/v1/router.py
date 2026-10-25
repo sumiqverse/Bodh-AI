@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.api.v1.adaptive import router as adaptive_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.attempts import router as attempts_router
 from app.api.v1.auth import router as auth_router
@@ -27,3 +28,4 @@ api_v1_router.include_router(questions_router)
 api_v1_router.include_router(attempts_router)
 api_v1_router.include_router(mastery_router)
 api_v1_router.include_router(sync_router)
+api_v1_router.include_router(adaptive_router)
