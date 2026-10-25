@@ -1,0 +1,11 @@
+{
+  "name": "@bodhai/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "tsconfig.base.json",
+    "tsconfig.next.json",
+    "tsconfig.react.json",
+    "tsconfig.node.json"
+  ]
+}

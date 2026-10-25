@@ -1,0 +1,8 @@
+{
+  "*.{ts,tsx,js,jsx,mjs}": ["prettier --write", "eslint --fix --max-warnings=0 --no-warn-ignored"],
+  "apps/api/**/*.py": [
+    "uv run --project apps/api ruff check --fix",
+    "uv run --project apps/api ruff format"
+  ],
+  "*.{json,md,yml,yaml}": ["prettier --write"]
+}

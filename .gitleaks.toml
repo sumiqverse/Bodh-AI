@@ -1,0 +1,20 @@
+title = "BodhAI Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlists for safe files, documentation, and examples"
+paths = [
+  '''^\.env\.example$''',
+  '''^apps/.+/\.env\.example$''',
+  '''^docs/''',
+  '''^content/''',
+  '''pnpm-lock\.yaml$''',
+  '''uv\.lock$'''
+]
+regexes = [
+  '''example-secret-key-change-in-production''',
+  '''placeholder_key_''',
+  '''test_dummy_token'''
+]

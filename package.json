@@ -1,0 +1,37 @@
+{
+  "name": "bodhai-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.5.2",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "pnpm run lint:js && pnpm run lint:py && pnpm run lint:format",
+    "lint:js": "eslint . --max-warnings=0 --no-warn-ignored",
+    "lint:py": "pnpm --filter @bodhai/api lint",
+    "lint:format": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,json,md,yml,yaml}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md,yml,yaml}\"",
+    "typecheck": "pnpm run typecheck:ts && pnpm run typecheck:py",
+    "typecheck:ts": "turbo run typecheck",
+    "typecheck:py": "pnpm --filter @bodhai/api typecheck",
+    "test": "pnpm run test:unit",
+    "test:unit": "pnpm run test:ts && pnpm run test:py",
+    "test:ts": "vitest run",
+    "test:py": "pnpm --filter @bodhai/api test",
+    "verify": "pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
+    "@eslint/js": "^9.21.0",
+    "eslint": "^9.21.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.2",
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.25.0",
+    "vitest": "^3.0.8"
+  }
+}
