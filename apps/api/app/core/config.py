@@ -58,6 +58,64 @@ class Settings(BaseSettings):
         description="Maximum requests permitted per client per minute",
     )
 
+    # AI Tutor Service Settings
+    tutor_llm_provider: str = Field(
+        default="mock",
+        description="LLM provider: mock, openai",
+    )
+    openai_api_key: str = Field(
+        default="",
+        description="Optional API key for external LLM provider",
+    )
+    openai_api_base: str = Field(
+        default="https://api.openai.com/v1",
+        description="Base URL for OpenAI-compatible API",
+    )
+    tutor_llm_model: str = Field(
+        default="gpt-4o-mini",
+        description="Model identifier for tutor chat completion",
+    )
+    tutor_embedding_model: str = Field(
+        default="text-embedding-3-small",
+        description="Model identifier for semantic embeddings",
+    )
+    tutor_similarity_threshold: float = Field(
+        default=0.70,
+        description="Minimum cosine similarity threshold for grounding",
+    )
+    tutor_top_k: int = Field(
+        default=5,
+        description="Top-k context chunks to retrieve",
+    )
+    tutor_monthly_budget_usd: float = Field(
+        default=50.0,
+        description="Monthly cost budget limit in USD",
+    )
+    tutor_per_user_rate_limit: int = Field(
+        default=20,
+        description="Max tutor requests per student per minute",
+    )
+    tutor_global_rate_limit: int = Field(
+        default=500,
+        description="Max global tutor requests per minute",
+    )
+    tutor_circuit_breaker_threshold: int = Field(
+        default=3,
+        description="Consecutive failure threshold before opening circuit",
+    )
+    tutor_circuit_breaker_recovery_sec: int = Field(
+        default=30,
+        description="Seconds to wait before half-open circuit test",
+    )
+    tutor_timeout_seconds: float = Field(
+        default=5.0,
+        description="Timeout in seconds for external LLM calls",
+    )
+    tutor_log_retention_days: int = Field(
+        default=90,
+        description="Days to retain privacy interaction logs before pruning",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

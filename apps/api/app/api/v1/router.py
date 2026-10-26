@@ -14,6 +14,7 @@ from app.api.v1.mastery import router as mastery_router
 from app.api.v1.questions import router as questions_router
 from app.api.v1.skills import router as skills_router
 from app.api.v1.sync import router as sync_router
+from app.api.v1.tutor import router as tutor_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 
@@ -29,3 +30,4 @@ api_v1_router.include_router(attempts_router)
 api_v1_router.include_router(mastery_router)
 api_v1_router.include_router(sync_router)
 api_v1_router.include_router(adaptive_router)
+api_v1_router.include_router(tutor_router)

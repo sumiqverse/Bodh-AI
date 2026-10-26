@@ -19,6 +19,11 @@ from app.models.teacher import (
     ClassSkillAggregate,
     TeacherDecision,
 )
+from app.models.tutor import (
+    CurriculumChunkEmbedding,
+    TutorInteractionLog,
+    TutorMonthlyCostBudget,
+)
 
 __all__ = [
     "Assignment",
@@ -29,6 +34,7 @@ __all__ = [
     "ClassSkillAggregate",
     "Consent",
     "Curriculum",
+    "CurriculumChunkEmbedding",
     "Embedding",
     "Enrollment",
     "GlossaryTerm",
@@ -49,6 +55,8 @@ __all__ = [
     "TeacherDecision",
     "TimestampMixin",
     "Topic",
+    "TutorInteractionLog",
+    "TutorMonthlyCostBudget",
     "UUIDPrimaryKeyMixin",
     "User",
 ]

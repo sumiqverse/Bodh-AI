@@ -33,6 +33,14 @@ from app.schemas.teacher import (
     TeacherDecisionCreateRequest,
     TeacherDecisionResponse,
 )
+from app.schemas.tutor import (
+    EvalCase,
+    TutorIngestRequest,
+    TutorIngestResponse,
+    TutorMonthlyBudgetResponse,
+    TutorQueryRequest,
+    TutorResponseSchema,
+)
 
 __all__ = [
     "AssignmentCreateRequest",
@@ -47,6 +55,7 @@ __all__ = [
     "ConsentCreateRequest",
     "ConsentResponse",
     "CurriculumResponse",
+    "EvalCase",
     "HealthResponse",
     "MasteryResponse",
     "PrerequisiteResponse",
@@ -62,4 +71,9 @@ __all__ = [
     "TeacherDecisionCreateRequest",
     "TeacherDecisionResponse",
     "TopicResponse",
+    "TutorIngestRequest",
+    "TutorIngestResponse",
+    "TutorMonthlyBudgetResponse",
+    "TutorQueryRequest",
+    "TutorResponseSchema",
 ]

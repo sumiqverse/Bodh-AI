@@ -1,0 +1,43 @@
+name: Nightly AI Tutor Evaluation
+
+on:
+  schedule:
+    # Run nightly at 02:00 UTC (07:30 IST)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate-tutor:
+    name: Evaluate AI Tutor Safety and Groundedness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: 'latest'
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
+
+      - name: Install API dependencies
+        run: |
+          cd apps/api
+          uv sync --all-groups
+
+      - name: Run 50-Case AI Tutor Benchmark Suite
+        run: |
+          cd apps/api
+          uv run python scripts/eval_tutor.py
+
+      - name: Run AI Tutor Test Suite
+        run: |
+          cd apps/api
+          uv run pytest tests/test_tutor* tests/test_pii* -v

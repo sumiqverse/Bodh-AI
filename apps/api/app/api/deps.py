@@ -3,7 +3,7 @@
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, Request
 from sqlalchemy import text
@@ -100,14 +100,20 @@ async def get_current_user(
     return user
 
 
-def require_role(*allowed_roles: str) -> Callable[..., User]:
+def require_role(*allowed_roles: Any) -> Callable[..., User]:
     """Factory creating an endpoint dependency enforcing role-based access control."""
+    flattened_roles: list[str] = []
+    for r in allowed_roles:
+        if isinstance(r, (list, tuple, set)):
+            flattened_roles.extend(r)
+        elif isinstance(r, str):
+            flattened_roles.append(r)
 
     def role_dependency(user: Annotated[User, Depends(get_current_user)]) -> User:
-        if user.role.name not in allowed_roles:
+        if user.role.name not in flattened_roles:
             raise AuthorizationError(
                 f"Role '{user.role.name}' is not authorized to access this resource. "
-                f"Required role: {', '.join(allowed_roles)}."
+                f"Required role: {', '.join(flattened_roles)}."
             )
         return user
 
