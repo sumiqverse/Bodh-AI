@@ -1,0 +1,250 @@
+{
+  "version": "1.0.0",
+  "parameters": {
+    "bkt": {
+      "l0": 0.3,
+      "t": 0.1,
+      "g": 0.2,
+      "s": 0.1
+    },
+    "thresholds": {
+      "not_learned": 0.4,
+      "mastered": 0.95,
+      "min_observations": 3
+    },
+    "weights": {
+      "gap": 0.4,
+      "difficulty": 0.3,
+      "recency": 0.2,
+      "curriculum": 0.1
+    }
+  },
+  "bkt_correct_sequence": [
+    {
+      "step": 1,
+      "p_prior": 0.3,
+      "is_correct": true,
+      "predicted_success": 0.41,
+      "entropy": 0.881291,
+      "expected_information_gain": 0.16288,
+      "posterior": 0.658537,
+      "p_next": 0.692683
+    },
+    {
+      "step": 2,
+      "p_prior": 0.692683,
+      "is_correct": true,
+      "predicted_success": 0.684878,
+      "entropy": 0.890052,
+      "expected_information_gain": 0.335882,
+      "posterior": 0.910256,
+      "p_next": 0.919231
+    },
+    {
+      "step": 3,
+      "p_prior": 0.919231,
+      "is_correct": true,
+      "predicted_success": 0.843462,
+      "entropy": 0.404884,
+      "expected_information_gain": 0.149924,
+      "posterior": 0.980848,
+      "p_next": 0.982763
+    },
+    {
+      "step": 4,
+      "p_prior": 0.982763,
+      "is_correct": true,
+      "predicted_success": 0.887934,
+      "entropy": 0.125631,
+      "expected_information_gain": 0.039569,
+      "posterior": 0.996118,
+      "p_next": 0.996506
+    },
+    {
+      "step": 5,
+      "p_prior": 0.996506,
+      "is_correct": true,
+      "predicted_success": 0.897554,
+      "entropy": 0.033548,
+      "expected_information_gain": 0.009011,
+      "posterior": 0.999221,
+      "p_next": 0.999299
+    }
+  ],
+  "bkt_mixed_rapid_sequence": [
+    {
+      "step": 1,
+      "p_prior": 0.5,
+      "is_correct": false,
+      "time_spent_s": 15.0,
+      "is_rapid_guess": false,
+      "posterior": 0.111111,
+      "p_next": 0.2
+    },
+    {
+      "step": 2,
+      "p_prior": 0.2,
+      "is_correct": false,
+      "time_spent_s": 2.1,
+      "is_rapid_guess": true,
+      "posterior": 0.140606,
+      "p_next": 0.226545
+    },
+    {
+      "step": 3,
+      "p_prior": 0.226545,
+      "is_correct": true,
+      "time_spent_s": 10.0,
+      "is_rapid_guess": false,
+      "posterior": 0.568604,
+      "p_next": 0.611743
+    },
+    {
+      "step": 4,
+      "p_prior": 0.611743,
+      "is_correct": false,
+      "time_spent_s": 1.5,
+      "is_rapid_guess": true,
+      "posterior": 0.455224,
+      "p_next": 0.509701
+    }
+  ],
+  "mastery_state_progression": [
+    {
+      "step": 1,
+      "is_correct": true,
+      "hint_level": 0,
+      "p_mastery": 0.6927,
+      "state": "not_learned",
+      "observations_count": 1,
+      "hint_free_correct_count": 1,
+      "consecutive_correct": 1
+    },
+    {
+      "step": 2,
+      "is_correct": true,
+      "hint_level": 0,
+      "p_mastery": 0.9192,
+      "state": "not_learned",
+      "observations_count": 2,
+      "hint_free_correct_count": 2,
+      "consecutive_correct": 2
+    },
+    {
+      "step": 3,
+      "is_correct": false,
+      "hint_level": 0,
+      "p_mastery": 0.6284,
+      "state": "partial",
+      "observations_count": 3,
+      "hint_free_correct_count": 2,
+      "consecutive_correct": 0
+    },
+    {
+      "step": 4,
+      "is_correct": true,
+      "hint_level": 0,
+      "p_mastery": 0.8955,
+      "state": "partial",
+      "observations_count": 4,
+      "hint_free_correct_count": 3,
+      "consecutive_correct": 1
+    },
+    {
+      "step": 5,
+      "is_correct": true,
+      "hint_level": 0,
+      "p_mastery": 0.9773,
+      "state": "mastered",
+      "observations_count": 5,
+      "hint_free_correct_count": 4,
+      "consecutive_correct": 2
+    },
+    {
+      "step": 6,
+      "is_correct": true,
+      "hint_level": 0,
+      "p_mastery": 0.9954,
+      "state": "mastered",
+      "observations_count": 6,
+      "hint_free_correct_count": 5,
+      "consecutive_correct": 3
+    },
+    {
+      "step": 7,
+      "is_correct": true,
+      "hint_level": 0,
+      "p_mastery": 0.9991,
+      "state": "mastered",
+      "observations_count": 7,
+      "hint_free_correct_count": 6,
+      "consecutive_correct": 4
+    }
+  ],
+  "root_cause_case": {
+    "target_skill": "SKILL-04",
+    "edges": [
+      ["SKILL-01", "SKILL-02"],
+      ["SKILL-02", "SKILL-03"],
+      ["SKILL-03", "SKILL-04"],
+      ["SKILL-05", "SKILL-03"]
+    ],
+    "skill_mastery": {
+      "SKILL-01": 0.2,
+      "SKILL-02": 0.35,
+      "SKILL-03": 0.75,
+      "SKILL-04": 0.3,
+      "SKILL-05": 0.9
+    },
+    "expected_root_cause": {
+      "skill_id": "SKILL-01",
+      "depth": 3,
+      "p_mastery": 0.2,
+      "path": ["SKILL-04", "SKILL-03", "SKILL-02", "SKILL-01"]
+    }
+  },
+  "hint_ladder_cases": [
+    {
+      "consecutive_fails": 0,
+      "expected_level": 0
+    },
+    {
+      "consecutive_fails": 1,
+      "expected_level": 1
+    },
+    {
+      "consecutive_fails": 2,
+      "expected_level": 2
+    },
+    {
+      "consecutive_fails": 3,
+      "expected_level": 3
+    },
+    {
+      "consecutive_fails": 4,
+      "expected_level": 3
+    }
+  ],
+  "ranker_case": {
+    "weights": {
+      "gap": 0.4,
+      "difficulty": 0.3,
+      "recency": 0.2,
+      "curriculum": 0.1
+    },
+    "item": {
+      "difficulty": 3,
+      "skill_id": "SKILL-02"
+    },
+    "p_mastery": 0.35,
+    "is_prereq_gap": true,
+    "days_since_attempt": 2.0,
+    "expected_score": 0.546667,
+    "expected_breakdown": {
+      "gap_priority": 1.0,
+      "difficulty_fit": 0.0,
+      "recency_penalty": 0.4,
+      "curriculum_alignment": 0.666667
+    }
+  }
+}
