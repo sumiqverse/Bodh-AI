@@ -149,6 +149,70 @@ export default function SettingsPage(): React.JSX.Element {
         </div>
       )}
 
+      {/* Shared Device Warning Card */}
+      <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl" aria-hidden="true">
+              ⚠️
+            </span>
+            <CardTitle className="text-lg font-bold text-amber-900 dark:text-amber-100">
+              {t('deviceShareWarningTitle')}
+            </CardTitle>
+          </div>
+          <CardDescription className="text-xs sm:text-sm text-amber-800/90 dark:text-amber-200/90 leading-relaxed pt-1">
+            {t('deviceShareWarningDesc')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="min-h-[42px] cursor-pointer text-xs font-semibold border-amber-500/40 text-amber-900 dark:text-amber-100 hover:bg-amber-500/10"
+          >
+            {t('logoutButton')}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Language Preferences Card */}
+      <Card className="shadow-xs">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl font-bold">{t('changeLanguageTitle')}</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            {t('changeLanguageDesc')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant={currentUser.preferred_language === 'en' ? 'primary' : 'outline'}
+              size="md"
+              onClick={() => {
+                router.replace('/settings', { locale: 'en' });
+              }}
+              className="min-h-[44px] cursor-pointer text-sm font-semibold"
+            >
+              English
+            </Button>
+            <Button
+              type="button"
+              variant={currentUser.preferred_language === 'hi' ? 'primary' : 'outline'}
+              size="md"
+              onClick={() => {
+                router.replace('/settings', { locale: 'hi' });
+              }}
+              className="min-h-[44px] cursor-pointer text-sm font-semibold"
+            >
+              हिन्दी (Hindi)
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Profile Card */}
       <Card className="shadow-xs">
         <CardHeader>

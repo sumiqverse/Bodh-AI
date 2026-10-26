@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Badge } from '@bodhai/ui';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
 import type { ConsentDetailResponse } from '@bodhai/api-client';
@@ -128,11 +128,22 @@ export default function ConsentPage(): React.JSX.Element {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
-      <div>
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
-          {t('title')}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
+            {t('title')}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
+        </div>
+        <Link href="/diagnostic">
+          <Button
+            variant="primary"
+            size="md"
+            className="cursor-pointer font-semibold shadow-elevated"
+          >
+            Continue to Diagnostic →
+          </Button>
+        </Link>
       </div>
 
       {/* Statutory Banner */}

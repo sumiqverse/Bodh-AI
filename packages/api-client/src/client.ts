@@ -48,14 +48,92 @@ export interface CurriculumResponse {
   updated_at: string;
   topics?: TopicResponse[];
 }
-export type QuestionResponse = components['schemas']['QuestionResponse'];
+export interface QuestionOptionItem {
+  id: string;
+  text: string;
+}
+
+export interface QuestionResponse {
+  id: string;
+  code?: string;
+  skill_id: string;
+  difficulty: number;
+  question_type: string;
+  prompt: string;
+  options?: QuestionOptionItem[] | null;
+  hints?: string[];
+}
+
 export type AttemptSubmitRequest = components['schemas']['AttemptSubmitRequest'];
 export type AttemptResponse = components['schemas']['AttemptResponse'];
-export type MasteryResponse = components['schemas']['MasteryResponse'];
+
+export interface MasteryResponse {
+  skill_id: string;
+  p_mastery: number;
+  confidence: number;
+  attempts_count: number;
+  correct_count: number;
+  last_attempted_at?: string | null;
+  state?: 'not_learned' | 'partial' | 'mastered' | string;
+  rationale?: string;
+}
 export type ConsentCreateRequest = components['schemas']['GuardianConsentCreateRequest'];
 export type ConsentResponse = components['schemas']['ConsentDetailResponse'];
 export type SyncBatchRequest = components['schemas']['SyncBatchRequest'];
 export type SyncBatchResponse = components['schemas']['SyncBatchResponse'];
+
+// Adaptive & Diagnostic types
+export interface DiagnosticStartRequest {
+  curriculum_code?: string;
+  initial_skills?: string[];
+}
+
+export interface DiagnosticProgressRequest {
+  session_id: string;
+  question_id: string;
+  selected_answer: string;
+  time_spent_ms: number;
+  hint_level?: number;
+}
+
+export interface DiagnosticItemResponse {
+  question_id: string;
+  code: string;
+  skill_id: string;
+  skill_code: string;
+  difficulty: number;
+  prompt: string;
+  options?: Array<{ id: string; text: string }> | null;
+}
+
+export interface DiagnosticResponse {
+  session_id: string;
+  is_completed: boolean;
+  questions_answered: number;
+  next_item?: DiagnosticItemResponse | null;
+  rationale?: string;
+  stop_reason?: string | null;
+  summary?: Record<string, unknown> | null;
+}
+
+export interface NextItemResponse {
+  question_id: string;
+  code: string;
+  skill_id: string;
+  skill_code: string;
+  difficulty: number;
+  question_type: string;
+  prompt: string;
+  options?: Array<{ id: string; text: string }> | null;
+  hints: string[];
+  predicted_success: number;
+  score: number;
+  score_breakdown: Record<string, number>;
+  hint_ladder: number;
+  is_test_gate: boolean;
+  is_skip_ahead: boolean;
+  rationale: string;
+}
 
 // Auth & User types
 export type TeacherSignupRequest = components['schemas']['TeacherSignupRequest'];
@@ -195,7 +273,8 @@ export class BodhaiApiClient {
 
   public constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
-    this.fetchFn = options.fetchFn ?? fetch;
+    const defaultFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : fetch;
+    this.fetchFn = options.fetchFn ?? defaultFetch;
     this.defaultHeaders = options.defaultHeaders ?? {};
   }
 
@@ -484,13 +563,21 @@ export class BodhaiApiClient {
 
   public async submitAttempt(
     attempt: AttemptSubmitRequest,
+    tokenOrStudentId?: string,
     studentId?: string,
   ): Promise<AttemptResponse> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    if (studentId) {
-      headers['X-Student-Id'] = studentId;
+    if (tokenOrStudentId) {
+      headers['Authorization'] = `Bearer ${tokenOrStudentId}`;
+    }
+    const sId = studentId ?? tokenOrStudentId;
+    if (sId) {
+      headers['X-Student-Id'] = sId;
+    }
+    if (attempt.idempotency_key) {
+      headers['Idempotency-Key'] = attempt.idempotency_key;
     }
     return this.request<AttemptResponse>('/api/v1/attempts', {
       method: 'POST',
@@ -499,9 +586,50 @@ export class BodhaiApiClient {
     });
   }
 
-  public async listMastery(studentId: string): Promise<MasteryResponse[]> {
-    const query = new URLSearchParams({ student_id: studentId });
-    return this.request<MasteryResponse[]>(`/api/v1/mastery?${query.toString()}`);
+  public async listMastery(studentId?: string, token?: string): Promise<MasteryResponse[]> {
+    const query = new URLSearchParams();
+    if (studentId) query.set('student_id', studentId);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request<MasteryResponse[]>(`/api/v1/mastery${qs}`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async startDiagnostic(
+    payload: DiagnosticStartRequest,
+    token?: string,
+  ): Promise<DiagnosticResponse> {
+    return this.request<DiagnosticResponse>('/api/v1/diagnostics', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeaders(token),
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async progressDiagnostic(
+    payload: DiagnosticProgressRequest,
+    token?: string,
+  ): Promise<DiagnosticResponse> {
+    return this.request<DiagnosticResponse>('/api/v1/diagnostics', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeaders(token),
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async getNextItem(curriculumCode?: string, token?: string): Promise<NextItemResponse> {
+    const query = new URLSearchParams();
+    if (curriculumCode) query.set('curriculum_code', curriculumCode);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request<NextItemResponse>(`/api/v1/next-item${qs}`, {
+      headers: this.authHeaders(token),
+    });
   }
 
   public async createConsent(

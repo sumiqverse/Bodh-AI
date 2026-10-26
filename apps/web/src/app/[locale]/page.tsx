@@ -72,7 +72,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/contact">
+          <Link href="/diagnostic">
             <Button variant="primary" size="lg" className="font-semibold shadow-elevated">
               {t('heroCtaPrimary')}
             </Button>

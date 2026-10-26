@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { routing, type Locale } from '@/i18n/routing';
 import { ThemeProvider } from '@/components/theme-provider';
+import { QueryProvider } from '@/components/query-provider';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { ToastProvider } from '@bodhai/ui';
@@ -140,15 +141,17 @@ export default async function LocaleLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ToastProvider>
-              <div className="flex min-h-screen flex-col">
-                <SiteHeader />
-                <main id="main-content" className="flex-1 focus:outline-none" tabIndex={-1}>
-                  {children}
-                </main>
-                <SiteFooter />
-              </div>
-            </ToastProvider>
+            <QueryProvider>
+              <ToastProvider>
+                <div className="flex min-h-screen flex-col">
+                  <SiteHeader />
+                  <main id="main-content" className="flex-1 focus:outline-none" tabIndex={-1}>
+                    {children}
+                  </main>
+                  <SiteFooter />
+                </div>
+              </ToastProvider>
+            </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

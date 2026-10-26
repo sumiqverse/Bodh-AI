@@ -56,7 +56,7 @@ export function SiteHeader(): React.JSX.Element {
               {tNav('settings')}
             </Button>
           </Link>
-          <Link href="/contact" className="hidden sm:inline-flex">
+          <Link href="/diagnostic" className="hidden sm:inline-flex">
             <Button variant="primary" size="sm" className="font-semibold shadow-xs">
               {tCommon('tryDiagnostic')}
             </Button>

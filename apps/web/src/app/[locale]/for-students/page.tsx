@@ -71,7 +71,7 @@ export default async function ForStudentsPage({ params }: PageProps): Promise<Re
       </div>
 
       <div className="mt-14 text-center">
-        <Link href="/contact">
+        <Link href="/diagnostic">
           <Button variant="primary" size="lg" className="shadow-md">
             {tCommon('tryDiagnostic')}
           </Button>

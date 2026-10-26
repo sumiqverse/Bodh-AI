@@ -31,6 +31,10 @@ export function clearAuthSession(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem('bodhai_session_last_active');
+  localStorage.removeItem('bodhai_diag_session');
+  // Clear any residual student state on shared device
+  sessionStorage.clear();
 }
 
 let clientInstance: BodhaiApiClient | null = null;

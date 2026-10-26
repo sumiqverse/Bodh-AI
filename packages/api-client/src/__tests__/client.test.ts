@@ -269,4 +269,91 @@ describe('BodhaiApiClient', () => {
     expect(stats.total_schools).toBe(3);
     expect(stats.total_students).toBe(450);
   });
+
+  it('starts and progresses diagnostic session', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        session_id: 'diag-session-123',
+        is_completed: false,
+        questions_answered: 0,
+        next_item: {
+          question_id: 'q-101',
+          code: 'NCERT-MATH-C8-CH01-Q01',
+          skill_id: 'skill-01',
+          skill_code: 'NCERT-MATH-C8-SK01',
+          difficulty: 1,
+          prompt: 'What is $2 + 2$?',
+          options: [{ id: 'A', text: '4' }],
+        },
+      }),
+    });
+
+    const client = new BodhaiApiClient({
+      baseUrl: 'http://localhost:8000',
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+
+    const started = await client.startDiagnostic({ curriculum_code: 'NCERT-MATH-C8' }, 'token');
+    expect(started.session_id).toBe('diag-session-123');
+    expect(started.next_item?.question_id).toBe('q-101');
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        session_id: 'diag-session-123',
+        is_completed: true,
+        questions_answered: 15,
+        next_item: null,
+      }),
+    });
+
+    const progressed = await client.progressDiagnostic(
+      {
+        session_id: 'diag-session-123',
+        question_id: 'q-101',
+        selected_answer: 'A',
+        time_spent_ms: 5000,
+      },
+      'token',
+    );
+    expect(progressed.is_completed).toBe(true);
+    expect(progressed.questions_answered).toBe(15);
+  });
+
+  it('fetches recommended next item', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        question_id: 'q-202',
+        code: 'NCERT-MATH-C8-CH02-Q01',
+        skill_id: 'skill-02',
+        skill_code: 'NCERT-MATH-C8-SK02',
+        difficulty: 2,
+        question_type: 'mcq',
+        prompt: 'Solve $x + 3 = 7$',
+        options: [{ id: 'A', text: '$x = 4$' }],
+        hints: ['Subtract 3 from both sides'],
+        predicted_success: 0.75,
+        score: 1.2,
+        score_breakdown: {},
+        hint_ladder: 0,
+        is_test_gate: false,
+        is_skip_ahead: false,
+        rationale: 'Prerequisite remediation for linear equations',
+      }),
+    });
+
+    const client = new BodhaiApiClient({
+      baseUrl: 'http://localhost:8000',
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+
+    const item = await client.getNextItem('NCERT-MATH-C8', 'token');
+    expect(item.question_id).toBe('q-202');
+    expect(item.predicted_success).toBe(0.75);
+  });
 });
