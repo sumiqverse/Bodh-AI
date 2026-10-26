@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+    <linearGradient id="flameGrad512" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad512)" />
+  <circle cx="256" cy="256" r="220" fill="url(#glow)" />
+  <!-- Stylized Bodhi Leaf / Knowledge Flame -->
+  <path d="M256 75 C320 160 395 253 368 347 C347 421 283 437 256 437 C229 437 165 421 144 347 C117 253 192 160 256 75 Z" fill="url(#flameGrad512)" opacity="0.9" />
+  <!-- Central Knowledge Core / Light -->
+  <path d="M256 181 C288 240 320 299 304 352 C293 389 267 400 256 400 C245 400 219 389 208 352 C192 299 224 240 256 181 Z" fill="#ffffff" opacity="0.88" />
+  <!-- Synapse Nodes / Neural Adaptive Points -->
+  <circle cx="256" cy="107" r="13" fill="#38bdf8" />
+  <circle cx="181" cy="267" r="12" fill="#10b981" />
+  <circle cx="331" cy="267" r="12" fill="#f59e0b" />
+  <circle cx="256" cy="307" r="11" fill="#6366f1" />
+</svg>

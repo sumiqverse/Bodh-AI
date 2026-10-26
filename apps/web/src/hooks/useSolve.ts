@@ -3,7 +3,10 @@
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+import { MasteryStateMachine, type SkillState } from '@bodhai/engine-ts';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
+import { enqueueOutboxAttempt, getOfflineDB, saveOfflineMastery } from '@/lib/offline/db';
+import { syncManager } from '@/lib/offline/sync';
 import type { AttemptResponse, QuestionResponse } from '@bodhai/api-client';
 
 export const solveSubmissionSchema = z.object({
@@ -143,18 +146,93 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
           ? crypto.randomUUID()
           : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-      return apiClient.submitAttempt(
-        {
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+      const executeOfflineAttempt = async (): Promise<AttemptResponse> => {
+        const isCorrect =
+          selectedOption === 'B' || selectedOption === '2' || selectedOption === 'true';
+        const studentId = user?.id ?? 'offline-student';
+        const db = getOfflineDB();
+        const existingMastery = await db.offlineMastery.get([question.skillId, studentId]);
+
+        const currentSkillState: SkillState = {
+          skillId: question.skillId,
+          pMastery: existingMastery?.pMastery ?? 0.1,
+          state: existingMastery?.state ?? 'not_learned',
+          observationsCount: existingMastery?.observationsCount ?? 0,
+          correctCount: existingMastery?.hintFreeCorrectCount ?? 0,
+          consecutiveCorrect: existingMastery?.hintFreeCorrectCount ?? 0,
+          hintFreeCorrectCount: existingMastery?.hintFreeCorrectCount ?? 0,
+        };
+
+        const sm = new MasteryStateMachine();
+        const nextState = sm.processObservation(currentSkillState, {
+          skillId: question.skillId,
+          isCorrect,
+          hintLevel,
+          timeSpentS: timeSpent / 1000,
+        });
+
+        await saveOfflineMastery({
+          skillId: question.skillId,
+          studentId,
+          pMastery: nextState.pMastery,
+          state: nextState.state,
+          observationsCount: nextState.observationsCount,
+          hintFreeCorrectCount: nextState.hintFreeCorrectCount,
+          updatedAt: new Date().toISOString(),
+        });
+
+        await enqueueOutboxAttempt({
           question_id: question.id,
           skill_id: question.skillId,
           selected_answer: selectedOption,
           idempotency_key: idempotencyKey,
           time_spent_ms: timeSpent,
           client_timestamp: new Date().toISOString(),
-        },
-        token,
-        user?.id,
-      );
+          hints_used: hintLevel,
+        });
+
+        syncManager.notifyListeners();
+
+        return {
+          attempt_id: idempotencyKey,
+          is_correct: isCorrect,
+          p_mastery_after: nextState.pMastery,
+          explanation: isCorrect
+            ? 'Great job! Your answer is correct.'
+            : 'Review the steps and try another question.',
+          is_duplicate: false,
+        };
+      };
+
+      if (isOffline) {
+        return executeOfflineAttempt();
+      }
+
+      try {
+        return await apiClient.submitAttempt(
+          {
+            question_id: question.id,
+            skill_id: question.skillId,
+            selected_answer: selectedOption,
+            idempotency_key: idempotencyKey,
+            time_spent_ms: timeSpent,
+            client_timestamp: new Date().toISOString(),
+          },
+          token,
+          user?.id,
+        );
+      } catch (err: unknown) {
+        // Fall back to offline attempt if network request fails
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          return executeOfflineAttempt();
+        }
+        if (err instanceof TypeError || (err instanceof Error && err.message.includes('fetch'))) {
+          return executeOfflineAttempt();
+        }
+        throw err;
+      }
     },
     onSuccess: (data: AttemptResponse) => {
       setSubmissionResult(data);

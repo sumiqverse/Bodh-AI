@@ -20,6 +20,7 @@ from app.repositories.curriculum_repo import CurriculumRepository
 from app.repositories.mastery_repo import MasteryRepository
 from app.repositories.question_repo import QuestionRepository
 from app.repositories.skill_repo import SkillRepository
+from app.repositories.teacher_repo import TeacherRepository
 from tests.conftest import MockRedis
 from tests.factories import (
     CurriculumFactory,
@@ -53,8 +54,8 @@ async def test_teacher_dashboard_comprehensive(
     school_class = await class_repo.create_class(
         teacher_id=teacher.id,
         school_id=school.id,
-        name="Grade 8 Mathematics",
-        grade=8,
+        name="Grade 11 Mathematics",
+        grade=11,
         section="A",
         academic_year="2024-2025",
     )
@@ -64,7 +65,7 @@ async def test_teacher_dashboard_comprehensive(
     skill_repo = SkillRepository(db_session)
     question_repo = QuestionRepository(db_session)
 
-    curriculum = await curr_repo.create(CurriculumFactory.build(code="NCERT_TEACHER_8", grade=8))
+    curriculum = await curr_repo.create(CurriculumFactory.build(code="NCERT_TEACHER_11", grade=11))
     topic = await topic_repo.create(
         TopicFactory.build(curriculum_id=curriculum.id, name="Number Systems")
     )
@@ -297,4 +298,16 @@ async def test_teacher_dashboard_comprehensive(
     assert "Roll Number" in csv_text
     assert "Skill Code" in csv_text
     assert "SKILL_INT_OPS" in csv_text
-    assert "Grade 8 Mathematics" in csv_text
+    assert "Grade 11 Mathematics" in csv_text
+
+    # 12. Direct TeacherRepository edge case coverage
+    teacher_repo = TeacherRepository(db_session)
+    empty_class_attempts = await teacher_repo.get_class_attempts_since([], datetime.now(UTC))
+    assert empty_class_attempts == []
+    empty_mastery = await teacher_repo.get_mastery_matrix([], [])
+    assert empty_mastery == []
+    cached_aggs = await teacher_repo.get_cached_skill_aggregates(school_class.id)
+    assert isinstance(cached_aggs, list)
+    await teacher_repo.refresh_class_aggregates(school_class.id, [])
+    refreshed_aggs = await teacher_repo.get_cached_skill_aggregates(school_class.id)
+    assert refreshed_aggs == []

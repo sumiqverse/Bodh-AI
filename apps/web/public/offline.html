@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline | BodhAI</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #10b981;
+      --border: #334155;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+    .icon-wrapper {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.5rem;
+      background: rgba(56, 189, 248, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #ffffff;
+    }
+    p {
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      font-size: 0.95rem;
+    }
+    .bilingual-hindi {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--primary);
+      color: #0f172a;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: opacity 0.2s;
+      text-decoration: none;
+      margin-top: 1rem;
+      width: 100%;
+    }
+    .btn:hover, .btn:focus-visible {
+      opacity: 0.9;
+      outline: 2px solid #ffffff;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="offline-heading">
+    <div class="icon-wrapper" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+      </svg>
+    </div>
+    <span class="badge">Offline Mode / ऑफ़लाइन मोड</span>
+    <h1 id="offline-heading">You are currently offline</h1>
+    <p>
+      Downloaded chapters, practice sessions, and on-device diagnostics remain fully available. Any attempts you complete offline are stored safely and will sync automatically once connection returns.
+    </p>
+    <div class="bilingual-hindi">
+      <p>
+        आप वर्तमान में ऑफ़लाइन हैं। आपके डाउनलोड किए गए अध्याय और अभ्यास सत्र चालू रहेंगे। आपके उत्तर सुरक्षित रूप से सहेजे जाएंगे और इंटरनेट जुड़ते ही सिंक हो जाएंगे।
+      </p>
+    </div>
+    <button class="btn" id="retry-btn" onclick="window.location.reload()">
+      Retry Connection / पुनः प्रयास करें
+    </button>
+  </main>
+</body>
+</html>

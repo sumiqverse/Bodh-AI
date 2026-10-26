@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.assessment import MasteryResponse
+
 
 class SyncItemRequest(BaseModel):
     """Individual queued offline action."""
@@ -35,3 +37,7 @@ class SyncBatchResponse(BaseModel):
     processed: int
     failed: int
     results: list[SyncItemResult]
+    canonical_mastery: list[MasteryResponse] = Field(
+        default_factory=list,
+        description="Canonical student mastery states computed on server",
+    )

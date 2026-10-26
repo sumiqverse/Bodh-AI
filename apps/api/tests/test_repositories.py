@@ -8,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.auth import Role
 from app.models.curriculum import Curriculum, Topic
+from app.models.organization import School
 from app.repositories.attempt_repo import AttemptRepository
 from app.repositories.base import BaseRepository
+from app.repositories.class_repo import ClassRepository
 from app.repositories.consent_repo import ConsentRepository
 from app.repositories.curriculum_repo import CurriculumRepository
 from app.repositories.mastery_repo import MasteryRepository
@@ -19,6 +21,7 @@ from app.repositories.user_repo import UserRepository
 from tests.factories import (
     CurriculumFactory,
     QuestionFactory,
+    SchoolFactory,
     SkillFactory,
     TopicFactory,
     UserFactory,
@@ -344,3 +347,86 @@ async def test_consent_repository(db_session: AsyncSession) -> None:
 
     # Confirm no longer active
     assert await consent_repo.has_consent(student_id, "diagnostic") is False
+
+
+@pytest.mark.asyncio
+async def test_class_repository(db_session: AsyncSession) -> None:
+    """Test ClassRepository operations: create, get by id with teacher, join code, enrollments."""
+    role_repo = BaseRepository[Role](Role, db_session)
+    role = await role_repo.create(
+        Role(id=uuid.uuid4(), name="cls_test_role", description="", permissions=[])
+    )
+    user_repo = UserRepository(db_session)
+    teacher = await user_repo.create(UserFactory.build(role_id=role.id))
+    student = await user_repo.create(UserFactory.build(role_id=role.id))
+    school_repo = BaseRepository[School](School, db_session)
+    school = await school_repo.create(SchoolFactory.build())
+
+    class_repo = ClassRepository(db_session)
+    cls = await class_repo.create_class(
+        teacher_id=teacher.id,
+        school_id=school.id,
+        name="Test Class 10A",
+        grade=10,
+        section="A",
+        academic_year="2024-2025",
+    )
+    assert cls.id is not None
+    assert cls.name == "Test Class 10A"
+    assert cls.join_code is not None
+
+    # Fetch by ID with teacher
+    fetched = await class_repo.get_by_id_with_teacher(cls.id)
+    assert fetched is not None
+    assert fetched.teacher.id == teacher.id
+
+    # Fetch by join code
+    by_code = await class_repo.get_by_join_code(cls.join_code)
+    assert by_code is not None
+    assert by_code.id == cls.id
+
+    # Rotate join code
+    rotated = await class_repo.rotate_join_code(cls.id, "NEWCODE123")
+    assert rotated is not None
+    assert rotated.join_code == "NEWCODE123"
+
+    # Classes by teacher
+    teacher_classes = await class_repo.get_classes_by_teacher(teacher.id)
+    assert len(teacher_classes) >= 1
+
+    # Active classes
+    all_classes = await class_repo.get_all_active_classes()
+    assert len(all_classes) >= 1
+
+    # Enrollments
+    enrollment = await class_repo.add_enrollment(
+        class_id=cls.id,
+        student_id=student.id,
+        roll_number="01",
+        status="pending",
+    )
+    assert enrollment.class_id == cls.id
+    assert enrollment.student_id == student.id
+
+    approved = await class_repo.approve_enrollment(cls.id, student.id)
+    assert approved is not None
+    assert approved.status == "active"
+
+    enrollments = await class_repo.get_enrollments(cls.id)
+    assert len(enrollments) >= 1
+
+    single_enrollment = await class_repo.get_enrollment(cls.id, student.id)
+    assert single_enrollment is not None
+    assert single_enrollment.roll_number == "01"
+
+    # Re-enroll / update existing
+    updated = await class_repo.add_enrollment(cls.id, student.id, roll_number="02", status="active")
+    assert updated.roll_number == "02"
+
+    # Student enrollments
+    st_enrollments = await class_repo.get_student_enrollments(student.id)
+    assert len(st_enrollments) >= 1
+
+    # Remove enrollment
+    removed = await class_repo.remove_enrollment(cls.id, student.id)
+    assert removed is True

@@ -9,6 +9,7 @@ import { QueryProvider } from '@/components/query-provider';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { ToastProvider } from '@bodhai/ui';
+import { ServiceWorkerRegister } from '@/components/offline';
 import 'katex/dist/katex.min.css';
 import '../globals.css';
 
@@ -31,6 +32,7 @@ const notoDevanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
+  manifest: '/manifest.json',
   metadataBase: new URL('https://bodhai.org.in'),
   title: {
     default: 'BodhAI (बोधAI) — Adaptive Mastery Learning for Classes 6–10 in India',
@@ -143,6 +145,7 @@ export default async function LocaleLayout({
           >
             <QueryProvider>
               <ToastProvider>
+                <ServiceWorkerRegister />
                 <div className="flex min-h-screen flex-col">
                   <SiteHeader />
                   <main id="main-content" className="flex-1 focus:outline-none" tabIndex={-1}>

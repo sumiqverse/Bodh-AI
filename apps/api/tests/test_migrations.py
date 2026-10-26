@@ -13,6 +13,7 @@ def test_alembic_config_and_revisions() -> None:
     assert alembic_ini_path.exists(), "alembic.ini must exist in apps/api"
 
     config = Config(str(alembic_ini_path))
+    config.set_main_option("script_location", str(root_dir / "alembic"))
     script_dir = ScriptDirectory.from_config(config)
 
     # Verify head revision

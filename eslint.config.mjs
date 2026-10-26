@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/build/**',
       '**/.turbo/**',
+      '**/public/**',
       'apps/api/**',
       '**/*.d.ts',
     ],

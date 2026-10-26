@@ -134,9 +134,13 @@ async def test_teacher_heatmap_load_60_students(
 
     await db_session.flush()
 
-    # 5. Measure latency across multiple calls
+    # 5. Warmup call to initialize precomputed aggregates
+    warmup_resp = await client.get(f"/api/v1/classes/{school_class.id}/heatmap", headers=headers)
+    assert warmup_resp.status_code == 200
+
+    # 6. Measure latency across multiple calls
     latencies: list[float] = []
-    for _ in range(5):
+    for _ in range(10):
         start = time.perf_counter()
         resp = await client.get(f"/api/v1/classes/{school_class.id}/heatmap", headers=headers)
         elapsed_ms = (time.perf_counter() - start) * 1000.0

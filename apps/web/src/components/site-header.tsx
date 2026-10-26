@@ -1,16 +1,18 @@
 'use client';
 
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, Link } from '@/i18n/routing';
 import { Navbar, Button } from '@bodhai/ui';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
+import { OfflineIndicator } from './offline';
 
 export function SiteHeader(): React.JSX.Element {
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const pathname = usePathname();
+  const currentLocale = useLocale() as 'en' | 'hi';
 
   const navItems = [
     { label: tNav('howItWorks'), href: '/how-it-works', isActive: pathname === '/how-it-works' },
@@ -41,6 +43,7 @@ export function SiteHeader(): React.JSX.Element {
       themeToggle={<ThemeToggle label={tCommon('theme')} />}
       actions={
         <div className="flex items-center gap-2">
+          <OfflineIndicator locale={currentLocale} />
           <Link href="/login">
             <Button variant="ghost" size="sm" className="font-medium text-xs sm:text-sm">
               {tNav('login')}
