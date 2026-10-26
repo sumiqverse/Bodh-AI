@@ -21,10 +21,29 @@ from app.schemas.sync import (
     SyncItemRequest,
     SyncItemResult,
 )
+from app.schemas.teacher import (
+    AssignmentCreateRequest,
+    AssignmentResponse,
+    ClassEarlyWarningsResponse,
+    ClassGapClustersResponse,
+    ClassHeatmapResponse,
+    ClassProgressSummaryResponse,
+    ClassSuggestionsResponse,
+    StudentProfileResponse,
+    TeacherDecisionCreateRequest,
+    TeacherDecisionResponse,
+)
 
 __all__ = [
+    "AssignmentCreateRequest",
+    "AssignmentResponse",
     "AttemptResponse",
     "AttemptSubmitRequest",
+    "ClassEarlyWarningsResponse",
+    "ClassGapClustersResponse",
+    "ClassHeatmapResponse",
+    "ClassProgressSummaryResponse",
+    "ClassSuggestionsResponse",
     "ConsentCreateRequest",
     "ConsentResponse",
     "CurriculumResponse",
@@ -35,9 +54,12 @@ __all__ = [
     "QuestionResponse",
     "ReadyResponse",
     "SkillResponse",
+    "StudentProfileResponse",
     "SyncBatchRequest",
     "SyncBatchResponse",
     "SyncItemRequest",
     "SyncItemResult",
+    "TeacherDecisionCreateRequest",
+    "TeacherDecisionResponse",
     "TopicResponse",
 ]

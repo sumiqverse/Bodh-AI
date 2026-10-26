@@ -152,6 +152,220 @@ export type RotateCodeResponse = components['schemas']['RotateCodeResponse'];
 export type EnrollmentActionResponse = components['schemas']['EnrollmentActionResponse'];
 export type StudentRosterItem = components['schemas']['StudentRosterItem'];
 
+// Teacher Dashboard Heatmap & Aggregates
+export interface HeatmapStudent {
+  student_id: string;
+  student_name: string;
+  roll_number?: string | null;
+}
+
+export interface HeatmapSkill {
+  skill_id: string;
+  skill_code: string;
+  skill_name: string;
+  topic_name: string;
+  difficulty: number;
+}
+
+export interface HeatmapCell {
+  student_id: string;
+  skill_id: string;
+  state: 'not_learned' | 'partial' | 'mastered' | string;
+  p_mastery: number;
+  confidence: number;
+  attempts_count: number;
+  last_attempted_at?: string | null;
+}
+
+export interface ClassHeatmapResponse {
+  class_id: string;
+  total_students: number;
+  total_skills: number;
+  students: HeatmapStudent[];
+  skills: HeatmapSkill[];
+  matrix: HeatmapCell[];
+  summary: {
+    mastered: number;
+    partial: number;
+    not_learned: number;
+  };
+}
+
+export interface SuggestedRevisionPlan {
+  strategy: string;
+  focus_skill: string;
+  target_group_size: number;
+  suggested_actions: string[];
+  recommended_duration_mins: number;
+}
+
+export interface GapClusterItem {
+  cluster_id: string;
+  skill_id: string;
+  skill_code: string;
+  skill_name: string;
+  topic_name: string;
+  student_count: number;
+  student_ids: string[];
+  student_names: string[];
+  average_p_mastery: number;
+  suggested_revision_plan: SuggestedRevisionPlan;
+}
+
+export interface ClassGapClustersResponse {
+  class_id: string;
+  total_clusters: number;
+  clusters: GapClusterItem[];
+}
+
+export interface EarlyWarningItem {
+  student_id: string;
+  student_name: string;
+  roll_number?: string | null;
+  warning_type: 'stalled' | 'dropped' | 'inactive' | string;
+  days_inactive_or_stalled: number;
+  message: string;
+  suggested_action: string;
+}
+
+export interface ClassEarlyWarningsResponse {
+  class_id: string;
+  threshold_days: number;
+  warnings: EarlyWarningItem[];
+}
+
+export interface StudentProfileSkillItem {
+  skill_id: string;
+  skill_code: string;
+  skill_name: string;
+  topic_name: string;
+  p_mastery: number;
+  state: 'not_learned' | 'partial' | 'mastered' | string;
+  attempts_count: number;
+  correct_count: number;
+  last_attempted_at?: string | null;
+}
+
+export interface ErrorPatternItem {
+  question_code: string;
+  prompt_excerpt: string;
+  distractor_chosen: string;
+  count: number;
+  misconception: string;
+}
+
+export interface HintUsageSummary {
+  total_hints_requested: number;
+  hint_1_count: number;
+  hint_2_count: number;
+  hint_3_count: number;
+  independent_attempts_count: number;
+}
+
+export interface MasteryTrendPoint {
+  date: string;
+  p_mastery: number;
+  attempts: number;
+}
+
+export interface StudentProfileResponse {
+  student_id: string;
+  student_name: string;
+  roll_number?: string | null;
+  skills: StudentProfileSkillItem[];
+  error_patterns: ErrorPatternItem[];
+  hint_usage: HintUsageSummary;
+  trend: MasteryTrendPoint[];
+  summary: {
+    total_attempts: number;
+    mastered_skills: number;
+    total_skills: number;
+  };
+}
+
+export interface SuggestionItem {
+  suggestion_id: string;
+  student_id?: string | null;
+  student_name?: string | null;
+  skill_id: string;
+  skill_code: string;
+  skill_name: string;
+  title: string;
+  evidence: Record<string, unknown>;
+  rationale: string;
+  recommended_action: string;
+  is_ai_suggestion: boolean;
+  disclaimer: string;
+  status: 'pending' | 'accepted' | 'edited' | 'ignored' | 'overridden' | string;
+}
+
+export interface ClassSuggestionsResponse {
+  class_id: string;
+  suggestions: SuggestionItem[];
+}
+
+export interface TeacherDecisionCreateRequest {
+  action: 'accept' | 'edit' | 'ignore' | 'override' | string;
+  student_id?: string | null;
+  evidence?: Record<string, unknown>;
+  rationale?: string;
+  teacher_notes?: string | null;
+  custom_payload?: Record<string, unknown>;
+}
+
+export interface TeacherDecisionResponse {
+  id: string;
+  class_id: string;
+  teacher_id: string;
+  student_id?: string | null;
+  suggestion_id: string;
+  action: string;
+  teacher_notes?: string | null;
+  created_at: string;
+}
+
+export interface AssignmentCreateRequest {
+  title: string;
+  description?: string | null;
+  skill_ids: string[];
+  student_ids?: string[] | null;
+  due_date?: string | null;
+}
+
+export interface AssignmentStudentItem {
+  student_id: string;
+  student_name: string;
+  status: string;
+  completed_at?: string | null;
+}
+
+export interface AssignmentResponse {
+  id: string;
+  class_id: string;
+  title: string;
+  description?: string | null;
+  skill_ids: string[];
+  due_date?: string | null;
+  status: string;
+  total_assigned: number;
+  completed_count: number;
+  students: AssignmentStudentItem[];
+  created_at: string;
+}
+
+export interface ClassProgressSummaryResponse {
+  class_id: string;
+  total_students: number;
+  total_attempts: number;
+  overall_mastery_pct: number;
+  mastered_skills_avg: number;
+  reassessment_growth_pct: number;
+  timeline: Array<{
+    label: string;
+    mastery_pct: number;
+  }>;
+}
+
 // Consent & DPDP types
 export type GuardianConsentCreateRequest = components['schemas']['GuardianConsentCreateRequest'];
 export type ConsentDetailResponse = components['schemas']['ConsentDetailResponse'];
@@ -763,5 +977,147 @@ export class BodhaiApiClient {
         body: JSON.stringify(payload),
       },
     );
+  }
+
+  // --- Teacher Dashboard Methods ---
+
+  public async getClassHeatmap(
+    classId: string,
+    curriculumCode?: string,
+    token?: string,
+  ): Promise<ClassHeatmapResponse> {
+    const qs = curriculumCode ? `?curriculum_code=${encodeURIComponent(curriculumCode)}` : '';
+    return this.request<ClassHeatmapResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/heatmap${qs}`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async getClassGapClusters(
+    classId: string,
+    minStudents?: number,
+    minRatio?: number,
+    token?: string,
+  ): Promise<ClassGapClustersResponse> {
+    const params = new URLSearchParams();
+    if (minStudents !== undefined) params.set('min_students', minStudents.toString());
+    if (minRatio !== undefined) params.set('min_ratio', minRatio.toString());
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<ClassGapClustersResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/gap-clusters${qs}`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async getClassEarlyWarnings(
+    classId: string,
+    days?: number,
+    token?: string,
+  ): Promise<ClassEarlyWarningsResponse> {
+    const qs = days ? `?days=${days}` : '';
+    return this.request<ClassEarlyWarningsResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/early-warnings${qs}`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async getStudentProfile(
+    classId: string,
+    studentId: string,
+    token?: string,
+  ): Promise<StudentProfileResponse> {
+    return this.request<StudentProfileResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/students/${encodeURIComponent(studentId)}/profile`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async getClassSuggestions(
+    classId: string,
+    token?: string,
+  ): Promise<ClassSuggestionsResponse> {
+    return this.request<ClassSuggestionsResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/suggestions`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async recordTeacherDecision(
+    classId: string,
+    suggestionId: string,
+    payload: TeacherDecisionCreateRequest,
+    token?: string,
+  ): Promise<TeacherDecisionResponse> {
+    return this.request<TeacherDecisionResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/suggestions/${encodeURIComponent(suggestionId)}/decision`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.authHeaders(token),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  public async createAssignment(
+    classId: string,
+    payload: AssignmentCreateRequest,
+    token?: string,
+  ): Promise<AssignmentResponse> {
+    return this.request<AssignmentResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/assignments`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.authHeaders(token),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  public async listAssignments(classId: string, token?: string): Promise<AssignmentResponse[]> {
+    return this.request<AssignmentResponse[]>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/assignments`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async getClassProgressSummary(
+    classId: string,
+    token?: string,
+  ): Promise<ClassProgressSummaryResponse> {
+    return this.request<ClassProgressSummaryResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/progress-summary`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async exportClassCsv(classId: string, token?: string): Promise<string> {
+    const url = `${this.baseUrl}/api/v1/classes/${encodeURIComponent(classId)}/export/csv`;
+    const res = await fetch(url, {
+      headers: this.authHeaders(token),
+    });
+    if (!res.ok) {
+      throw new Error(`Export CSV failed: ${res.statusText}`);
+    }
+    return res.text();
   }
 }

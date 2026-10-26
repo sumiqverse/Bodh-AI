@@ -13,11 +13,20 @@ from app.models.auth import Role, Session, User
 from app.models.curriculum import Curriculum, GlossaryTerm, Prerequisite, Skill, Topic
 from app.models.organization import Consent, Enrollment, Guardian, School, SchoolClass
 from app.models.system import AuditLog, Embedding, SyncEvent
+from app.models.teacher import (
+    Assignment,
+    AssignmentStudent,
+    ClassSkillAggregate,
+    TeacherDecision,
+)
 
 __all__ = [
+    "Assignment",
+    "AssignmentStudent",
     "Attempt",
     "AuditLog",
     "Base",
+    "ClassSkillAggregate",
     "Consent",
     "Curriculum",
     "Embedding",
@@ -37,6 +46,7 @@ __all__ = [
     "Skill",
     "SoftDeleteMixin",
     "SyncEvent",
+    "TeacherDecision",
     "TimestampMixin",
     "Topic",
     "UUIDPrimaryKeyMixin",

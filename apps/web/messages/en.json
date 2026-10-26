@@ -247,7 +247,16 @@
     "removing": "Removing...",
     "active": "Active",
     "pending": "Pending Approval",
-    "emptyRoster": "No students enrolled in this class yet. Share the join code with your students!"
+    "emptyRoster": "No students enrolled in this class yet. Share the join code with your students!",
+    "classDetails": "Class Details",
+    "students": "Students",
+    "noStudents": "No students in this class yet.",
+    "pendingStudents": "Pending Student Approvals",
+    "activeStudents": "Enrolled Students",
+    "rollNumber": "Roll No.",
+    "name": "Name",
+    "reject": "Reject",
+    "back": "Back to Classes"
   },
   "consent": {
     "title": "Parental & Guardian Consent",
@@ -509,5 +518,124 @@
     "emptyTitle": "No Practice History Yet",
     "emptyDesc": "Complete your diagnostic or solve practice questions to see your history timeline.",
     "startPracticing": "Go to Skill Map"
+  },
+  "teacherDashboard": {
+    "title": "Teacher Dashboard",
+    "subtitle": "Classroom Competency Overview & Targeted Interventions",
+    "classOverview": "Class Overview",
+    "backToClasses": "Back to Classes",
+    "joinCodeLabel": "Class Join Code",
+    "rotateCode": "Rotate Code",
+    "rotating": "Rotating...",
+    "codeCopied": "Join code copied to clipboard",
+    "tabs": {
+      "heatmap": "Class Heatmap",
+      "gapClusters": "Group Gap Clusters",
+      "earlyWarnings": "Early Warnings",
+      "suggestions": "Suggestions & Decisions",
+      "assignments": "Assignments",
+      "progress": "Progress & Reassessment",
+      "roster": "Class Roster"
+    },
+    "heatmap": {
+      "title": "Class Competency Heatmap",
+      "description": "Cross-tabular mastery matrix (students × skills). Accessible visual patterns differentiate states.",
+      "mastered": "Mastered",
+      "partial": "In Progress",
+      "notLearned": "Not Started",
+      "patternLegend": "Accessible Pattern Legend",
+      "masteredPattern": "Solid fill with checkmark (✓) — Posterior probability ≥ 80%",
+      "partialPattern": "Diagonal striped fill with split moon (◐) — Posterior probability 40%–79%",
+      "notLearnedPattern": "Outlined neutral with circle (○) — Posterior probability < 40% or not attempted",
+      "filterTopic": "Filter by Topic",
+      "allTopics": "All Topics",
+      "searchStudent": "Search student by name or roll...",
+      "studentColumn": "Student / Roll No.",
+      "summaryStats": "Class Overview: {mastered} Mastered, {partial} In Progress, {notLearned} Not Started",
+      "virtualizedNotice": "Virtualized matrix optimized for 60 students × 150 skills (9,000 cells)"
+    },
+    "clusters": {
+      "title": "Conceptual Gap Clusters",
+      "description": "Algorithmic group clusters of students sharing prerequisite or conceptual gaps with suggested revision plans.",
+      "studentsSharingGap": "{count} students share a gap in {skill}",
+      "averageMastery": "Average Class Mastery",
+      "suggestedRevisionPlan": "Suggested Revision Plan",
+      "recommendedDuration": "Estimated Duration: {mins} mins",
+      "assignRevisionToGroup": "Assign Revision to This Group",
+      "assigning": "Assigning...",
+      "assignedSuccess": "Revision assignment created successfully!",
+      "emptyTitle": "No Critical Conceptual Gaps Detected",
+      "emptyDesc": "All students are progressing smoothly across active grade competencies."
+    },
+    "warnings": {
+      "title": "Early-Warning Risk Signals",
+      "description": "Identifies students with stalled progress or drop in mastery over time.",
+      "timeWindowLabel": "Observation Window",
+      "daysOption": "{days} Days",
+      "stalledBadge": "Progress Stalled",
+      "inactiveBadge": "Extended Inactivity",
+      "rollPrefix": "Roll No.",
+      "recommendedAction": "Recommended Intervention",
+      "emptyTitle": "No Early Warning Flags",
+      "emptyDesc": "No students currently show stalled progress or prolonged inactivity within the selected window."
+    },
+    "suggestions": {
+      "title": "AI Pedagogical Suggestions & Decision Hub",
+      "disclaimerBadge": "AI Advisory Suggestion — Teacher Discretion Required",
+      "disclaimerText": "All suggestions are generated as pedagogical advisory signals. Teachers retain full authority to accept, modify, ignore, or override learning pathways. No automated grades or promotion decisions are produced.",
+      "evidenceLabel": "Diagnostic Evidence & Signals",
+      "rationaleLabel": "Pedagogical Rationale",
+      "actionLabel": "Recommended Action",
+      "statusPending": "Pending Teacher Review",
+      "statusAccepted": "Accepted",
+      "statusEdited": "Edited by Teacher",
+      "statusIgnored": "Ignored",
+      "statusOverridden": "Overridden",
+      "accept": "Accept Suggestion",
+      "edit": "Edit Pathway",
+      "ignore": "Ignore",
+      "override": "Override Path",
+      "teacherNotesPlaceholder": "Optional notes on instructional decision...",
+      "decisionRecorded": "Teacher decision recorded in audit log."
+    },
+    "assignments": {
+      "title": "Targeted Assignments",
+      "description": "Push targeted skill sets and practice ladders to specific student groups or the whole class.",
+      "createNew": "Create New Assignment",
+      "assignmentTitle": "Assignment Title",
+      "assignmentDesc": "Description / Teacher Instructions",
+      "targetSkills": "Target Skills",
+      "targetGroup": "Assigned Students (Leave empty for entire class)",
+      "createButton": "Create & Push Assignment",
+      "creating": "Creating...",
+      "totalAssigned": "Total Students: {count}",
+      "completedCount": "Completed: {count}",
+      "statusActive": "Active",
+      "empty": "No assignments created yet for this class."
+    },
+    "progressView": {
+      "title": "Class Mastery & Reassessment Trajectory",
+      "overallMastery": "Class Competency Level",
+      "averageSkillsMastered": "Average Skills Mastered Per Student",
+      "growthRate": "Reassessment Growth Rate",
+      "totalAttempts": "Total Practice & Test Attempts",
+      "longitudinalTitle": "Competency Progression Timeline"
+    },
+    "export": {
+      "downloadCsv": "Download Privacy-Aware CSV",
+      "printView": "Print / PDF Report",
+      "privacyNotice": "DPDP Privacy Notice: Exports contain student roll numbers or pseudonyms only. Sensitive personal identifiers, numerical marks, and promotional determinations are strictly excluded.",
+      "exporting": "Generating CSV..."
+    },
+    "studentProfile": {
+      "modalTitle": "Student Competency Profile",
+      "masteryBreakdown": "Mastery by Skill",
+      "errorPatterns": "Recurring Error & Distractor Patterns",
+      "hintsUsed": "Hint Ladder Utilization",
+      "independentCount": "Independent Solutions (No Hints)",
+      "hintLevelBreakdown": "L1: {h1} | L2: {h2} | L3: {h3}",
+      "trendOverTime": "Mastery Trajectory Over Time",
+      "close": "Close Profile"
+    }
   }
 }

@@ -62,6 +62,15 @@ class MockRedis:
         self.expirations[key] = seconds
         return True
 
+    async def get(self, key: str) -> Any:
+        return self.data.get(key)
+
+    async def set(self, key: str, value: Any, ex: int | None = None) -> bool:
+        self.data[key] = value
+        if ex is not None:
+            self.expirations[key] = ex
+        return True
+
     async def close(self) -> None:
         self.data.clear()
 
