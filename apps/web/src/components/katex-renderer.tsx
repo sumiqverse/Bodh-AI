@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface KatexRendererProps {
   content: string;
@@ -26,6 +27,7 @@ export function KatexRenderer({ content, className = '' }: KatexRendererProps) {
           const html = katex.renderToString(math, {
             displayMode: true,
             throwOnError: false,
+            output: 'html',
           });
           return (
             <span
@@ -47,11 +49,12 @@ export function KatexRenderer({ content, className = '' }: KatexRendererProps) {
           const html = katex.renderToString(math, {
             displayMode: false,
             throwOnError: false,
+            output: 'html',
           });
           return (
             <span
               key={index}
-              className="inline-block px-0.5"
+              className="inline-block align-middle px-0.5"
               dangerouslySetInnerHTML={{ __html: html }}
             />
           );

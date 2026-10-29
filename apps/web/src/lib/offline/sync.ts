@@ -25,7 +25,10 @@ export interface SyncStatus {
 export type SyncStatusListener = (status: SyncStatus) => void;
 
 class SyncManager {
-  private isOnline: boolean = typeof navigator !== 'undefined' ? navigator.onLine : true;
+  private isOnline: boolean =
+    typeof window !== 'undefined' && typeof navigator !== 'undefined'
+      ? Boolean(navigator.onLine)
+      : true;
   private isSyncing = false;
   private lastSyncedAt: string | null = null;
   private syncError: string | null = null;

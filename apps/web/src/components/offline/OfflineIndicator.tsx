@@ -14,9 +14,11 @@ export function OfflineIndicator({
   locale = 'en',
   className = '',
 }: OfflineIndicatorProps): React.JSX.Element {
+  const [mounted, setMounted] = React.useState(false);
   const [status, setStatus] = React.useState<SyncStatus>(() => syncManager.getStatusSync());
 
   React.useEffect(() => {
+    setMounted(true);
     void syncManager.getStatus().then((s) => setStatus(s));
     return syncManager.subscribe((nextStatus) => {
       setStatus(nextStatus);
@@ -28,6 +30,21 @@ export function OfflineIndicator({
       await syncManager.triggerSync();
     }
   }, [status.isOnline, status.isSyncing]);
+
+  if (!mounted) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border transition-colors bg-emerald-950/30 text-emerald-300 border-emerald-800/40 ${className}`}
+        data-testid="offline-indicator"
+        suppressHydrationWarning
+      >
+        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+        <span>{t('offline.status.online', locale)}</span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -43,6 +60,7 @@ export function OfflineIndicator({
               : 'bg-emerald-950/30 text-emerald-300 border-emerald-800/40'
       } ${className}`}
       data-testid="offline-indicator"
+      suppressHydrationWarning
     >
       {!status.isOnline ? (
         <>

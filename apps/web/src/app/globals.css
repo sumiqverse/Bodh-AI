@@ -1,3 +1,5 @@
+@import 'katex/dist/katex.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -113,6 +115,11 @@
   /* Accessible focus visible outlines */
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* KaTeX fixes to prevent Tailwind Preflight border/collapse issues */
+  .katex .mfrac .frac-line {
+    border-bottom-color: currentColor !important;
   }
 }
 

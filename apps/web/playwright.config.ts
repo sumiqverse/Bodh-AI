@@ -29,6 +29,16 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
+    {
+      name: 'low-end-android',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 360, height: 640 },
+        isMobile: true,
+        hasTouch: true,
+        defaultBrowserType: 'chromium',
+      },
+    },
   ],
   webServer: {
     command: 'pnpm run start',

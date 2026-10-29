@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import 'katex/dist/katex.min.css';
 
 export default function RootLayout({
   children,

@@ -16,6 +16,22 @@ export default defineConfig({
         inline: ['next-intl'],
       },
     },
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+      exclude: [
+        '**/node_modules/**',
+        '**/e2e/**',
+        '**/.next/**',
+        '**/*.config.*',
+        '**/vitest.setup.ts',
+      ],
+    },
   },
   resolve: {
     alias: {
