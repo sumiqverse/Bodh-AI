@@ -104,6 +104,8 @@ export interface DiagnosticItemResponse {
   difficulty: number;
   prompt: string;
   options?: Array<{ id: string; text: string }> | null;
+  question_type?: 'mcq' | 'numeric' | 'short_text' | string;
+  topic_name?: string | null;
 }
 
 export interface DiagnosticResponse {
@@ -114,6 +116,10 @@ export interface DiagnosticResponse {
   rationale?: string;
   stop_reason?: string | null;
   summary?: Record<string, unknown> | null;
+  last_is_correct?: boolean | null;
+  correct_answer_id?: string | null;
+  explanation?: string | null;
+  is_weakness_review?: boolean;
 }
 
 export interface NextItemResponse {
@@ -151,6 +157,24 @@ export type ClassDetailResponse = components['schemas']['ClassDetailResponse'];
 export type RotateCodeResponse = components['schemas']['RotateCodeResponse'];
 export type EnrollmentActionResponse = components['schemas']['EnrollmentActionResponse'];
 export type StudentRosterItem = components['schemas']['StudentRosterItem'];
+
+export interface AuditLogItemResponse {
+  id: string;
+  user_id?: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  changes: Record<string, unknown>;
+  ip_address?: string | null;
+  created_at: string;
+}
+
+export interface AuditLogListResponse {
+  total: number;
+  items: AuditLogItemResponse[];
+  limit: number;
+  offset: number;
+}
 
 // Teacher Dashboard Heatmap & Aggregates
 export interface HeatmapStudent {
@@ -478,18 +502,21 @@ export interface ApiClientOptions {
   readonly baseUrl: string;
   readonly fetchFn?: typeof fetch;
   readonly defaultHeaders?: Record<string, string>;
+  readonly getToken?: () => string | null;
 }
 
 export class BodhaiApiClient {
   private readonly baseUrl: string;
   private readonly fetchFn: typeof fetch;
   private readonly defaultHeaders: Record<string, string>;
+  private readonly getToken?: () => string | null;
 
   public constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
     const defaultFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : fetch;
     this.fetchFn = options.fetchFn ?? defaultFetch;
     this.defaultHeaders = options.defaultHeaders ?? {};
+    this.getToken = options.getToken;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -501,12 +528,26 @@ export class BodhaiApiClient {
       extraHeaders.forEach((val, key) => headers.set(key, val));
     }
 
+    if (!headers.has('Authorization') && this.getToken) {
+      const autoToken = this.getToken();
+      if (autoToken) {
+        headers.set('Authorization', `Bearer ${autoToken}`);
+      }
+    }
+
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/json');
     }
 
+    const signal =
+      options.signal ??
+      (typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
+        ? AbortSignal.timeout(45000)
+        : undefined);
+
     const response = await this.fetchFn(url, {
       ...options,
+      signal,
       headers,
     });
 
@@ -519,7 +560,11 @@ export class BodhaiApiClient {
       }
 
       if (problemDetail && problemDetail.detail) {
-        throw new Error(`API Error [${response.status}]: ${problemDetail.detail}`);
+        let details = '';
+        if (Array.isArray(problemDetail.invalid_params) && problemDetail.invalid_params.length > 0) {
+          details = ': ' + problemDetail.invalid_params.map((p) => `${p.name} (${p.reason})`).join(', ');
+        }
+        throw new Error(`API Error [${response.status}]: ${problemDetail.detail}${details}`);
       }
       throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
     }
@@ -529,8 +574,9 @@ export class BodhaiApiClient {
 
   private authHeaders(token?: string): Record<string, string> {
     const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const effectiveToken = token ?? this.getToken?.() ?? undefined;
+    if (effectiveToken) {
+      headers['Authorization'] = `Bearer ${effectiveToken}`;
     }
     return headers;
   }
@@ -731,6 +777,28 @@ export class BodhaiApiClient {
     });
   }
 
+  public async getAuditLogs(
+    params?: {
+      action?: string;
+      resource_type?: string;
+      user_id?: string;
+      limit?: number;
+      offset?: number;
+    },
+    token?: string,
+  ): Promise<AuditLogListResponse> {
+    const query = new URLSearchParams();
+    if (params?.action) query.set('action', params.action);
+    if (params?.resource_type) query.set('resource_type', params.resource_type);
+    if (params?.user_id) query.set('user_id', params.user_id);
+    if (params?.limit !== undefined) query.set('limit', params.limit.toString());
+    if (params?.offset !== undefined) query.set('offset', params.offset.toString());
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request<AuditLogListResponse>(`/api/v1/admin/audit-logs${qs}`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
   // --- Curriculum & Content Endpoints ---
   public async listCurricula(params?: {
     grade?: number;
@@ -747,8 +815,11 @@ export class BodhaiApiClient {
     return this.request<CurriculumResponse>(`/api/v1/curricula/${encodeURIComponent(code)}`);
   }
 
-  public async getCurriculumTopics(code: string): Promise<TopicResponse[]> {
-    return this.request<TopicResponse[]>(`/api/v1/curricula/${encodeURIComponent(code)}/topics`);
+  public async getCurriculumTopics(code: string, token?: string): Promise<TopicResponse[]> {
+    return this.request<TopicResponse[]>(
+      `/api/v1/curricula/${encodeURIComponent(code)}/topics`,
+      { headers: this.authHeaders(token) },
+    );
   }
 
   public async getSkill(skillId: string): Promise<SkillResponse> {

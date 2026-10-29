@@ -42,6 +42,7 @@ dev = [
     "types-pyyaml>=6.0.12.20260906",
     "types-jsonschema>=4.26.0.20261006",
     "hypothesis>=6.170.9",
+    "pip-audit>=2.8.0",
 ]
 
 [tool.ruff]
@@ -107,7 +108,10 @@ asyncio_mode = "auto"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=85"
 filterwarnings = [
     "ignore:.*HTTP_422_UNPROCESSABLE_ENTITY.*",
+]
+markers = [
+    "quarantine: marks tests quarantined due to non-deterministic flakiness",
 ]
