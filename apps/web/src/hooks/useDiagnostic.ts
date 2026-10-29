@@ -10,6 +10,13 @@ export interface UseDiagnosticOptions {
   totalTarget?: number;
 }
 
+export interface DiagnosticFeedback {
+  isCorrect: boolean;
+  correctAnswerId: string | null;
+  isWeaknessReview: boolean;
+  explanation?: string | null;
+}
+
 export interface UseDiagnosticReturn {
   sessionId: string | null;
   currentItem: DiagnosticItemResponse | null;
@@ -21,8 +28,12 @@ export interface UseDiagnosticReturn {
   errorMessage: string | null;
   summary: Record<string, unknown> | null;
   startSession: () => Promise<void>;
-  submitAnswer: (selectedOption: string, timeSpentMs: number) => Promise<void>;
+  submitAnswer: (selectedOption: string, timeSpentMs: number) => Promise<DiagnosticResponse | undefined>;
   retry: () => void;
+  feedback: DiagnosticFeedback | null;
+  isWeaknessReview: boolean;
+  advanceToNext: () => void;
+  isPendingCompletion: boolean;
 }
 
 export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticReturn {
@@ -33,15 +44,19 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
   const apiClient = getWebApiClient();
 
   const [activeSession, setActiveSession] = React.useState<DiagnosticResponse | null>(null);
+  const [pendingNextSession, setPendingNextSession] = React.useState<DiagnosticResponse | null>(null);
+  const [feedback, setFeedback] = React.useState<DiagnosticFeedback | null>(null);
+  const [sessionKey, setSessionKey] = React.useState<number>(() => Date.now());
 
   // TanStack Query for initial diagnostic session calibration
   const initialSessionQuery = useQuery({
-    queryKey: ['diagnostic-session-init', curriculumCode],
+    queryKey: ['diagnostic-session-init', curriculumCode, sessionKey],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
       return apiClient.startDiagnostic({ curriculum_code: curriculumCode }, token);
     },
     staleTime: 0,
+    gcTime: 0,
     retry: 2,
   });
 
@@ -52,6 +67,7 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
   const questionsAnswered = currentSessionData?.questions_answered ?? 0;
   const isCompleted = currentSessionData?.is_completed ?? false;
   const summary = currentSessionData?.summary ?? null;
+  const isWeaknessReview = Boolean(currentSessionData?.is_weakness_review);
 
   // TanStack Query mutation for progressing diagnostic
   const progressMutation = useMutation({
@@ -60,34 +76,91 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
         throw new Error('No active diagnostic session.');
       }
       const token = getAuthToken() ?? undefined;
-      return apiClient.progressDiagnostic(
-        {
-          session_id: sessionId,
-          question_id: currentItem.question_id,
-          selected_answer: payload.selectedOption,
-          time_spent_ms: payload.timeSpentMs,
-        },
-        token,
-      );
+      try {
+        return await apiClient.progressDiagnostic(
+          {
+            session_id: sessionId,
+            question_id: currentItem.question_id,
+            selected_answer: payload.selectedOption,
+            time_spent_ms: payload.timeSpentMs,
+          },
+          token,
+        );
+      } catch (err: unknown) {
+        // If session was lost on backend (404), seamlessly recover with a fresh session
+        if (
+          err &&
+          typeof err === 'object' &&
+          'status' in err &&
+          (err as { status: number }).status === 404
+        ) {
+          return await apiClient.startDiagnostic({ curriculum_code: curriculumCode }, token);
+        }
+        throw err;
+      }
     },
     onSuccess: (data: DiagnosticResponse) => {
-      setActiveSession(data);
-      // Invalidate student mastery query cache so fresh skills are fetched upon finishing
-      if (data.is_completed) {
-        void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+      if (typeof data.last_is_correct === 'boolean') {
+        setPendingNextSession(data);
+        setFeedback({
+          isCorrect: data.last_is_correct,
+          correctAnswerId: data.correct_answer_id ?? null,
+          isWeaknessReview: Boolean(data.is_weakness_review),
+          explanation: data.explanation ?? null,
+        });
+      } else {
+        setActiveSession(data);
+        if (data.is_completed) {
+          if (typeof window !== 'undefined' && data.summary) {
+            try {
+              localStorage.setItem('bodhai_last_diagnostic_summary', JSON.stringify(data.summary));
+            } catch {
+              // ignore storage error
+            }
+          }
+          void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+          void queryClient.invalidateQueries({ queryKey: ['next-item'] });
+        }
       }
     },
   });
 
+  const advanceToNext = React.useCallback(() => {
+    if (pendingNextSession) {
+      const nextData = pendingNextSession;
+      setActiveSession(nextData);
+      setPendingNextSession(null);
+      setFeedback(null);
+      if (nextData.is_completed) {
+        if (typeof window !== 'undefined' && nextData.summary) {
+          try {
+            localStorage.setItem('bodhai_last_diagnostic_summary', JSON.stringify(nextData.summary));
+          } catch {
+            // ignore storage error
+          }
+        }
+        void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+        void queryClient.invalidateQueries({ queryKey: ['next-item'] });
+      }
+    }
+  }, [pendingNextSession, queryClient]);
+
   const startSession = React.useCallback(async () => {
     setActiveSession(null);
-    await initialSessionQuery.refetch();
-  }, [initialSessionQuery]);
+    setPendingNextSession(null);
+    setFeedback(null);
+    setSessionKey(Date.now());
+  }, []);
 
   const submitAnswer = React.useCallback(
     async (selectedOption: string, timeSpentMs: number) => {
-      if (progressMutation.isPending || isCompleted) return;
-      await progressMutation.mutateAsync({ selectedOption, timeSpentMs });
+      if (progressMutation.isPending || isCompleted) return undefined;
+      try {
+        return await progressMutation.mutateAsync({ selectedOption, timeSpentMs });
+      } catch {
+        // Handled through progressMutation.error
+        return undefined;
+      }
     },
     [isCompleted, progressMutation],
   );
@@ -123,5 +196,9 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
     startSession,
     submitAnswer,
     retry,
+    feedback,
+    isWeaknessReview,
+    advanceToNext,
+    isPendingCompletion: Boolean(pendingNextSession?.is_completed),
   };
 }

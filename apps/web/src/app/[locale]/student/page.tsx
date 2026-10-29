@@ -120,6 +120,15 @@ export default function StudentHomePage(): React.JSX.Element {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href="/profile">
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-[40px] text-xs font-semibold text-primary border-primary/40 hover:bg-primary/10 cursor-pointer"
+            >
+              My Profile
+            </Button>
+          </Link>
           <Link href="/diagnostic">
             <Button
               variant="outline"

@@ -59,19 +59,38 @@ export default function ConsentPage(): React.JSX.Element {
 
     setErrorMessage(null);
     setSuccessMessage(null);
-    setIsSubmitting(true);
+
+    const trimmedName = guardianName.trim();
+    if (trimmedName.length < 2) {
+      setErrorMessage(t('nameError'));
+      return;
+    }
+
+    const cleanPhone = guardianPhone.trim();
+    const digitsOnly = cleanPhone.replace(/\D/g, '');
+    if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+      setErrorMessage(t('phoneError'));
+      return;
+    }
 
     const scopes: string[] = [];
     if (scopeDiagnostic) scopes.push('diagnostic');
     if (scopeLearning) scopes.push('learning');
     if (scopeDataSharing) scopes.push('data_sharing');
 
+    if (scopes.length === 0) {
+      setErrorMessage(t('scopeError'));
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      const newConsents = await apiClient.recordGuardianConsent(
+      await apiClient.recordGuardianConsent(
         {
           student_id: user.id,
-          guardian_name: guardianName.trim(),
-          guardian_phone: guardianPhone.trim(),
+          guardian_name: trimmedName,
+          guardian_phone: cleanPhone,
           guardian_relationship: relationship,
           version: '2024.1',
           scopes,
@@ -79,12 +98,17 @@ export default function ConsentPage(): React.JSX.Element {
         token,
       );
 
-      setConsents((prev) => [...newConsents, ...prev]);
+      const refreshed = await apiClient.getStudentConsents(user.id, token);
+      setConsents(refreshed);
       setSuccessMessage(t('consentGrantedSuccess'));
       setGuardianName('');
       setGuardianPhone('');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error registering consent';
+      let msg = err instanceof Error ? err.message : 'Error registering consent';
+      if (msg.includes('422') || msg.toLowerCase().includes('failed validation')) {
+        const cleanDetail = msg.replace(/^API Error \[422\]:\s*/, '');
+        msg = `${t('validationError')} (${cleanDetail})`;
+      }
       setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
@@ -135,15 +159,26 @@ export default function ConsentPage(): React.JSX.Element {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
-        <Link href="/diagnostic">
-          <Button
-            variant="primary"
-            size="md"
-            className="cursor-pointer font-semibold shadow-elevated"
-          >
-            Continue to Diagnostic →
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/diagnostic">
+            <Button
+              variant="primary"
+              size="md"
+              className="cursor-pointer font-semibold shadow-elevated"
+            >
+              Continue to Diagnostic →
+            </Button>
+          </Link>
+          <Link href="/student">
+            <Button
+              variant="outline"
+              size="md"
+              className="cursor-pointer font-semibold"
+            >
+              Student Home →
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Statutory Banner */}
@@ -188,6 +223,8 @@ export default function ConsentPage(): React.JSX.Element {
                 <Input
                   id="guardian-name"
                   required
+                  minLength={2}
+                  maxLength={150}
                   placeholder={t('guardianNamePlaceholder')}
                   value={guardianName}
                   onChange={(e) => setGuardianName(e.target.value)}
@@ -204,11 +241,19 @@ export default function ConsentPage(): React.JSX.Element {
                 <Input
                   id="guardian-phone"
                   type="tel"
+                  inputMode="tel"
                   required
+                  maxLength={15}
                   placeholder={t('guardianPhonePlaceholder')}
                   value={guardianPhone}
-                  onChange={(e) => setGuardianPhone(e.target.value)}
+                  onChange={(e) => {
+                    const filtered = e.target.value.replace(/[^0-9+\s\-()]/g, '');
+                    setGuardianPhone(filtered);
+                  }}
                 />
+                <p className="text-[11px] text-muted-foreground">
+                  {t('phoneHelp')}
+                </p>
               </div>
             </div>
 
@@ -290,9 +335,9 @@ export default function ConsentPage(): React.JSX.Element {
             <p className="py-6 text-center text-sm text-muted-foreground">{t('noConsents')}</p>
           ) : (
             <div className="space-y-3">
-              {consents.map((item) => (
+              {consents.map((item, index) => (
                 <div
-                  key={item.id}
+                  key={`${item.id}-${item.scope || index}`}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border p-4 shadow-xs"
                 >
                   <div className="space-y-1">

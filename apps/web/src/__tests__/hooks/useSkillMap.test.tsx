@@ -11,6 +11,15 @@ describe('useSkillMap hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(apiClientModule, 'getAuthToken').mockReturnValue('mock-token');
+    vi.spyOn(apiClientModule, 'getCurrentUser').mockReturnValue({
+      id: 'user-01',
+      role: 'student',
+      full_name: 'Test Student',
+      is_minor: false,
+      preferred_language: 'en',
+      created_at: '',
+    });
     vi.spyOn(apiClientModule, 'getWebApiClient').mockReturnValue({
       getCurriculumTopics: mockGetCurriculumTopics,
       listMastery: mockListMastery,

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
+import { getWebApiClient, getAuthToken, getCurrentUser, clearAuthSession } from '@/lib/api-client';
 import type { MasteryResponse, TopicResponse } from '@bodhai/api-client';
 
 export interface ProgressHistoryItem {
@@ -46,7 +46,19 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
       const token = getAuthToken();
       const user = getCurrentUser();
       if (!token || !user) return [];
-      return apiClient.listMastery(user.id, token);
+      try {
+        return await apiClient.listMastery(user.id, token);
+      } catch (err: unknown) {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'status' in err &&
+          (err as { status: number }).status === 401
+        ) {
+          clearAuthSession();
+        }
+        return [];
+      }
     },
     staleTime: 30 * 1000,
   });
