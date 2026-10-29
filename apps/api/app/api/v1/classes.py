@@ -1,16 +1,19 @@
 import contextlib
 import hashlib
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, require_role
 from app.core.errors import AuthorizationError, NotFoundError
 from app.core.security import generate_join_code
+from app.models.assessment import Question, QuestionTranslation
 from app.models.auth import User
+from app.models.curriculum import Curriculum, Skill, Topic
 from app.models.organization import School, SchoolClass
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.class_repo import ClassRepository
@@ -21,6 +24,14 @@ from app.schemas.classes import (
     EnrollmentActionResponse,
     RotateCodeResponse,
     StudentRosterItem,
+)
+from app.schemas.curriculum import (
+    ClassroomContentResponse,
+    ClassroomQuestionItem,
+    ClassroomSkillItem,
+    ClassroomTopicItem,
+    CustomQuestionCreateRequest,
+    CustomQuestionResponse,
 )
 from app.schemas.teacher import (
     AssignmentCreateRequest,
@@ -622,3 +633,346 @@ async def export_class_csv(
             "Cache-Control": "no-cache",
         },
     )
+
+
+def _detect_subject_from_class_name(name: str) -> str:
+    """Infer subject from class section name."""
+    n = name.lower()
+    if "sci" in n:
+        return "science"
+    if "soc" in n or "sst" in n or "hist" in n or "geo" in n:
+        return "social_science"
+    if "eng" in n:
+        return "english"
+    if "hin" in n:
+        return "hindi"
+    return "mathematics"
+
+
+@router.get(
+    "/{class_id}/content",
+    response_model=ClassroomContentResponse,
+    summary="Get curriculum topics, skills, and questions for classroom",
+)
+async def get_classroom_content(
+    class_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("teacher", "admin"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    subject: Annotated[str | None, Query(description="Subject filter")] = None,
+) -> ClassroomContentResponse:
+    """Retrieve all syllabus topics, competency skills, and calibrated/custom questions."""
+    class_repo = ClassRepository(session)
+    school_class = await class_repo.get_by_id(class_id)
+    if school_class is None:
+        raise NotFoundError("Class", class_id)
+
+    if school_class.teacher_id != current_user.id:
+        await _assert_class_ownership(school_class, current_user)
+
+    selected_subject = subject or _detect_subject_from_class_name(school_class.name)
+
+    # 1. Fetch Curriculum for grade and subject
+    curr_stmt = select(Curriculum).where(
+        Curriculum.grade == school_class.grade,
+        Curriculum.subject.ilike(f"%{selected_subject}%"),
+    )
+    curr_res = await session.execute(curr_stmt)
+    curriculum = curr_res.scalar_one_or_none()
+
+    if curriculum is None:
+        curr_stmt = select(Curriculum).where(Curriculum.grade == school_class.grade).limit(1)
+        curr_res = await session.execute(curr_stmt)
+        curriculum = curr_res.scalar_one_or_none()
+
+    if curriculum is None:
+        return ClassroomContentResponse(
+            class_id=school_class.id,
+            class_name=school_class.name,
+            grade=school_class.grade,
+            subject=selected_subject,
+            curriculum_code=f"NCERT-{selected_subject.upper()}-C{school_class.grade}",
+            topics=[],
+            custom_questions_count=0,
+        )
+
+    # 2. Fetch Topics for curriculum
+    top_stmt = (
+        select(Topic)
+        .where(Topic.curriculum_id == curriculum.id)
+        .order_by(Topic.sequence_order)
+    )
+    top_res = await session.execute(top_stmt)
+    topics = list(top_res.scalars().all())
+
+    # 3. Fetch Skills for these topics
+    topic_ids = [t.id for t in topics]
+    skills_by_topic: dict[uuid.UUID, list[Skill]] = {t.id: [] for t in topics}
+    if topic_ids:
+        sk_stmt = select(Skill).where(Skill.topic_id.in_(topic_ids)).order_by(Skill.code)
+        sk_res = await session.execute(sk_stmt)
+        for s in sk_res.scalars().all():
+            skills_by_topic[s.topic_id].append(s)
+
+    all_skill_ids = [s.id for sl in skills_by_topic.values() for s in sl]
+
+    # 4. Fetch Questions for these skills with translations
+    questions_by_skill: dict[uuid.UUID, list[Question]] = {s_id: [] for s_id in all_skill_ids}
+    if all_skill_ids:
+        q_stmt = (
+            select(Question)
+            .where(Question.skill_id.in_(all_skill_ids))
+            .options(selectinload(Question.translations))
+            .order_by(Question.created_at)
+        )
+        q_res = await session.execute(q_stmt)
+        for q in q_res.scalars().all():
+            questions_by_skill.setdefault(q.skill_id, []).append(q)
+
+    # 5. Build response
+    classroom_topics: list[ClassroomTopicItem] = []
+    total_custom = 0
+
+    for t in topics:
+        topic_skills: list[ClassroomSkillItem] = []
+        for s in skills_by_topic.get(t.id, []):
+            skill_questions: list[ClassroomQuestionItem] = []
+            for q in questions_by_skill.get(s.id, []):
+                trans = next((tr for tr in q.translations if tr.language == "en"), None)
+                if not trans and q.translations:
+                    trans = q.translations[0]
+
+                prompt_text = trans.prompt if trans else f"Assessment item for {s.name}"
+                options_data = trans.options if trans and trans.options else []
+                explanation_text = trans.explanation if trans else ""
+                hints_data = trans.hints if trans and trans.hints else []
+                is_custom = bool(q.code and "CUSTOM" in q.code)
+                if is_custom:
+                    total_custom += 1
+
+                skill_questions.append(
+                    ClassroomQuestionItem(
+                        id=q.id,
+                        code=q.code or str(q.id),
+                        prompt=prompt_text,
+                        options=options_data,
+                        explanation=explanation_text,
+                        hints=hints_data,
+                        difficulty=q.difficulty,
+                        is_custom=is_custom,
+                    )
+                )
+
+            topic_skills.append(
+                ClassroomSkillItem(
+                    id=s.id,
+                    code=s.code,
+                    name=s.name,
+                    description=s.description,
+                    difficulty=s.difficulty,
+                    blooms_level=s.blooms_level,
+                    questions=skill_questions,
+                )
+            )
+
+        classroom_topics.append(
+            ClassroomTopicItem(
+                id=t.id,
+                code=t.code,
+                name=t.name,
+                description=t.description,
+                sequence_order=t.sequence_order,
+                skills=topic_skills,
+            )
+        )
+
+    return ClassroomContentResponse(
+        class_id=school_class.id,
+        class_name=school_class.name,
+        grade=school_class.grade,
+        subject=curriculum.subject,
+        curriculum_code=curriculum.code,
+        topics=classroom_topics,
+        custom_questions_count=total_custom,
+    )
+
+
+@router.post(
+    "/{class_id}/questions",
+    response_model=CustomQuestionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create custom question for classroom skill",
+)
+async def create_classroom_question(
+    class_id: uuid.UUID,
+    payload: CustomQuestionCreateRequest,
+    current_user: Annotated[User, Depends(require_role("teacher"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> CustomQuestionResponse:
+    """Allow a teacher to create and assign custom questions for any competency skill."""
+    class_repo = ClassRepository(session)
+    school_class = await class_repo.get_by_id(class_id)
+    if school_class is None:
+        raise NotFoundError("Class", class_id)
+
+    await _assert_class_ownership(school_class, current_user)
+
+    # 1. Resolve skill by code
+    sk_stmt = select(Skill).where(Skill.code == payload.skill_code)
+    sk_res = await session.execute(sk_stmt)
+    skill = sk_res.scalar_one_or_none()
+    if skill is None:
+        raise NotFoundError("Skill", payload.skill_code)
+
+    # 2. Create Question
+    q_code = f"Q-CUSTOM-{uuid.uuid4().hex[:8].upper()}"
+    q_id = uuid.uuid4()
+    question = Question(
+        id=q_id,
+        code=q_code,
+        skill_id=skill.id,
+        difficulty=payload.difficulty,
+        question_type="mcq",
+        status="published",
+        needs_teacher_review=False,
+        version=1,
+        reviewer_id=current_user.id,
+    )
+    session.add(question)
+    await session.flush()
+
+    # 3. Create English Translation
+    options_dict = [opt.model_dump() for opt in payload.options]
+    trans_en = QuestionTranslation(
+        id=uuid.uuid4(),
+        question_id=q_id,
+        language="en",
+        prompt=payload.prompt_en,
+        options=options_dict,
+        explanation=payload.explanation,
+        hints=payload.hints,
+    )
+    session.add(trans_en)
+
+    if payload.prompt_hi:
+        trans_hi = QuestionTranslation(
+            id=uuid.uuid4(),
+            question_id=q_id,
+            language="hi",
+            prompt=payload.prompt_hi,
+            options=options_dict,
+            explanation=payload.explanation,
+            hints=payload.hints,
+        )
+        session.add(trans_hi)
+
+    await session.commit()
+
+    return CustomQuestionResponse(
+        id=question.id,
+        code=question.code,
+        skill_code=skill.code,
+        prompt=payload.prompt_en,
+        options=options_dict,
+        explanation=payload.explanation,
+        hints=payload.hints,
+        difficulty=question.difficulty,
+        status=question.status,
+    )
+
+
+@router.post(
+    "/{class_id}/content/upload",
+    summary="Batch upload custom questions (JSON or CSV format)",
+)
+async def upload_classroom_content(
+    class_id: uuid.UUID,
+    payload: dict[str, Any],
+    current_user: Annotated[User, Depends(require_role("teacher"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    """Upload custom questions in bulk attached to classroom competencies."""
+    class_repo = ClassRepository(session)
+    school_class = await class_repo.get_by_id(class_id)
+    if school_class is None:
+        raise NotFoundError("Class", class_id)
+
+    await _assert_class_ownership(school_class, current_user)
+
+    questions_list = payload.get("questions", [])
+    if not isinstance(questions_list, list) or not questions_list:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payload must contain a non-empty 'questions' array.",
+        )
+
+    all_skills_stmt = select(Skill)
+    all_skills = {s.code: s for s in (await session.execute(all_skills_stmt)).scalars().all()}
+
+    fallback_skill = next(iter(all_skills.values())) if all_skills else None
+    if not fallback_skill:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No curriculum skills configured in the system.",
+        )
+
+    created_count = 0
+    for q_item in questions_list:
+        target_code = q_item.get("skill_code", "")
+        skill = all_skills.get(target_code, fallback_skill)
+
+        q_id = uuid.uuid4()
+        q_code = f"Q-CUSTOM-{uuid.uuid4().hex[:8].upper()}"
+        difficulty = int(q_item.get("difficulty", 3))
+
+        question = Question(
+            id=q_id,
+            code=q_code,
+            skill_id=skill.id,
+            difficulty=difficulty,
+            question_type="mcq",
+            status="published",
+            needs_teacher_review=False,
+            version=1,
+            reviewer_id=current_user.id,
+        )
+        session.add(question)
+        await session.flush()
+
+        options = q_item.get(
+            "options",
+            [
+                {"id": "A", "text": "Option A", "is_correct": True},
+                {"id": "B", "text": "Option B", "is_correct": False},
+            ],
+        )
+        hints = q_item.get(
+            "hints",
+            [
+                "Review the key definitions.",
+                "Verify intermediate calculations carefully.",
+                "Choose the option adhering to NCERT standards.",
+            ],
+        )
+        explanation = q_item.get("explanation", "Standard NCERT curriculum competency explanation.")
+
+        trans = QuestionTranslation(
+            id=uuid.uuid4(),
+            question_id=q_id,
+            language="en",
+            prompt=q_item.get("prompt", "Assessment question"),
+            options=options,
+            explanation=explanation,
+            hints=hints,
+        )
+        session.add(trans)
+        created_count += 1
+
+    await session.commit()
+    return {
+        "status": "success",
+        "class_id": str(class_id),
+        "imported_count": created_count,
+        "message": (
+            f"Successfully uploaded {created_count} custom questions to class {school_class.name}"
+        ),
+    }

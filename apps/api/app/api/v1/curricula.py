@@ -9,17 +9,113 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, require_role
 from app.core.errors import NotFoundError
 from app.models.auth import User
+from app.models.curriculum import Curriculum, Skill, Topic
 from app.repositories.curriculum_repo import CurriculumRepository
 from app.schemas.curriculum import (
     ContentImportResponse,
     CurriculumResponse,
+    CurriculumSearchResponse,
     GraphEdge,
     GraphNode,
+    SearchSkillItem,
+    SearchTopicItem,
     SkillGraphResponse,
     TopicResponse,
 )
 
 router = APIRouter(prefix="/curricula", tags=["Curriculum"])
+
+
+@router.get("/search", response_model=CurriculumSearchResponse, summary="Search Topics and Skills")
+async def search_curricula_content(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
+    q: Annotated[str, Query(min_length=1, description="Search query string")] = "",
+    grade: Annotated[int | None, Query(ge=6, le=10, description="Grade filter (6-10)")] = None,
+    subject: Annotated[str | None, Query(description="Subject filter")] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+) -> CurriculumSearchResponse:
+    """Search topics and competencies across NCERT Classes 6-10."""
+    from sqlalchemy import select
+
+    term = f"%{q.strip()}%"
+
+    # 1. Search Topics
+    t_stmt = (
+        select(Topic, Curriculum)
+        .join(Curriculum, Topic.curriculum_id == Curriculum.id)
+        .where(
+            (Topic.name.ilike(term))
+            | (Topic.description.ilike(term))
+            | (Topic.code.ilike(term))
+        )
+    )
+    if grade is not None:
+        t_stmt = t_stmt.where(Curriculum.grade == grade)
+    if subject:
+        t_stmt = t_stmt.where(Curriculum.subject.ilike(f"%{subject.strip()}%"))
+    t_stmt = t_stmt.order_by(Curriculum.grade, Topic.sequence_order).limit(limit)
+
+    t_res = await session.execute(t_stmt)
+    topic_matches = [
+        SearchTopicItem(
+            id=topic.id,
+            code=topic.code,
+            name=topic.name,
+            description=topic.description,
+            sequence_order=topic.sequence_order,
+            curriculum_id=curr.id,
+            curriculum_code=curr.code,
+            grade=curr.grade,
+            subject=curr.subject,
+        )
+        for topic, curr in t_res.all()
+    ]
+
+    # 2. Search Skills
+    s_stmt = (
+        select(Skill, Topic, Curriculum)
+        .join(Topic, Skill.topic_id == Topic.id)
+        .join(Curriculum, Topic.curriculum_id == Curriculum.id)
+        .where(
+            (Skill.name.ilike(term))
+            | (Skill.description.ilike(term))
+            | (Skill.code.ilike(term))
+        )
+    )
+    if grade is not None:
+        s_stmt = s_stmt.where(Curriculum.grade == grade)
+    if subject:
+        s_stmt = s_stmt.where(Curriculum.subject.ilike(f"%{subject.strip()}%"))
+    s_stmt = s_stmt.order_by(Curriculum.grade, Skill.name).limit(limit)
+
+    s_res = await session.execute(s_stmt)
+    skill_matches = [
+        SearchSkillItem(
+            id=skill.id,
+            code=skill.code,
+            name=skill.name,
+            description=skill.description,
+            difficulty=skill.difficulty,
+            blooms_level=skill.blooms_level,
+            topic_id=top.id,
+            topic_code=top.code,
+            topic_name=top.name,
+            grade=curr.grade,
+            subject=curr.subject,
+        )
+        for skill, top, curr in s_res.all()
+    ]
+
+    return CurriculumSearchResponse(
+        query=q,
+        grade=grade,
+        subject=subject,
+        total_topics=len(topic_matches),
+        total_skills=len(skill_matches),
+        topics=topic_matches,
+        skills=skill_matches,
+    )
 
 
 @router.get("", response_model=list[CurriculumResponse], summary="List Curricula")

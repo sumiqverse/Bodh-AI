@@ -53,6 +53,7 @@ import { SuggestionsDecisionHub } from '@/components/teacher/SuggestionsDecision
 import { AssignmentsView } from '@/components/teacher/AssignmentsView';
 import { ProgressReassessmentView } from '@/components/teacher/ProgressReassessmentView';
 import { StudentProfileModal } from '@/components/teacher/StudentProfileModal';
+import { CurriculumContentHub } from '@/components/teacher/CurriculumContentHub';
 import { Sparkles, RefreshCw, Copy, Check, FileSpreadsheet, Printer } from 'lucide-react';
 
 export default function TeacherDashboardPage(): React.JSX.Element {
@@ -88,8 +89,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
   // New class form state
   const [className, setClassName] = React.useState<string>('');
   const [grade, setGrade] = React.useState<string>('8');
+  const [subject, setSubject] = React.useState<string>('Mathematics');
   const [section, setSection] = React.useState<string>('A');
-  const [academicYear, setAcademicYear] = React.useState<string>('2024-2025');
+  const [academicYear] = React.useState<string>('2024-2025');
 
   // Active selected class object
   const activeClass = React.useMemo(() => {
@@ -320,13 +322,17 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     setErrorMessage(null);
     setIsCreating(true);
 
+    const finalClassName =
+      className.trim() || `Class ${grade}-${section.trim() || 'A'} ${subject}`;
+    const codePrefix = subject.slice(0, 4).toUpperCase();
+
     const newMockClass: ClassResponse = {
       id: `cls-mock-${Date.now()}`,
-      name: className.trim(),
+      name: finalClassName,
       grade: parseInt(grade, 10),
       section: section.trim() || 'A',
       academic_year: academicYear.trim(),
-      join_code: `MATH${Math.floor(100 + Math.random() * 900)}`,
+      join_code: `${codePrefix}${Math.floor(100 + Math.random() * 900)}`,
       school_id: 'sch-001',
       teacher_id: getCurrentUser()?.id ?? 'tchr-001',
       created_at: new Date().toISOString(),
@@ -344,7 +350,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     try {
       const created = await apiClient.createClass(
         {
-          name: className.trim(),
+          name: finalClassName,
           grade: parseInt(grade, 10),
           section: section.trim() || 'A',
           academic_year: academicYear.trim(),
@@ -514,6 +520,14 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     { value: '10', label: 'Class 10' },
   ];
 
+  const subjectOptions = [
+    { value: 'Mathematics', label: 'Mathematics (NCERT)' },
+    { value: 'Science', label: 'Science (NCERT)' },
+    { value: 'Social Science', label: 'Social Science (NCERT)' },
+    { value: 'English', label: 'English (NCERT)' },
+    { value: 'Hindi', label: 'Hindi (NCERT)' },
+  ];
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
       {/* Top Header & Classroom Switcher */}
@@ -661,6 +675,12 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               📊 Overview & Heatmap
             </TabsTrigger>
             <TabsTrigger
+              value="curriculum"
+              className="rounded-t-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card px-4 py-2 text-xs font-bold text-primary cursor-pointer"
+            >
+              📚 Curriculum & Content Hub
+            </TabsTrigger>
+            <TabsTrigger
               value="clusters"
               className="rounded-t-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card px-4 py-2 text-xs font-semibold cursor-pointer"
             >
@@ -748,6 +768,16 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           )}
         </TabsContent>
 
+        {/* Tab: Curriculum & Content Hub */}
+        <TabsContent value="curriculum">
+          <CurriculumContentHub
+            activeClass={activeClass}
+            onRefreshData={() => {
+              if (activeClass) void loadActiveTelemetry(activeClass.id, getAuthToken() || '');
+            }}
+          />
+        </TabsContent>
+
         {/* Tab 2: Gap Clusters */}
         <TabsContent value="clusters">
           {clusters ? (
@@ -808,19 +838,18 @@ export default function TeacherDashboardPage(): React.JSX.Element {
             <CardContent>
               <form
                 onSubmit={handleCreateClass}
-                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 items-end"
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 items-end"
               >
                 <div className="space-y-1.5 lg:col-span-2">
                   <label
                     htmlFor="new-class-name"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    {t('className')}
+                    {t('className')} (or auto-generates)
                   </label>
                   <Input
                     id="new-class-name"
-                    required
-                    placeholder={t('classNamePlaceholder')}
+                    placeholder={`e.g. Class ${grade}-${section} ${subject}`}
                     value={className}
                     onChange={(e) => setClassName(e.target.value)}
                   />
@@ -843,6 +872,21 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
                 <div className="space-y-1.5">
                   <label
+                    htmlFor="new-class-subject"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    Subject
+                  </label>
+                  <Select
+                    id="new-class-subject"
+                    options={subjectOptions}
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
                     htmlFor="new-class-section"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                   >
@@ -853,21 +897,6 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                     placeholder={t('sectionPlaceholder')}
                     value={section}
                     onChange={(e) => setSection(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="new-class-academic-year"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                  >
-                    {t('academicYear')}
-                  </label>
-                  <Input
-                    id="new-class-academic-year"
-                    placeholder={t('academicYearPlaceholder')}
-                    value={academicYear}
-                    onChange={(e) => setAcademicYear(e.target.value)}
                   />
                 </div>
 

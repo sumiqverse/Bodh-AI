@@ -52,6 +52,7 @@ import { SuggestionsDecisionHub } from '@/components/teacher/SuggestionsDecision
 import { AssignmentsView } from '@/components/teacher/AssignmentsView';
 import { ProgressReassessmentView } from '@/components/teacher/ProgressReassessmentView';
 import { StudentProfileModal } from '@/components/teacher/StudentProfileModal';
+import { CurriculumContentHub } from '@/components/teacher/CurriculumContentHub';
 
 interface PageProps {
   readonly params: Promise<{ id: string; locale: string }>;
@@ -418,6 +419,18 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
     );
   }
 
+  const classObj = {
+    id: classDetail.id,
+    name: classDetail.name,
+    grade: classDetail.grade,
+    section: classDetail.section,
+    academic_year: classDetail.academic_year,
+    join_code: classDetail.join_code,
+    school_id: classDetail.school_id,
+    teacher_id: classDetail.teacher_id,
+    created_at: classDetail.created_at,
+  };
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-6">
       {/* Header bar: breadcrumb, title, code, export & print */}
@@ -528,6 +541,12 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
               📊 {tTeacher('tabs.heatmap')}
             </TabsTrigger>
             <TabsTrigger
+              value="curriculum"
+              className="rounded-t-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card px-4 py-2 text-xs font-bold text-primary"
+            >
+              📚 Curriculum & Content Hub
+            </TabsTrigger>
+            <TabsTrigger
               value="clusters"
               className="rounded-t-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card px-4 py-2 text-xs font-semibold"
             >
@@ -593,6 +612,14 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
               No competency telemetry available yet.
             </div>
           )}
+        </TabsContent>
+
+        {/* Tab: Curriculum & Content Hub */}
+        <TabsContent value="curriculum">
+          <CurriculumContentHub
+            activeClass={classObj}
+            onRefreshData={loadClassData}
+          />
         </TabsContent>
 
         {/* Tab 2: Group Gap Clusters View */}

@@ -48,6 +48,111 @@ export interface CurriculumResponse {
   updated_at: string;
   topics?: TopicResponse[];
 }
+export interface SearchTopicItem {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  sequence_order: number;
+  curriculum_id: string;
+  curriculum_code: string;
+  grade: number;
+  subject: string;
+}
+
+export interface SearchSkillItem {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  difficulty: number;
+  blooms_level: string;
+  topic_id: string;
+  topic_code: string;
+  topic_name: string;
+  grade: number;
+  subject: string;
+}
+
+export interface CurriculumSearchResponse {
+  query: string;
+  grade?: number | null;
+  subject?: string | null;
+  total_topics: number;
+  total_skills: number;
+  topics: SearchTopicItem[];
+  skills: SearchSkillItem[];
+}
+
+export interface ClassroomQuestionItem {
+  id: string;
+  code: string;
+  prompt: string;
+  options: Array<{ id: string; text: string; is_correct?: boolean; distractor_feedback?: string }>;
+  explanation: string;
+  hints: string[];
+  difficulty: number;
+  is_custom: boolean;
+}
+
+export interface ClassroomSkillItem {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  difficulty: number;
+  blooms_level: string;
+  questions: ClassroomQuestionItem[];
+}
+
+export interface ClassroomTopicItem {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  sequence_order: number;
+  skills: ClassroomSkillItem[];
+}
+
+export interface ClassroomContentResponse {
+  class_id: string;
+  class_name: string;
+  grade: number;
+  subject: string;
+  curriculum_code: string;
+  topics: ClassroomTopicItem[];
+  custom_questions_count: number;
+}
+
+export interface CustomQuestionCreateRequest {
+  skill_code: string;
+  prompt_en: string;
+  prompt_hi?: string | null;
+  options: Array<{ id: string; text: string; is_correct: boolean; distractor_feedback?: string }>;
+  difficulty: number;
+  explanation: string;
+  hints: string[];
+}
+
+export interface CustomQuestionResponse {
+  id: string;
+  code: string;
+  skill_code: string;
+  prompt: string;
+  options: Array<{ id: string; text: string; is_correct: boolean }>;
+  explanation: string;
+  hints: string[];
+  difficulty: number;
+  status: string;
+}
+
+export interface ContentUploadResult {
+  status: string;
+  class_id: string;
+  imported_count: number;
+  message: string;
+}
+
 export interface QuestionOptionItem {
   id: string;
   text: string;
@@ -1190,5 +1295,68 @@ export class BodhaiApiClient {
       throw new Error(`Export CSV failed: ${res.statusText}`);
     }
     return res.text();
+  }
+
+  public async searchCurriculumContent(
+    query: string,
+    params?: { grade?: number; subject?: string; limit?: number },
+    token?: string,
+  ): Promise<CurriculumSearchResponse> {
+    const qp = new URLSearchParams({ q: query });
+    if (params?.grade) qp.set('grade', params.grade.toString());
+    if (params?.subject) qp.set('subject', params.subject);
+    if (params?.limit) qp.set('limit', params.limit.toString());
+    return this.request<CurriculumSearchResponse>(
+      `/api/v1/curricula/search?${qp.toString()}`,
+      { headers: this.authHeaders(token) },
+    );
+  }
+
+  public async getClassroomContent(
+    classId: string,
+    subject?: string,
+    token?: string,
+  ): Promise<ClassroomContentResponse> {
+    const qp = subject ? `?subject=${encodeURIComponent(subject)}` : '';
+    return this.request<ClassroomContentResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/content${qp}`,
+      { headers: this.authHeaders(token) },
+    );
+  }
+
+  public async createClassroomQuestion(
+    classId: string,
+    payload: CustomQuestionCreateRequest,
+    token?: string,
+  ): Promise<CustomQuestionResponse> {
+    return this.request<CustomQuestionResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/questions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.authHeaders(token),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  public async uploadClassroomContent(
+    classId: string,
+    payload: { questions: any[] },
+    token?: string,
+  ): Promise<ContentUploadResult> {
+    return this.request<ContentUploadResult>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/content/upload`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.authHeaders(token),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
   }
 }
