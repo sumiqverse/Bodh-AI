@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '@bodhai/ui';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
 import type { AdminSchoolStatsResponse } from '@bodhai/api-client';
 
@@ -48,12 +49,14 @@ export default function AdminStatsPage(): React.JSX.Element {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8 space-y-8">
+    <div className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
+      <AdminNav />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
+          <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground">
             {t('title')}
-          </h1>
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
 
