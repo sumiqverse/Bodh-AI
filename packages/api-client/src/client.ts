@@ -610,6 +610,35 @@ export interface ApiClientOptions {
   readonly getToken?: () => string | null;
 }
 
+export interface UserProfileResponse<T = Record<string, unknown>> {
+  type: 'teacher' | 'student';
+  profile: T;
+}
+
+export interface ProfileUpdatePayload {
+  fullName?: string;
+  fullNameHi?: string;
+  title?: string;
+  titleHi?: string;
+  experienceYears?: number;
+  schoolName?: string;
+  department?: string;
+  qualifications?: string;
+  bio?: string;
+  bioHi?: string;
+  phone?: string;
+  officeHours?: string;
+  specializations?: string[];
+  avatarUrl?: string;
+}
+
+export interface SetupCohortPayload {
+  grade?: number;
+  section?: string;
+  subject?: string;
+  className?: string;
+}
+
 export class BodhaiApiClient {
   private readonly baseUrl: string;
   private readonly fetchFn: typeof fetch;
@@ -666,8 +695,12 @@ export class BodhaiApiClient {
 
       if (problemDetail && problemDetail.detail) {
         let details = '';
-        if (Array.isArray(problemDetail.invalid_params) && problemDetail.invalid_params.length > 0) {
-          details = ': ' + problemDetail.invalid_params.map((p) => `${p.name} (${p.reason})`).join(', ');
+        if (
+          Array.isArray(problemDetail.invalid_params) &&
+          problemDetail.invalid_params.length > 0
+        ) {
+          details =
+            ': ' + problemDetail.invalid_params.map((p) => `${p.name} (${p.reason})`).join(', ');
         }
         throw new Error(`API Error [${response.status}]: ${problemDetail.detail}${details}`);
       }
@@ -921,10 +954,9 @@ export class BodhaiApiClient {
   }
 
   public async getCurriculumTopics(code: string, token?: string): Promise<TopicResponse[]> {
-    return this.request<TopicResponse[]>(
-      `/api/v1/curricula/${encodeURIComponent(code)}/topics`,
-      { headers: this.authHeaders(token) },
-    );
+    return this.request<TopicResponse[]>(`/api/v1/curricula/${encodeURIComponent(code)}/topics`, {
+      headers: this.authHeaders(token),
+    });
   }
 
   public async getSkill(skillId: string): Promise<SkillResponse> {
@@ -1306,10 +1338,9 @@ export class BodhaiApiClient {
     if (params?.grade) qp.set('grade', params.grade.toString());
     if (params?.subject) qp.set('subject', params.subject);
     if (params?.limit) qp.set('limit', params.limit.toString());
-    return this.request<CurriculumSearchResponse>(
-      `/api/v1/curricula/search?${qp.toString()}`,
-      { headers: this.authHeaders(token) },
-    );
+    return this.request<CurriculumSearchResponse>(`/api/v1/curricula/search?${qp.toString()}`, {
+      headers: this.authHeaders(token),
+    });
   }
 
   public async getClassroomContent(
@@ -1344,7 +1375,7 @@ export class BodhaiApiClient {
 
   public async uploadClassroomContent(
     classId: string,
-    payload: { questions: any[] },
+    payload: { questions: Record<string, unknown>[] },
     token?: string,
   ): Promise<ContentUploadResult> {
     return this.request<ContentUploadResult>(
@@ -1358,5 +1389,41 @@ export class BodhaiApiClient {
         body: JSON.stringify(payload),
       },
     );
+  }
+
+  public async getMyProfile<T = Record<string, unknown>>(
+    token?: string,
+  ): Promise<UserProfileResponse<T>> {
+    return this.request<UserProfileResponse<T>>('/api/v1/profiles/me', {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async updateMyProfile<T = Record<string, unknown>>(
+    payload: ProfileUpdatePayload,
+    token?: string,
+  ): Promise<UserProfileResponse<T>> {
+    return this.request<UserProfileResponse<T>>('/api/v1/profiles/me', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeaders(token),
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async setupCohort<T = Record<string, unknown>>(
+    payload?: SetupCohortPayload,
+    token?: string,
+  ): Promise<UserProfileResponse<T>> {
+    return this.request<UserProfileResponse<T>>('/api/v1/profiles/setup-cohort', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeaders(token),
+      },
+      body: JSON.stringify(payload || {}),
+    });
   }
 }

@@ -1,6 +1,6 @@
 /**
  * BodhAI Profiles Telemetry & Data Layer
- * 
+ *
  * Provides individualized, authentic NCERT student profiles and teacher profiles
  * with distinct competencies, error patterns, hint usage ladders, and learning streaks.
  */
@@ -98,7 +98,7 @@ export interface StudentProfile {
   dpdpConsentGranted: boolean;
   guardianName: string;
   guardianRelation: string;
-  
+
   // Aggregate Metrics
   overallMastery: number; // 0 - 100
   learningStreakDays: number;
@@ -171,7 +171,7 @@ export interface TeacherProfile {
   bioHi: string;
   officeHours: string;
   verifiedEducator: boolean;
-  
+
   // Aggregate Metrics
   totalStudentsTaught: number;
   activeClassesCount: number;
@@ -205,7 +205,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
     age: 13,
     avatarGradient: 'from-emerald-500 to-teal-700',
     bio: 'Enthusiastic math learner aiming for aerospace engineering. Excels in symbolic algebra and algebraic identities, currently focusing on improving 3D mensuration visualization.',
-    bioHi: 'गणित के उत्साही विद्यार्थी जो एयरोस्पेस इंजीनियरिंग का लक्ष्य रखते हैं। बीजगणित में उत्कृष्ट, वर्तमान में 3D क्षेत्रमिति की समझ मजबूत करने पर कार्यरत।',
+    bioHi:
+      'गणित के उत्साही विद्यार्थी जो एयरोस्पेस इंजीनियरिंग का लक्ष्य रखते हैं। बीजगणित में उत्कृष्ट, वर्तमान में 3D क्षेत्रमिति की समझ मजबूत करने पर कार्यरत।',
     preferredLanguage: 'hi',
     dpdpConsentGranted: true,
     guardianName: 'Ramesh Sharma',
@@ -445,7 +446,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
     age: 14,
     avatarGradient: 'from-purple-500 to-indigo-700',
     bio: 'Visual learner with outstanding geometric spatial reasoning. Preparing for National Talent Search and loves converting data into visual bar and pie graphs.',
-    bioHi: 'दृश्य अधिगम में निपुण छात्रा जिनकी ज्यामितीय समझ अत्यंत प्रखर है। राष्ट्रीय प्रतिभा खोज परीक्षा की तैयारी में जुटी हैं।',
+    bioHi:
+      'दृश्य अधिगम में निपुण छात्रा जिनकी ज्यामितीय समझ अत्यंत प्रखर है। राष्ट्रीय प्रतिभा खोज परीक्षा की तैयारी में जुटी हैं।',
     preferredLanguage: 'en',
     dpdpConsentGranted: true,
     guardianName: 'Sanjay Patel',
@@ -536,9 +538,11 @@ export const STUDENTS_DATA: StudentProfile[] = [
       {
         questionCode: 'ERR-EXP-ADD-BASES',
         promptExcerpt: 'Simplify 3⁴ × 3² × 3⁻¹',
-        distractorChosen: 'Multiplied bases to 27⁵ instead of keeping base 3 and adding exponents (3⁵)',
+        distractorChosen:
+          'Multiplied bases to 27⁵ instead of keeping base 3 and adding exponents (3⁵)',
         count: 5,
-        misconception: 'Exponent base rule: multiplied base numbers rather than applying a^m * a^n = a^(m+n).',
+        misconception:
+          'Exponent base rule: multiplied base numbers rather than applying a^m * a^n = a^(m+n).',
         remedyAction: 'Scaffolded practice on base preservation rule.',
         severity: 'high',
       },
@@ -547,7 +551,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         promptExcerpt: 'If 12 men build a wall in 8 days, how many days will 16 men take?',
         distractorChosen: 'Used direct proportion cross-multiply (12/8 = 16/x -> 10.6 days)',
         count: 4,
-        misconception: 'Applied direct ratio instead of inverse constant product rule (x1 * y1 = x2 * y2).',
+        misconception:
+          'Applied direct ratio instead of inverse constant product rule (x1 * y1 = x2 * y2).',
         remedyAction: 'Assigned inverse constant product worksheet with physical analogies.',
         severity: 'medium',
       },
@@ -638,7 +643,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         skillName: 'Laws of Exponents: Base Preservation Lab',
         topicName: 'Exponents and Powers',
         type: 'remedial',
-        reason: 'Mastery is 42%. Clearing the base multiplication trap will unlock Class 9 readiness.',
+        reason:
+          'Mastery is 42%. Clearing the base multiplication trap will unlock Class 9 readiness.',
         estimatedMinutes: 9,
       },
       {
@@ -666,7 +672,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
     age: 13,
     avatarGradient: 'from-amber-500 to-orange-700',
     bio: 'Speed calculator in mental arithmetic and prime factorisation games. Benefiting from BodhAI hint ladders to build patience with multi-step algebraic transpositions.',
-    bioHi: 'मौखिक अंकगणित में तीव्र विद्यार्थी। बहुपदीय बीजगणितीय चरणों को धैर्यपूर्वक हल करने हेतु बोधAI के क्रमिक संकेतों का लाभ उठा रहे हैं।',
+    bioHi:
+      'मौखिक अंकगणित में तीव्र विद्यार्थी। बहुपदीय बीजगणितीय चरणों को धैर्यपूर्वक हल करने हेतु बोधAI के क्रमिक संकेतों का लाभ उठा रहे हैं।',
     preferredLanguage: 'hi',
     dpdpConsentGranted: true,
     guardianName: 'Anita Verma',
@@ -747,7 +754,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         promptExcerpt: 'Solve 3x + 11 = 26',
         distractorChosen: '3x = 26 + 11 = 37 -> x = 37/3 (forgot to flip +11 to -11)',
         count: 9,
-        misconception: 'Transposition balance error: maintained addition operator across equal sign boundary.',
+        misconception:
+          'Transposition balance error: maintained addition operator across equal sign boundary.',
         remedyAction: 'Balance scale visual simulator practice assigned.',
         severity: 'high',
       },
@@ -772,7 +780,7 @@ export const STUDENTS_DATA: StudentProfile[] = [
     trend: [
       { date: 'Week 1', pMastery: 0.42, attempts: 32, accuracy: 48 },
       { date: 'Week 2', pMastery: 0.46, attempts: 38, accuracy: 52 },
-      { date: 'Week 3', pMastery: 0.50, attempts: 44, accuracy: 58 },
+      { date: 'Week 3', pMastery: 0.5, attempts: 44, accuracy: 58 },
       { date: 'Week 4', pMastery: 0.54, attempts: 40, accuracy: 61 },
       { date: 'Week 5', pMastery: 0.58, attempts: 44, accuracy: 65 },
     ],
@@ -837,7 +845,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         skillName: 'Balance Scale Linear Equations Tutor',
         topicName: 'Linear Equations',
         type: 'remedial',
-        reason: 'Current mastery is 34%. Interactive visual balance exercises will fix sign transpositions.',
+        reason:
+          'Current mastery is 34%. Interactive visual balance exercises will fix sign transpositions.',
         estimatedMinutes: 7,
       },
       {
@@ -865,7 +874,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
     age: 14,
     avatarGradient: 'from-sky-500 to-blue-700',
     bio: 'Top Olympiad contender with a 31-day active streak. Solves almost completely independently. Passionate about coordinate geometry and irrational number proofs.',
-    bioHi: 'ओलिंपियाड की शीर्ष प्रतिभागी जिनका 31 दिनों का अटूट अभ्यास क्रम है। पूर्ण स्वतंत्रता से प्रश्न हल करती हैं। निर्देशांक ज्यामिति में विशेष रुचि।',
+    bioHi:
+      'ओलिंपियाड की शीर्ष प्रतिभागी जिनका 31 दिनों का अटूट अभ्यास क्रम है। पूर्ण स्वतंत्रता से प्रश्न हल करती हैं। निर्देशांक ज्यामिति में विशेष रुचि।',
     preferredLanguage: 'en',
     dpdpConsentGranted: true,
     guardianName: 'Subramanian Iyer',
@@ -961,7 +971,7 @@ export const STUDENTS_DATA: StudentProfile[] = [
     },
     trend: [
       { date: 'Week 1', pMastery: 0.88, attempts: 90, accuracy: 92 },
-      { date: 'Week 2', pMastery: 0.90, attempts: 110, accuracy: 94 },
+      { date: 'Week 2', pMastery: 0.9, attempts: 110, accuracy: 94 },
       { date: 'Week 3', pMastery: 0.91, attempts: 125, accuracy: 95 },
       { date: 'Week 4', pMastery: 0.92, attempts: 135, accuracy: 95 },
       { date: 'Week 5', pMastery: 0.93, attempts: 150, accuracy: 96 },
@@ -1027,7 +1037,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         skillName: 'Parallel Axiom (Postulate 5) Equivalent Formulations',
         topicName: "Euclid's Geometry",
         type: 'practice',
-        reason: 'Elevate 72% partial mastery to 95%+ by analyzing historical attempts to prove Postulate 5.',
+        reason:
+          'Elevate 72% partial mastery to 95%+ by analyzing historical attempts to prove Postulate 5.',
         estimatedMinutes: 10,
       },
       {
@@ -1055,7 +1066,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
     age: 12,
     avatarGradient: 'from-teal-500 to-emerald-700',
     bio: 'Class 7 sports enthusiast who learns best through cricket batting averages and sports analytics. Great at fractions and decimals, practicing negative integer signs.',
-    bioHi: 'कक्षा 7 के विद्यार्थी जिन्हें खेल के आंकड़ों से गणित समझना प्रिय है। भिन्न और दशमलव में निपुण, ऋणात्मक पूर्णांकों के नियमों का अभ्यास कर रहे हैं।',
+    bioHi:
+      'कक्षा 7 के विद्यार्थी जिन्हें खेल के आंकड़ों से गणित समझना प्रिय है। भिन्न और दशमलव में निपुण, ऋणात्मक पूर्णांकों के नियमों का अभ्यास कर रहे हैं।',
     preferredLanguage: 'hi',
     dpdpConsentGranted: true,
     guardianName: 'Harpreet Singh',
@@ -1112,7 +1124,7 @@ export const STUDENTS_DATA: StudentProfile[] = [
         topicName: 'Rational Numbers',
         topicCode: 'CH09',
         difficulty: 3,
-        pMastery: 0.50,
+        pMastery: 0.5,
         state: 'partial',
         attemptsCount: 24,
         lastAttemptedAt: '2026-10-25T15:20:00Z',
@@ -1133,7 +1145,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         promptExcerpt: 'Divide: (3/4) ÷ (2/5)',
         distractorChosen: 'Multiplied directly (3*2)/(4*5) = 6/20 without reciprocating divisor',
         count: 5,
-        misconception: 'Forgot to invert second fraction when converting division to multiplication.',
+        misconception:
+          'Forgot to invert second fraction when converting division to multiplication.',
         remedyAction: 'Practice on "Keep, Change, Flip" fraction division mnemonic.',
         severity: 'medium',
       },
@@ -1149,7 +1162,7 @@ export const STUDENTS_DATA: StudentProfile[] = [
     trend: [
       { date: 'Week 1', pMastery: 0.51, attempts: 38, accuracy: 56 },
       { date: 'Week 2', pMastery: 0.56, attempts: 44, accuracy: 62 },
-      { date: 'Week 3', pMastery: 0.60, attempts: 48, accuracy: 66 },
+      { date: 'Week 3', pMastery: 0.6, attempts: 48, accuracy: 66 },
       { date: 'Week 4', pMastery: 0.64, attempts: 50, accuracy: 70 },
       { date: 'Week 5', pMastery: 0.67, attempts: 50, accuracy: 72 },
     ],
@@ -1213,7 +1226,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
         skillName: 'Rational Numbers Distance on Number Line',
         topicName: 'Rational Numbers',
         type: 'practice',
-        reason: 'Raise 50% partial mastery to mastered state through 5 number line positioning items.',
+        reason:
+          'Raise 50% partial mastery to mastered state through 5 number line positioning items.',
         estimatedMinutes: 9,
       },
     ],
@@ -1232,7 +1246,8 @@ export const STUDENTS_DATA: StudentProfile[] = [
     age: 15,
     avatarGradient: 'from-rose-500 to-pink-700',
     bio: 'Class 10 CBSE Board candidate practicing rigorous NCERT exemplar problems. Outstanding analytical stamina in quadratic equations and arithmetic progressions.',
-    bioHi: 'कक्षा 10 की छात्रा जो सीबीएसई बोर्ड परीक्षा हेतु गहन अभ्यास कर रही हैं। द्विघात समीकरण और समांतर श्रेढ़ी में उत्कृष्ट विश्लेषणात्मक दक्षता।',
+    bioHi:
+      'कक्षा 10 की छात्रा जो सीबीएसई बोर्ड परीक्षा हेतु गहन अभ्यास कर रही हैं। द्विघात समीकरण और समांतर श्रेढ़ी में उत्कृष्ट विश्लेषणात्मक दक्षता।',
     preferredLanguage: 'en',
     dpdpConsentGranted: true,
     guardianName: 'Vikas Mehta',
@@ -1277,7 +1292,7 @@ export const STUDENTS_DATA: StudentProfile[] = [
         topicName: 'Arithmetic Progressions',
         topicCode: 'CH05',
         difficulty: 3,
-        pMastery: 0.90,
+        pMastery: 0.9,
         state: 'mastered',
         attemptsCount: 44,
         lastAttemptedAt: '2026-10-26T17:00:00Z',
@@ -1313,16 +1328,19 @@ export const STUDENTS_DATA: StudentProfile[] = [
         promptExcerpt: 'Evaluate (sin 30° + cos 60°) / tan 45°',
         distractorChosen: 'Confused cos 60° with √3/2 (used cos 30° value)',
         count: 4,
-        misconception: 'Swapped complementary angle table values between 30° and 60° for sine and cosine.',
+        misconception:
+          'Swapped complementary angle table values between 30° and 60° for sine and cosine.',
         remedyAction: 'Assigned unit equilateral triangle derivation mnemonic.',
         severity: 'medium',
       },
       {
         questionCode: 'ERR-FRUSTUM-CONVERSION',
         promptExcerpt: 'Metallic sphere of radius 6cm melted and recast into wire',
-        distractorChosen: 'Equated surface areas instead of conserving volume (V_sphere = V_cylinder)',
+        distractorChosen:
+          'Equated surface areas instead of conserving volume (V_sphere = V_cylinder)',
         count: 3,
-        misconception: 'Conservation principle error: equated external area rather than cubic volume.',
+        misconception:
+          'Conservation principle error: equated external area rather than cubic volume.',
         remedyAction: 'Physical recast volume conservation practice module.',
         severity: 'medium',
       },
@@ -1440,7 +1458,8 @@ export const TEACHERS_DATA: TeacherProfile[] = [
     experienceYears: 14,
     avatarGradient: 'from-blue-600 to-indigo-800',
     bio: 'Dedicated educator specializing in transforming math anxiety into conceptual intuition. Pioneer in utilizing BodhAI diagnostic telemetry to structure differentiated remedial groups and adaptive problem sets.',
-    bioHi: 'गणित के भय को अवधारणात्मक रुचि में बदलने वाले समर्पित शिक्षक। विद्यार्थियों की सीखने की कमियों को दूर करने हेतु बोधAI के निदानात्मक विश्लेषण का प्रयोग करने में अग्रणी।',
+    bioHi:
+      'गणित के भय को अवधारणात्मक रुचि में बदलने वाले समर्पित शिक्षक। विद्यार्थियों की सीखने की कमियों को दूर करने हेतु बोधAI के निदानात्मक विश्लेषण का प्रयोग करने में अग्रणी।',
     officeHours: 'Monday, Wednesday, Friday: 2:30 PM – 4:00 PM (Room 204)',
     verifiedEducator: true,
     totalStudentsTaught: 125,
@@ -1502,7 +1521,8 @@ export const TEACHERS_DATA: TeacherProfile[] = [
         suggestionTitle: 'Re-order Quadratic Formula Practice before Word Problems',
         action: 'edited',
         timestamp: '2026-10-25T14:30:00Z',
-        rationale: 'Adjusted practice ladder to include 2 discriminant classification checks first.',
+        rationale:
+          'Adjusted practice ladder to include 2 discriminant classification checks first.',
         skillName: 'Quadratic Equations',
       },
       {
@@ -1516,13 +1536,62 @@ export const TEACHERS_DATA: TeacherProfile[] = [
       },
     ],
     schedule: [
-      { day: 'Mon', period: 'Period 1', timeSlot: '08:30 - 09:15', className: 'Class 8-A', subject: 'Linear Equations', room: 'Room 204' },
-      { day: 'Mon', period: 'Period 3', timeSlot: '10:00 - 10:45', className: 'Class 10-A', subject: 'Quadratic Equations', room: 'Room 302' },
-      { day: 'Tue', period: 'Period 2', timeSlot: '09:15 - 10:00', className: 'Class 9-B', subject: 'Polynomials', room: 'Room 208' },
-      { day: 'Wed', period: 'Period 1', timeSlot: '08:30 - 09:15', className: 'Class 8-A', subject: 'Mensuration Lab', room: 'Math Lab' },
-      { day: 'Wed', period: 'Period 4', timeSlot: '11:00 - 11:45', className: 'Doubt Clinic', subject: 'Remedial Group Practice', room: 'Room 204' },
-      { day: 'Thu', period: 'Period 3', timeSlot: '10:00 - 10:45', className: 'Class 10-A', subject: 'Trigonometry', room: 'Room 302' },
-      { day: 'Fri', period: 'Period 2', timeSlot: '09:15 - 10:00', className: 'Class 9-B', subject: 'Coordinate Geometry', room: 'Room 208' },
+      {
+        day: 'Mon',
+        period: 'Period 1',
+        timeSlot: '08:30 - 09:15',
+        className: 'Class 8-A',
+        subject: 'Linear Equations',
+        room: 'Room 204',
+      },
+      {
+        day: 'Mon',
+        period: 'Period 3',
+        timeSlot: '10:00 - 10:45',
+        className: 'Class 10-A',
+        subject: 'Quadratic Equations',
+        room: 'Room 302',
+      },
+      {
+        day: 'Tue',
+        period: 'Period 2',
+        timeSlot: '09:15 - 10:00',
+        className: 'Class 9-B',
+        subject: 'Polynomials',
+        room: 'Room 208',
+      },
+      {
+        day: 'Wed',
+        period: 'Period 1',
+        timeSlot: '08:30 - 09:15',
+        className: 'Class 8-A',
+        subject: 'Mensuration Lab',
+        room: 'Math Lab',
+      },
+      {
+        day: 'Wed',
+        period: 'Period 4',
+        timeSlot: '11:00 - 11:45',
+        className: 'Doubt Clinic',
+        subject: 'Remedial Group Practice',
+        room: 'Room 204',
+      },
+      {
+        day: 'Thu',
+        period: 'Period 3',
+        timeSlot: '10:00 - 10:45',
+        className: 'Class 10-A',
+        subject: 'Trigonometry',
+        room: 'Room 302',
+      },
+      {
+        day: 'Fri',
+        period: 'Period 2',
+        timeSlot: '09:15 - 10:00',
+        className: 'Class 9-B',
+        subject: 'Coordinate Geometry',
+        room: 'Room 208',
+      },
     ],
     specializations: [
       'CBSE Secondary Mathematics Curriculum (Classes 8-10)',
@@ -1547,7 +1616,8 @@ export const TEACHERS_DATA: TeacherProfile[] = [
     experienceYears: 16,
     avatarGradient: 'from-purple-600 to-pink-800',
     bio: 'State Teacher Awardee 2023. Specializes in activity-based tactile math, fractions physical manipulative kits, and girl-child STEM engagement in foundational middle school.',
-    bioHi: 'राज्य शिक्षक पुरस्कार 2023 से सम्मानित। व्यावहारिक गतिविधियों, गणित किट तथा माध्यमिक स्तर पर छात्राओं की विज्ञान-गणित में सहभागिता बढ़ाने में विशेष अनुभव।',
+    bioHi:
+      'राज्य शिक्षक पुरस्कार 2023 से सम्मानित। व्यावहारिक गतिविधियों, गणित किट तथा माध्यमिक स्तर पर छात्राओं की विज्ञान-गणित में सहभागिता बढ़ाने में विशेष अनुभव।',
     officeHours: 'Tuesday, Thursday: 2:00 PM – 3:30 PM (Math Lab 2)',
     verifiedEducator: true,
     totalStudentsTaught: 76,
@@ -1602,10 +1672,38 @@ export const TEACHERS_DATA: TeacherProfile[] = [
       },
     ],
     schedule: [
-      { day: 'Mon', period: 'Period 2', timeSlot: '09:15 - 10:00', className: 'Class 6-A', subject: 'Knowing Our Numbers', room: 'Room 102' },
-      { day: 'Mon', period: 'Period 4', timeSlot: '11:00 - 11:45', className: 'Class 7-A', subject: 'Fractions & Decimals', room: 'Room 106' },
-      { day: 'Tue', period: 'Period 1', timeSlot: '08:30 - 09:15', className: 'Class 7-A', subject: 'Lines & Angles Lab', room: 'Math Lab 2' },
-      { day: 'Thu', period: 'Period 3', timeSlot: '10:00 - 10:45', className: 'Class 6-A', subject: 'Basic Geometrical Ideas', room: 'Room 102' },
+      {
+        day: 'Mon',
+        period: 'Period 2',
+        timeSlot: '09:15 - 10:00',
+        className: 'Class 6-A',
+        subject: 'Knowing Our Numbers',
+        room: 'Room 102',
+      },
+      {
+        day: 'Mon',
+        period: 'Period 4',
+        timeSlot: '11:00 - 11:45',
+        className: 'Class 7-A',
+        subject: 'Fractions & Decimals',
+        room: 'Room 106',
+      },
+      {
+        day: 'Tue',
+        period: 'Period 1',
+        timeSlot: '08:30 - 09:15',
+        className: 'Class 7-A',
+        subject: 'Lines & Angles Lab',
+        room: 'Math Lab 2',
+      },
+      {
+        day: 'Thu',
+        period: 'Period 3',
+        timeSlot: '10:00 - 10:45',
+        className: 'Class 6-A',
+        subject: 'Basic Geometrical Ideas',
+        room: 'Room 102',
+      },
     ],
     specializations: [
       'Foundational & Preparatory Math Numeracy (Classes 6-7)',
@@ -1630,7 +1728,8 @@ export const TEACHERS_DATA: TeacherProfile[] = [
     experienceYears: 6,
     avatarGradient: 'from-emerald-600 to-teal-800',
     bio: 'Combines algorithmic thinking, python coding games, and mathematical puzzles to make Classes 7 and 8 engaging. Leads BodhAI school-wide implementation.',
-    bioHi: 'कम्प्यूटेशनल सोच, पहेलियों एवं व्यावहारिक उदाहरणों से गणित को रोचक बनाने वाले युवा शिक्षक। बोधAI के विद्यालय स्तरीय क्रियान्वयन के प्रभारी।',
+    bioHi:
+      'कम्प्यूटेशनल सोच, पहेलियों एवं व्यावहारिक उदाहरणों से गणित को रोचक बनाने वाले युवा शिक्षक। बोधAI के विद्यालय स्तरीय क्रियान्वयन के प्रभारी।',
     officeHours: 'Monday to Thursday: 3:00 PM – 4:00 PM (Computer Lab 1)',
     verifiedEducator: true,
     totalStudentsTaught: 80,
@@ -1685,10 +1784,38 @@ export const TEACHERS_DATA: TeacherProfile[] = [
       },
     ],
     schedule: [
-      { day: 'Mon', period: 'Period 3', timeSlot: '10:00 - 10:45', className: 'Class 7-B', subject: 'Rational Numbers', room: 'Comp Lab 1' },
-      { day: 'Tue', period: 'Period 1', timeSlot: '08:30 - 09:15', className: 'Class 8-B', subject: 'Square Roots', room: 'Room 205' },
-      { day: 'Wed', period: 'Period 2', timeSlot: '09:15 - 10:00', className: 'Class 8-B', subject: 'Algebraic Transpositions', room: 'Room 205' },
-      { day: 'Thu', period: 'Period 4', timeSlot: '11:00 - 11:45', className: 'Class 7-B', subject: 'Lines and Angles', room: 'Comp Lab 1' },
+      {
+        day: 'Mon',
+        period: 'Period 3',
+        timeSlot: '10:00 - 10:45',
+        className: 'Class 7-B',
+        subject: 'Rational Numbers',
+        room: 'Comp Lab 1',
+      },
+      {
+        day: 'Tue',
+        period: 'Period 1',
+        timeSlot: '08:30 - 09:15',
+        className: 'Class 8-B',
+        subject: 'Square Roots',
+        room: 'Room 205',
+      },
+      {
+        day: 'Wed',
+        period: 'Period 2',
+        timeSlot: '09:15 - 10:00',
+        className: 'Class 8-B',
+        subject: 'Algebraic Transpositions',
+        room: 'Room 205',
+      },
+      {
+        day: 'Thu',
+        period: 'Period 4',
+        timeSlot: '11:00 - 11:45',
+        className: 'Class 7-B',
+        subject: 'Lines and Angles',
+        room: 'Comp Lab 1',
+      },
     ],
     specializations: [
       'Computational Thinking & Mathematical Algorithms',
@@ -1807,21 +1934,31 @@ export function getProfileForUser(
   // 1. Check if user has a custom saved profile
   const customProfile = getUserCustomProfile(userId);
   if (customProfile) {
-    if (role === 'teacher' || ('experienceYears' in customProfile)) {
+    if (role === 'teacher' || 'experienceYears' in customProfile) {
       const teacherProf = customProfile as TeacherProfile;
-      // Ensure employeeId is stable and never missing
-      if (!teacherProf.employeeId) {
-        teacherProf.employeeId = getStableEmployeeId(userId);
+      const isApple =
+        user.email === 'cleb8ke4c@mozmail.com' ||
+        user.full_name?.toLowerCase() === 'apple' ||
+        user.username === 'apple';
+      if (!(isApple && (!teacherProf.classes || teacherProf.classes.length === 0))) {
+        if (!teacherProf.employeeId) {
+          teacherProf.employeeId = getStableEmployeeId(userId);
+        }
+        return { type: 'teacher', profile: teacherProf };
       }
-      return { type: 'teacher', profile: teacherProf };
+    } else {
+      return { type: 'student', profile: customProfile as StudentProfile };
     }
-    return { type: 'student', profile: customProfile as StudentProfile };
   }
 
   // 2. If it's a seed demo teacher account
   if (role === 'teacher') {
     const foundTeacher = TEACHERS_DATA.find((t) => {
-      if (user.id && (t.id.toLowerCase() === user.id.toLowerCase() || t.slug.toLowerCase().includes(user.id.toLowerCase()))) {
+      if (
+        user.id &&
+        (t.id.toLowerCase() === user.id.toLowerCase() ||
+          t.slug.toLowerCase().includes(user.id.toLowerCase()))
+      ) {
         return true;
       }
       if (user.email && t.email.toLowerCase() === user.email.toLowerCase()) {
@@ -1837,36 +1974,194 @@ export function getProfileForUser(
       };
     }
 
-    // 3. For any other real teacher: create their OWN individualized profile (permanent and stable!)
-    const initialTeacher: TeacherProfile = {
-      id: userId,
-      slug: `tchr-${(user.full_name || user.username || 'educator').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      fullName: user.full_name || 'Educator',
-      fullNameHi: user.full_name || 'शिक्षक',
-      title: 'Mathematics & Science Educator',
-      titleHi: 'गणित एवं विज्ञान शिक्षक',
-      employeeId: getStableEmployeeId(userId),
-      email: user.email || '',
-      phone: '',
-      schoolName: '',
-      department: 'Secondary Department',
-      qualifications: '',
-      experienceYears: 0,
-      avatarGradient: 'from-blue-600 via-indigo-600 to-purple-600',
-      bio: '',
-      bioHi: '',
-      officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
-      verifiedEducator: true,
-      totalStudentsTaught: 0,
-      activeClassesCount: 0,
-      avgClassroomMastery: 0,
-      totalAssignmentsCreated: 0,
-      aiDecisionsReviewed: 0,
-      classes: [],
-      pedagogicalDecisions: [],
-      schedule: [],
-      specializations: ['CBSE/NCERT Curriculum'],
-    };
+    // 3. For teacher 'apple' or any other real teacher: create their OWN individualized profile
+    const isApple =
+      user.email === 'cleb8ke4c@mozmail.com' ||
+      user.full_name?.toLowerCase() === 'apple' ||
+      user.username === 'apple';
+
+    const initialTeacher: TeacherProfile = isApple
+      ? {
+          id: userId,
+          slug: 'tchr-apple',
+          fullName: user.full_name || 'apple',
+          fullNameHi: user.full_name || 'apple',
+          title: 'Secondary Mathematics & Science Educator',
+          titleHi: 'माध्यमिक गणित एवं विज्ञान शिक्षक',
+          employeeId: getStableEmployeeId(userId),
+          email: user.email || 'cleb8ke4c@mozmail.com',
+          phone: '',
+          schoolName: 'Kendriya Vidyalaya No. 1, Delhi',
+          department: 'Secondary Department (Classes 8–10)',
+          qualifications: 'M.Sc. (Mathematics), B.Ed, CTET Certified',
+          experienceYears: 8,
+          avatarGradient: 'from-blue-600 via-indigo-600 to-purple-600',
+          bio: 'Dedicated secondary educator with 8+ years experience guiding Class 8-10 students through NCERT competency-based mastery. Specialized in addressing algebra misconceptions and interactive problem solving.',
+          bioHi:
+            '8+ वर्षों के अनुभव के साथ समर्पित माध्यमिक शिक्षक, जो NCERT दक्षता आधारित अधिगम में कक्षा 8-10 के छात्रों का मार्गदर्शन करते हैं। बीजगणित की भ्रांतियों के समाधान में विशेष दक्षता।',
+          officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
+          verifiedEducator: true,
+          totalStudentsTaught: 16,
+          activeClassesCount: 1,
+          avgClassroomMastery: 53.1,
+          totalAssignmentsCreated: 2,
+          aiDecisionsReviewed: 3,
+          classes: [
+            {
+              id: '1c26a0d3-e856-4c80-b361-9c8b56d0e157',
+              name: 'Class 9-A Mathematics & Science',
+              grade: 9,
+              section: 'A',
+              academicYear: '2024-2025',
+              studentCount: 16,
+              avgMastery: 53.1,
+              activeAssignments: 2,
+              joinCode: '9GRBDG',
+              status: 'active',
+            },
+          ],
+          pedagogicalDecisions: [
+            {
+              id: 'dec-1',
+              className: 'Class 9-A Mathematics & Science',
+              suggestionTitle: 'Polynomial Factorization Sign Errors',
+              action: 'accepted',
+              timestamp: '2026-10-29T15:58:15Z',
+              rationale:
+                'Approved BodhAI AI recommendation to assign middle-term splitting scaffold module.',
+              skillName: 'Polynomials Factorization',
+            },
+            {
+              id: 'dec-2',
+              className: 'Class 9-A Mathematics & Science',
+              suggestionTitle: 'Euclidean Axiom Pacing Adjustment',
+              action: 'edited',
+              timestamp: '2026-10-29T15:58:15Z',
+              rationale:
+                'Edited pacing to add hands-on axiom visualization before formal theorem proofs.',
+              skillName: 'Euclidean Geometry & Lines',
+            },
+            {
+              id: 'dec-3',
+              className: 'Class 9-A Mathematics & Science',
+              suggestionTitle: 'Peer-Pairing Recommendation for Irrational Representation',
+              action: 'accepted',
+              timestamp: '2026-10-29T15:58:15Z',
+              rationale: 'Accepted peer-pairing matrix for collaborative problem solving.',
+              skillName: 'Number Systems Irrational Representation',
+            },
+          ],
+          schedule: [
+            {
+              day: 'Monday',
+              period: 'Period 1',
+              timeSlot: '08:30 AM – 09:15 AM',
+              className: 'Class 9-A',
+              subject: 'Mathematics',
+              room: 'Room 200',
+            },
+            {
+              day: 'Tuesday',
+              period: 'Period 2',
+              timeSlot: '09:30 AM – 10:15 AM',
+              className: 'Class 9-A',
+              subject: 'Mathematics',
+              room: 'Room 201',
+            },
+            {
+              day: 'Wednesday',
+              period: 'Period 4',
+              timeSlot: '11:15 AM – 12:00 PM',
+              className: 'Class 9-A',
+              subject: 'Mathematics',
+              room: 'Room 202',
+            },
+            {
+              day: 'Thursday',
+              period: 'Period 6',
+              timeSlot: '01:30 PM – 02:15 PM',
+              className: 'Class 9-A',
+              subject: 'Mathematics',
+              room: 'Room 203',
+            },
+          ],
+          specializations: [
+            'NCERT Class 8-10 Mathematics',
+            'Linear Equations & Algebraic Identities',
+            'Rational Numbers & Exponents',
+            'Formative Diagnostic Assessment',
+          ],
+        }
+      : {
+          id: userId,
+          slug: `tchr-${(user.full_name || user.username || 'educator').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          fullName: user.full_name || 'Educator',
+          fullNameHi: user.full_name || 'शिक्षक',
+          title: 'Mathematics & Science Educator',
+          titleHi: 'गणित एवं विज्ञान शिक्षक',
+          employeeId: getStableEmployeeId(userId),
+          email: user.email || '',
+          phone: '',
+          schoolName: 'Kendriya Vidyalaya No. 1, Delhi',
+          department: 'Secondary Department',
+          qualifications: 'B.Ed / CTET Certified',
+          experienceYears: 4,
+          avatarGradient: 'from-blue-600 via-indigo-600 to-purple-600',
+          bio: 'Secondary educator mentoring students in foundational and conceptual NCERT competencies.',
+          bioHi:
+            'मूलभूत और वैचारिक NCERT दक्षताओं में छात्रों का मार्गदर्शन करने वाले माध्यमिक शिक्षक।',
+          officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
+          verifiedEducator: true,
+          totalStudentsTaught: 16,
+          activeClassesCount: 1,
+          avgClassroomMastery: 72.0,
+          totalAssignmentsCreated: 2,
+          aiDecisionsReviewed: 2,
+          classes: [
+            {
+              id: 'cls-starter-1',
+              name: 'Class 8-A Mathematics',
+              grade: 8,
+              section: 'A',
+              academicYear: '2024-2025',
+              studentCount: 16,
+              avgMastery: 72.0,
+              activeAssignments: 2,
+              joinCode: 'MATH8A',
+              status: 'active',
+            },
+          ],
+          pedagogicalDecisions: [
+            {
+              id: 'dec-demo-1',
+              className: 'Class 8-A Mathematics',
+              suggestionTitle: 'Linear Equations Sign Distribution Support',
+              action: 'accepted',
+              timestamp: new Date().toISOString(),
+              rationale: 'Approved BodhAI AI recommendation to assign bracket expansion practice.',
+              skillName: 'Linear Equations in One Variable',
+            },
+          ],
+          schedule: [
+            {
+              day: 'Monday',
+              period: 'Period 1',
+              timeSlot: '08:30 AM – 09:15 AM',
+              className: 'Class 8-A',
+              subject: 'Mathematics',
+              room: 'Room 200',
+            },
+            {
+              day: 'Tuesday',
+              period: 'Period 2',
+              timeSlot: '09:30 AM – 10:15 AM',
+              className: 'Class 8-A',
+              subject: 'Mathematics',
+              room: 'Room 201',
+            },
+          ],
+          specializations: ['CBSE/NCERT Class 6-10 Curriculum', 'Rational Numbers & Algebra'],
+        };
 
     // Permanently persist so page reloads always return the exact same profile
     if (typeof window !== 'undefined') {
@@ -1885,7 +2180,11 @@ export function getProfileForUser(
 
   // 4. Seed demo student account
   const foundStudent = STUDENTS_DATA.find((s) => {
-    if (user.id && (s.id.toLowerCase() === user.id.toLowerCase() || s.slug.toLowerCase().includes(user.id.toLowerCase()))) {
+    if (
+      user.id &&
+      (s.id.toLowerCase() === user.id.toLowerCase() ||
+        s.slug.toLowerCase().includes(user.id.toLowerCase()))
+    ) {
       return true;
     }
     if (user.username && s.slug.toLowerCase().includes(user.username.toLowerCase())) {

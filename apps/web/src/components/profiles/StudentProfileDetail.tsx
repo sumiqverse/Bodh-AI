@@ -46,9 +46,13 @@ import {
 
 interface StudentProfileDetailProps {
   readonly profile: StudentProfile;
+  readonly onProfileUpdated?: (updated: StudentProfile) => void;
 }
 
-export function StudentProfileDetail({ profile }: StudentProfileDetailProps): React.JSX.Element {
+export function StudentProfileDetail({
+  profile,
+  onProfileUpdated: _onProfileUpdated,
+}: StudentProfileDetailProps): React.JSX.Element {
   const t = useTranslations('profiles');
   const locale = useLocale();
 
@@ -56,7 +60,9 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
   const [activeTab, setActiveTab] = React.useState<
     'mastery' | 'errors' | 'hints' | 'trend' | 'activity' | 'badges' | 'plan'
   >('mastery');
-  const [skillFilter, setSkillFilter] = React.useState<'all' | 'mastered' | 'partial' | 'not_learned'>('all');
+  const [skillFilter, setSkillFilter] = React.useState<
+    'all' | 'mastered' | 'partial' | 'not_learned'
+  >('all');
   const [copiedLink, setCopiedLink] = React.useState<boolean>(false);
   const [isExporting, setIsExporting] = React.useState<boolean>(false);
   const [exportNotice, setExportNotice] = React.useState<string | null>(null);
@@ -102,7 +108,11 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert(locale === 'hi' ? 'कृपया केवल इमेज (Image) फ़ाइल चुनें।' : 'Please select a valid image file.');
+      alert(
+        locale === 'hi'
+          ? 'कृपया केवल इमेज (Image) फ़ाइल चुनें।'
+          : 'Please select a valid image file.',
+      );
       return;
     }
 
@@ -213,7 +223,9 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
           <div className="space-y-1">
             <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              {locale === 'hi' ? 'अपनी विद्यार्थी प्रोफ़ाइल पूरी करें' : 'Complete Your Student Profile'}
+              {locale === 'hi'
+                ? 'अपनी विद्यार्थी प्रोफ़ाइल पूरी करें'
+                : 'Complete Your Student Profile'}
             </h4>
             <p className="text-xs text-muted-foreground">
               {locale === 'hi'
@@ -285,7 +297,10 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                 </div>
 
                 <p className="text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span>{profileData.schoolName || (locale === 'hi' ? 'विद्यालय जोड़ें' : 'School Not Set')}</span>
+                  <span>
+                    {profileData.schoolName ||
+                      (locale === 'hi' ? 'विद्यालय जोड़ें' : 'School Not Set')}
+                  </span>
                   {profileData.schoolUdise && (
                     <>
                       <span className="opacity-40">•</span>
@@ -308,7 +323,8 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                 <p className="text-xs sm:text-sm text-foreground/90 max-w-2xl pt-1">
                   {locale === 'hi'
                     ? profileData.bioHi || profileData.bio || 'कोई परिचय नहीं जोड़ा गया।'
-                    : profileData.bio || 'No bio added yet. Click "Edit Profile" to add your learning goals.'}
+                    : profileData.bio ||
+                      'No bio added yet. Click "Edit Profile" to add your learning goals.'}
                 </p>
               </div>
             </div>
@@ -371,9 +387,7 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
               <TrendingUp className="w-3.5 h-3.5 text-primary" />
               {t('masteryIndex')}
             </span>
-            <div className="text-2xl font-black text-foreground">
-              {profileData.overallMastery}%
-            </div>
+            <div className="text-2xl font-black text-foreground">{profileData.overallMastery}%</div>
             <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
               <div
                 className="bg-primary h-full rounded-full transition-all duration-500"
@@ -389,7 +403,8 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
               {t('streak')}
             </span>
             <div className="text-2xl font-black text-amber-500 flex items-center justify-center sm:justify-start gap-1">
-              {profileData.learningStreakDays} <span className="text-xs font-normal text-muted-foreground">days</span>
+              {profileData.learningStreakDays}{' '}
+              <span className="text-xs font-normal text-muted-foreground">days</span>
             </div>
             <span className="text-[10px] text-muted-foreground">Active practice</span>
           </div>
@@ -400,9 +415,7 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
               {t('accuracy')}
             </span>
-            <div className="text-2xl font-black text-foreground">
-              {profileData.accuracyRate}%
-            </div>
+            <div className="text-2xl font-black text-foreground">{profileData.accuracyRate}%</div>
             <span className="text-[10px] text-muted-foreground">First-try accuracy</span>
           </div>
 
@@ -425,7 +438,8 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
               {t('practiceHours')}
             </span>
             <div className="text-2xl font-black text-foreground">
-              {profileData.practiceHours} <span className="text-xs font-normal text-muted-foreground">hrs</span>
+              {profileData.practiceHours}{' '}
+              <span className="text-xs font-normal text-muted-foreground">hrs</span>
             </div>
             <span className="text-[10px] text-muted-foreground">Total platform time</span>
           </div>
@@ -587,7 +601,9 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                   <TableRow key={sk.skillId} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="py-3">
                       <div className="font-semibold text-xs text-foreground">{sk.skillName}</div>
-                      <div className="font-mono text-[10px] text-muted-foreground">{sk.skillCode}</div>
+                      <div className="font-mono text-[10px] text-muted-foreground">
+                        {sk.skillCode}
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">{sk.topicName}</span>
@@ -657,13 +673,17 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
               Individualized Cognitive Error Profile
             </h3>
             <p className="text-xs text-muted-foreground">
-              These misconceptions are unique to {profileData.fullName} based on recurring distractor patterns observed during recent diagnostic assessments.
+              These misconceptions are unique to {profileData.fullName} based on recurring
+              distractor patterns observed during recent diagnostic assessments.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(profileData.errorPatterns || []).map((err, idx) => (
-              <Card key={idx} className="border border-destructive/20 hover:border-destructive/40 transition-colors shadow-xs">
+              <Card
+                key={idx}
+                className="border border-destructive/20 hover:border-destructive/40 transition-colors shadow-xs"
+              >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <Badge variant="destructive" className="font-mono text-[11px]">
@@ -691,9 +711,7 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                     <span className="font-semibold text-muted-foreground block text-[11px]">
                       {t('misconceptionIdentified')}:
                     </span>
-                    <p className="text-foreground/90 mt-0.5 leading-relaxed">
-                      {err.misconception}
-                    </p>
+                    <p className="text-foreground/90 mt-0.5 leading-relaxed">{err.misconception}</p>
                   </div>
 
                   <div className="pt-2 border-t border-border/50">
@@ -701,9 +719,7 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                       <Lightbulb className="w-3.5 h-3.5" />
                       {t('recommendedRemedy')}:
                     </span>
-                    <p className="text-xs text-foreground/80 mt-0.5">
-                      {err.remedyAction}
-                    </p>
+                    <p className="text-xs text-foreground/80 mt-0.5">{err.remedyAction}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -725,28 +741,36 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
             <div className="space-y-2">
               <div className="h-6 w-full rounded-lg overflow-hidden flex bg-muted font-mono text-[10px] font-bold text-white">
                 <div
-                  style={{ width: `${((profileData.hintUsage?.independentAttemptsCount || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%` }}
+                  style={{
+                    width: `${((profileData.hintUsage?.independentAttemptsCount || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%`,
+                  }}
                   className="bg-emerald-600 flex items-center justify-center transition-all"
                   title="Independent Solutions"
                 >
                   {profileData.hintUsage?.independentAttemptsCount || 0}
                 </div>
                 <div
-                  style={{ width: `${((profileData.hintUsage?.hint1Count || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%` }}
+                  style={{
+                    width: `${((profileData.hintUsage?.hint1Count || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%`,
+                  }}
                   className="bg-blue-600 flex items-center justify-center transition-all"
                   title="Level 1 Hints"
                 >
                   {profileData.hintUsage?.hint1Count || 0}
                 </div>
                 <div
-                  style={{ width: `${((profileData.hintUsage?.hint2Count || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%` }}
+                  style={{
+                    width: `${((profileData.hintUsage?.hint2Count || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%`,
+                  }}
                   className="bg-amber-600 flex items-center justify-center transition-all"
                   title="Level 2 Hints"
                 >
                   {profileData.hintUsage?.hint2Count || 0}
                 </div>
                 <div
-                  style={{ width: `${((profileData.hintUsage?.hint3Count || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%` }}
+                  style={{
+                    width: `${((profileData.hintUsage?.hint3Count || 0) / Math.max(1, (profileData.hintUsage?.independentAttemptsCount || 0) + (profileData.hintUsage?.totalHintsRequested || 0))) * 100}%`,
+                  }}
                   className="bg-purple-600 flex items-center justify-center transition-all"
                   title="Level 3 Hints"
                 >
@@ -819,7 +843,10 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
 
             <div className="space-y-3">
               {(profileData.trend || []).map((pt, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/20">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/20"
+                >
                   <div className="flex items-center gap-3">
                     <span className="font-bold text-xs text-foreground w-16">{pt.date}</span>
                     <div className="w-32 sm:w-48 bg-muted rounded-full h-2 overflow-hidden">
@@ -870,9 +897,7 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                         {act.questionCode}
                       </span>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {act.topic}
-                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{act.topic}</TableCell>
                     <TableCell className="text-center">
                       <Badge
                         variant={act.isCorrect ? 'default' : 'destructive'}
@@ -899,7 +924,10 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
       {activeTab === 'badges' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(profileData.badges || []).map((bdg) => (
-            <Card key={bdg.id} className="border border-border/80 p-5 space-y-3 shadow-xs hover:shadow-md transition-shadow">
+            <Card
+              key={bdg.id}
+              className="border border-border/80 p-5 space-y-3 shadow-xs hover:shadow-md transition-shadow"
+            >
               <div className="flex items-center justify-between">
                 <div className="text-3xl">{bdg.icon}</div>
                 <Badge variant="outline" className={`text-[10px] ${bdg.color}`}>
@@ -931,13 +959,17 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
               Tailored Adaptive Practice Pathway
             </h3>
             <p className="text-xs text-muted-foreground">
-              Generated by BodhAI based on {profileData.fullName}&apos;s diagnostic signals, error patterns, and prerequisite graph.
+              Generated by BodhAI based on {profileData.fullName}&apos;s diagnostic signals, error
+              patterns, and prerequisite graph.
             </p>
           </div>
 
           <div className="space-y-3">
             {(profileData.recommendedSteps || []).map((stp, idx) => (
-              <Card key={stp.id} className="p-4 border border-border/80 hover:border-primary/40 transition-colors shadow-xs">
+              <Card
+                key={stp.id}
+                className="p-4 border border-border/80 hover:border-primary/40 transition-colors shadow-xs"
+              >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -946,21 +978,24 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
                       </span>
                       <h4 className="text-sm font-bold text-foreground">{stp.skillName}</h4>
                       <Badge
-                        variant={stp.type === 'remedial' ? 'destructive' : stp.type === 'mastery_gate' ? 'default' : 'outline'}
+                        variant={
+                          stp.type === 'remedial'
+                            ? 'destructive'
+                            : stp.type === 'mastery_gate'
+                              ? 'default'
+                              : 'outline'
+                        }
                         className="text-[10px]"
                       >
                         {stp.type.toUpperCase()}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground pl-8">
-                      {stp.reason}
-                    </p>
+                    <p className="text-xs text-muted-foreground pl-8">{stp.reason}</p>
                   </div>
 
                   <div className="flex items-center gap-3 pl-8 sm:pl-0">
                     <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
-                      <Clock className="w-3.5 h-3.5" />
-                      ~{stp.estimatedMinutes} mins
+                      <Clock className="w-3.5 h-3.5" />~{stp.estimatedMinutes} mins
                     </span>
                     <Link href={`/solve?skill=${stp.skillCode}`}>
                       <Button variant="primary" size="sm" className="text-xs font-bold gap-1">
@@ -1004,7 +1039,10 @@ export function StudentProfileDetail({ profile }: StudentProfileDetailProps): Re
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveProfile} className="p-6 space-y-4 overflow-y-auto flex-1 text-left">
+            <form
+              onSubmit={handleSaveProfile}
+              className="p-6 space-y-4 overflow-y-auto flex-1 text-left"
+            >
               {/* Photo Upload Section */}
               <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl border border-border/80 bg-muted/20">
                 <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-700 flex items-center justify-center text-white text-2xl font-black shadow-md overflow-hidden shrink-0 ring-2 ring-border">

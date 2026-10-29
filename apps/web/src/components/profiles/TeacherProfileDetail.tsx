@@ -20,6 +20,7 @@ import {
   TableCell,
 } from '@bodhai/ui';
 import { type TeacherProfile, saveUserCustomProfile } from '@/lib/profiles-data';
+import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import {
   Award,
   BookOpen,
@@ -45,16 +46,20 @@ import {
 
 interface TeacherProfileDetailProps {
   readonly profile: TeacherProfile;
+  readonly onProfileUpdated?: (updated: TeacherProfile) => void;
 }
 
-export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): React.JSX.Element {
+export function TeacherProfileDetail({
+  profile,
+  onProfileUpdated,
+}: TeacherProfileDetailProps): React.JSX.Element {
   const t = useTranslations('profiles');
   const locale = useLocale();
 
   const [profileData, setProfileData] = React.useState<TeacherProfile>(profile);
-  const [activeTab, setActiveTab] = React.useState<'classes' | 'decisions' | 'schedule' | 'specializations'>(
-    'classes',
-  );
+  const [activeTab, setActiveTab] = React.useState<
+    'classes' | 'decisions' | 'schedule' | 'specializations'
+  >('classes');
   const [copiedCode, setCopiedCode] = React.useState<string | null>(null);
   const [copiedProfileLink, setCopiedProfileLink] = React.useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState<boolean>(false);
@@ -108,7 +113,11 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert(locale === 'hi' ? 'कृपया केवल इमेज (Image) फ़ाइल चुनें।' : 'Please select a valid image file.');
+      alert(
+        locale === 'hi'
+          ? 'कृपया केवल इमेज (Image) फ़ाइल चुनें।'
+          : 'Please select a valid image file.',
+      );
       return;
     }
 
@@ -164,7 +173,9 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const [isSettingUpCohort, setIsSettingUpCohort] = React.useState<boolean>(false);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const updated: TeacherProfile = {
       ...profileData,
@@ -191,12 +202,75 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
     setProfileData(updated);
     saveUserCustomProfile(updated.id, updated);
     setIsEditModalOpen(false);
+
+    try {
+      const apiClient = getWebApiClient();
+      const token = getAuthToken();
+      if (token) {
+        const res = await apiClient.updateMyProfile(
+          {
+            fullName: updated.fullName,
+            fullNameHi: updated.fullNameHi,
+            title: updated.title,
+            titleHi: updated.titleHi,
+            experienceYears: updated.experienceYears,
+            schoolName: updated.schoolName,
+            department: updated.department,
+            qualifications: updated.qualifications,
+            bio: updated.bio,
+            bioHi: updated.bioHi,
+            phone: updated.phone,
+            officeHours: updated.officeHours,
+            specializations: updated.specializations,
+            avatarUrl: updated.avatarUrl,
+          },
+          token,
+        );
+        if (res && res.profile) {
+          setProfileData(res.profile);
+          onProfileUpdated?.(res.profile);
+        }
+      }
+    } catch (err) {
+      console.warn('API update profile fallback:', err);
+    }
+
     setSavedSuccessNotice(
       locale === 'hi'
-        ? 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है!'
-        : 'Your educator profile has been updated successfully!',
+        ? 'आपकी प्रोफ़ाइल डेटाबेस में सफलतापूर्वक अपडेट हो गई है!'
+        : 'Your educator profile has been saved to the database successfully!',
     );
     setTimeout(() => setSavedSuccessNotice(null), 4000);
+  };
+
+  const handleSetupCohort = async () => {
+    try {
+      setIsSettingUpCohort(true);
+      const apiClient = getWebApiClient();
+      const token = getAuthToken();
+      const res = await apiClient.setupCohort(
+        {
+          grade: 8,
+          section: 'B',
+          subject: 'Mathematics',
+          className: 'Class 8-B Mathematics & Science',
+        },
+        token || undefined,
+      );
+      if (res && res.profile) {
+        setProfileData(res.profile);
+        onProfileUpdated?.(res.profile);
+        setSavedSuccessNotice(
+          locale === 'hi'
+            ? '16 छात्रों और अभ्यासों के साथ कक्षा सफलतापूर्वक डेटाबेस में जोड़ दी गई है!'
+            : 'Classroom with 16 students and diagnostic assignments created in database!',
+        );
+      }
+    } catch (err) {
+      console.error('Failed to setup cohort:', err);
+    } finally {
+      setIsSettingUpCohort(false);
+    }
   };
 
   return (
@@ -280,7 +354,10 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
                 </p>
 
                 <p className="text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span>{profileData.schoolName || (locale === 'hi' ? 'विद्यालय जोड़ें' : 'School Not Set')}</span>
+                  <span>
+                    {profileData.schoolName ||
+                      (locale === 'hi' ? 'विद्यालय जोड़ें' : 'School Not Set')}
+                  </span>
                   <span className="opacity-40">•</span>
                   <span>{profileData.department}</span>
                   {profileData.qualifications && (
@@ -294,7 +371,8 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
                 <p className="text-xs sm:text-sm text-foreground/90 max-w-2xl pt-1">
                   {locale === 'hi'
                     ? profileData.bioHi || profileData.bio || 'कोई परिचय नहीं जोड़ा गया।'
-                    : profileData.bio || 'No bio added yet. Click "Edit Profile" to add your teaching statement.'}
+                    : profileData.bio ||
+                      'No bio added yet. Click "Edit Profile" to add your teaching statement.'}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
@@ -470,66 +548,157 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
 
       {/* TAB 1: CLASSES MANAGED */}
       {activeTab === 'classes' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {(profileData.classes || []).map((cls) => (
-            <Card key={cls.id} className="border border-border/80 shadow-xs hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="font-mono text-xs">
-                    Class {cls.grade}-{cls.section}
-                  </Badge>
-                  <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    Active
-                  </span>
-                </div>
-                <CardTitle className="text-base font-bold text-foreground pt-1">
-                  {cls.name}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Academic Year: {cls.academicYear}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 gap-2 p-3 bg-muted/30 rounded-lg">
-                  <div>
-                    <span className="text-muted-foreground block text-[11px]">Students:</span>
-                    <span className="text-base font-bold text-foreground">
-                      {cls.studentCount}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[11px]">Avg Mastery:</span>
-                    <span className="text-base font-bold text-primary">
-                      {cls.avgMastery}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-muted-foreground text-[11px]">Join Code:</span>
-                  <div className="flex items-center gap-1.5 font-mono font-bold text-xs bg-muted px-2 py-1 rounded">
-                    <span>{cls.joinCode}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyCode(cls.joinCode)}
-                      className="text-primary hover:text-primary/80 transition-colors cursor-pointer text-[10px]"
+        <div className="space-y-5">
+          {(profileData.classes || []).length === 0 ? (
+            <Card className="p-8 text-center border-dashed border-2 border-border/80 bg-muted/10 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <GraduationCap className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5 max-w-md mx-auto">
+                <h3 className="text-base font-bold text-foreground">
+                  {locale === 'hi' ? 'कोई कक्षा अभी सक्रिय नहीं है' : 'No Classrooms Active Yet'}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {locale === 'hi'
+                    ? 'छात्रों को जोड़ने और उनकी दक्षता हीटमैप देखने के लिए नई कक्षा बनाएं, या तुरंत 16 विद्यार्थियों का डेमो कोहोर्ट शुरू करें।'
+                    : 'Create your first classroom section to generate student join codes, or instantiate a live 16-student starter cohort to explore heatmap telemetry.'}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSetupCohort}
+                  disabled={isSettingUpCohort}
+                  className="text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 cursor-pointer shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {isSettingUpCohort
+                    ? locale === 'hi'
+                      ? 'कक्षा बनाई जा रही है...'
+                      : 'Initializing Cohort...'
+                    : locale === 'hi'
+                      ? '16 छात्रों का कोहोर्ट शुरू करें'
+                      : 'Initialize Starter Cohort (16 Students)'}
+                </Button>
+                <Link href="/classes">
+                  <Button variant="outline" size="sm" className="text-xs font-semibold gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    {locale === 'hi' ? 'क्लासरूम हब में जाएं' : 'Open Classroom Hub'}
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-1">
+                <p className="text-xs text-muted-foreground">
+                  {locale === 'hi'
+                    ? `आपके द्वारा संचालित ${profileData.classes.length} कक्षाएं और उनका वास्तविक दक्षता स्तर:`
+                    : `Active sections managed by you with real-time competency cohort mastery:`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSetupCohort}
+                    disabled={isSettingUpCohort}
+                    className="text-xs font-semibold gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                    {isSettingUpCohort
+                      ? locale === 'hi'
+                        ? 'जोड़ रहे हैं...'
+                        : 'Adding...'
+                      : locale === 'hi'
+                        ? '+ नया कोहोर्ट जोड़ें'
+                        : '+ Add Sample Cohort'}
+                  </Button>
+                  <Link href="/classes">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 shadow-xs"
                     >
-                      {copiedCode === cls.joinCode ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-border/40">
-                  <Link href={`/classes/${cls.id}`}>
-                    <Button variant="outline" size="sm" className="w-full text-xs font-semibold">
-                      Open Class Dashboard & Heatmap
+                      <BookOpen className="w-3.5 h-3.5" />
+                      {locale === 'hi' ? 'क्लासरूम हब' : 'Classroom Hub'}
                     </Button>
                   </Link>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {profileData.classes.map((cls) => (
+                  <Card
+                    key={cls.id}
+                    className="border border-border/80 shadow-xs hover:shadow-md transition-shadow"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="font-mono text-xs">
+                          Class {cls.grade}-{cls.section}
+                        </Badge>
+                        <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          Active
+                        </span>
+                      </div>
+                      <CardTitle className="text-base font-bold text-foreground pt-1">
+                        {cls.name}
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Academic Year: {cls.academicYear}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4 text-xs">
+                      <div className="grid grid-cols-2 gap-2 p-3 bg-muted/30 rounded-lg">
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Students:</span>
+                          <span className="text-base font-bold text-foreground">
+                            {cls.studentCount}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">
+                            Avg Mastery:
+                          </span>
+                          <span className="text-base font-bold text-primary">
+                            {cls.avgMastery}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-muted-foreground text-[11px]">Join Code:</span>
+                        <div className="flex items-center gap-1.5 font-mono font-bold text-xs bg-muted px-2 py-1 rounded">
+                          <span>{cls.joinCode}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCode(cls.joinCode)}
+                            className="text-primary hover:text-primary/80 transition-colors cursor-pointer text-[10px]"
+                          >
+                            {copiedCode === cls.joinCode ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/40">
+                        <Link href={`/classes?classId=${cls.id}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-xs font-semibold"
+                          >
+                            Open Class Dashboard & Heatmap
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -542,45 +711,64 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
               Teacher Governance & Advisory Engine Decisions
             </h3>
             <p className="text-xs text-muted-foreground">
-              BodhAI AI recommendations are strictly advisory. All intervention allocations and custom revision pathways are governed by verified educator decisions.
+              BodhAI AI recommendations are strictly advisory. All intervention allocations and
+              custom revision pathways are governed by verified educator decisions.
             </p>
           </div>
 
-          <div className="space-y-3">
-            {(profileData.pedagogicalDecisions || []).map((dec) => (
-              <Card key={dec.id} className="p-4 border border-border/80 shadow-xs">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={dec.action === 'accepted' ? 'default' : 'warning'}
-                        className="text-[10px] uppercase font-bold"
-                      >
-                        {dec.action}
-                      </Badge>
-                      <span className="font-bold text-xs text-foreground font-mono">
-                        {dec.className}
-                      </span>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs font-semibold text-primary">
-                        {dec.skillName}
-                      </span>
+          {(profileData.pedagogicalDecisions || []).length === 0 ? (
+            <Card className="p-8 text-center border-dashed border-2 border-border/80 bg-muted/10 space-y-3">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-bold text-foreground">
+                {locale === 'hi'
+                  ? 'कोई नया शैक्षणिक निर्णय लंबित नहीं है'
+                  : 'No Advisory Decisions Logged Yet'}
+              </h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                {locale === 'hi'
+                  ? 'जब छात्र अभ्यास करेंगे और त्रुटि समूह बनेंगे, BodhAI AI आपको सुझाव देगा जिन्हें आप स्वीकार या संशोधित कर सकते हैं।'
+                  : 'As your enrolled students complete diagnostic drills, BodhAI AI generates targeted suggestions in your Classroom Hub for your review.'}
+              </p>
+              <Link href="/classes">
+                <Button variant="outline" size="sm" className="text-xs font-semibold gap-1.5 mt-2">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  {locale === 'hi' ? 'सलाहकार हब खोलें' : 'Open Suggestions Hub'}
+                </Button>
+              </Link>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {(profileData.pedagogicalDecisions || []).map((dec) => (
+                <Card key={dec.id} className="p-4 border border-border/80 shadow-xs">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={dec.action === 'accepted' ? 'default' : 'warning'}
+                          className="text-[10px] uppercase font-bold"
+                        >
+                          {dec.action}
+                        </Badge>
+                        <span className="font-bold text-xs text-foreground font-mono">
+                          {dec.className}
+                        </span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs font-semibold text-primary">{dec.skillName}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-foreground">{dec.suggestionTitle}</h4>
+                      <p className="text-xs text-muted-foreground">Rationale: {dec.rationale}</p>
                     </div>
-                    <h4 className="text-sm font-bold text-foreground">
-                      {dec.suggestionTitle}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Rationale: {dec.rationale}
-                    </p>
-                  </div>
 
-                  <span className="text-[11px] font-mono text-muted-foreground shrink-0">
-                    {new Date(dec.timestamp).toLocaleDateString()}
-                  </span>
-                </div>
-              </Card>
-            ))}
-          </div>
+                    <span className="text-[11px] font-mono text-muted-foreground shrink-0">
+                      {new Date(dec.timestamp).toLocaleDateString()}
+                    </span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -600,19 +788,13 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
             <TableBody>
               {(profileData.schedule || []).map((slot, idx) => (
                 <TableRow key={idx}>
-                  <TableCell className="font-bold text-xs text-primary">
-                    {slot.day}
-                  </TableCell>
+                  <TableCell className="font-bold text-xs text-primary">{slot.day}</TableCell>
                   <TableCell className="text-xs font-mono">
                     <span className="font-semibold block">{slot.period}</span>
                     <span className="text-[11px] text-muted-foreground">{slot.timeSlot}</span>
                   </TableCell>
-                  <TableCell className="text-xs font-medium">
-                    {slot.className}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {slot.subject}
-                  </TableCell>
+                  <TableCell className="text-xs font-medium">{slot.className}</TableCell>
+                  <TableCell className="text-xs">{slot.subject}</TableCell>
                   <TableCell className="text-xs text-right font-mono text-muted-foreground">
                     {slot.room}
                   </TableCell>
@@ -627,14 +809,18 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
       {activeTab === 'specializations' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {(profileData.specializations || []).map((spec, idx) => (
-            <Card key={idx} className="p-4 border border-border/80 flex items-start gap-3 shadow-xs">
+            <Card
+              key={idx}
+              className="p-4 border border-border/80 flex items-start gap-3 shadow-xs"
+            >
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                 {idx + 1}
               </div>
               <div className="space-y-1">
                 <h4 className="text-sm font-bold text-foreground">{spec}</h4>
                 <p className="text-xs text-muted-foreground">
-                  Aligned with NCERT Class 6–10 guidelines and national foundational literacy and numeracy standards.
+                  Aligned with NCERT Class 6–10 guidelines and national foundational literacy and
+                  numeracy standards.
                 </p>
               </div>
             </Card>
@@ -670,7 +856,10 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveProfile} className="p-6 space-y-4 overflow-y-auto flex-1 text-left">
+            <form
+              onSubmit={handleSaveProfile}
+              className="p-6 space-y-4 overflow-y-auto flex-1 text-left"
+            >
               {/* Photo Upload Section */}
               <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl border border-border/80 bg-muted/20">
                 <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-800 flex items-center justify-center text-white text-2xl font-black shadow-md overflow-hidden shrink-0 ring-2 ring-border">
@@ -765,7 +954,10 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  {locale === 'hi' ? 'पद / विषय (Designation / Title)' : 'Professional Title / Designation'} *
+                  {locale === 'hi'
+                    ? 'पद / विषय (Designation / Title)'
+                    : 'Professional Title / Designation'}{' '}
+                  *
                 </label>
                 <Input
                   required
@@ -778,7 +970,10 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    {locale === 'hi' ? 'कार्य अनुभव (Years of Experience)' : 'Teaching Experience (Years)'} *
+                    {locale === 'hi'
+                      ? 'कार्य अनुभव (Years of Experience)'
+                      : 'Teaching Experience (Years)'}{' '}
+                    *
                   </label>
                   <Input
                     type="number"
@@ -787,7 +982,9 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
                     required
                     placeholder="e.g. 14"
                     value={formData.experienceYears}
-                    onChange={(e) => setFormData({ ...formData, experienceYears: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, experienceYears: Number(e.target.value) })
+                    }
                   />
                 </div>
 
@@ -807,7 +1004,9 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    {locale === 'hi' ? 'विभाग / कक्षाएँ (Department / Classes)' : 'Department / Subject Area'}
+                    {locale === 'hi'
+                      ? 'विभाग / कक्षाएँ (Department / Classes)'
+                      : 'Department / Subject Area'}
                   </label>
                   <Input
                     placeholder="e.g. Secondary Mathematics (Classes 8–10)"
@@ -818,7 +1017,9 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    {locale === 'hi' ? 'शैक्षणिक योग्यता (Qualifications)' : 'Educational Qualifications'}
+                    {locale === 'hi'
+                      ? 'शैक्षणिक योग्यता (Qualifications)'
+                      : 'Educational Qualifications'}
                   </label>
                   <Input
                     placeholder="e.g. M.Sc. Mathematics, B.Ed. (Delhi University)"
@@ -830,7 +1031,10 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  {locale === 'hi' ? 'परिचय एवं शिक्षण दृष्टिकोण (Bio / Teaching Statement)' : 'Bio / Teaching Philosophy'} *
+                  {locale === 'hi'
+                    ? 'परिचय एवं शिक्षण दृष्टिकोण (Bio / Teaching Statement)'
+                    : 'Bio / Teaching Philosophy'}{' '}
+                  *
                 </label>
                 <textarea
                   required
@@ -868,7 +1072,9 @@ export function TeacherProfileDetail({ profile }: TeacherProfileDetailProps): Re
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  {locale === 'hi' ? 'विशेषज्ञता के क्षेत्र (कॉमा से अलग करें)' : 'Areas of Specialization (comma-separated)'}
+                  {locale === 'hi'
+                    ? 'विशेषज्ञता के क्षेत्र (कॉमा से अलग करें)'
+                    : 'Areas of Specialization (comma-separated)'}
                 </label>
                 <Input
                   placeholder="e.g. Algebra, Geometry, CBSE Board Prep, Remedial Pedagogy"

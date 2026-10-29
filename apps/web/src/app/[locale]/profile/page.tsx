@@ -4,36 +4,63 @@ import * as React from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button, Badge } from '@bodhai/ui';
-import { getCurrentUser } from '@/lib/api-client';
+import { getCurrentUser, getWebApiClient, getAuthToken } from '@/lib/api-client';
 import {
   getProfileForUser,
   DEMO_ACCOUNTS,
   loginAsDemoUser,
   type DemoAccount,
+  type TeacherProfile,
+  type StudentProfile,
 } from '@/lib/profiles-data';
 import { StudentProfileDetail } from '@/components/profiles/StudentProfileDetail';
 import { TeacherProfileDetail } from '@/components/profiles/TeacherProfileDetail';
-import {
-  Lock,
-  ShieldCheck,
-  GraduationCap,
-  Users,
-  Sparkles,
-  ArrowRight,
-} from 'lucide-react';
+import { Lock, ShieldCheck, GraduationCap, Users, Sparkles, ArrowRight } from 'lucide-react';
 
 export default function MyProfilePage(): React.JSX.Element {
   const locale = useLocale();
+  const apiClient = getWebApiClient();
 
   const [mounted, setMounted] = React.useState<boolean>(false);
   const [currentUser, setCurrentUser] = React.useState<ReturnType<typeof getCurrentUser>>(null);
+  const [liveProfileResult, setLiveProfileResult] = React.useState<
+    | { type: 'teacher'; profile: TeacherProfile }
+    | { type: 'student'; profile: StudentProfile }
+    | null
+  >(null);
+  const [_loadingLive, setLoadingLive] = React.useState<boolean>(false);
+
+  const fetchLiveProfile = React.useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) return;
+    try {
+      setLoadingLive(true);
+      const res = await apiClient.getMyProfile(token);
+      if (res && res.profile) {
+        setLiveProfileResult(res);
+      }
+    } catch (err) {
+      // Fallback cleanly to local profile
+      console.warn('Live profile fetch error:', err);
+    } finally {
+      setLoadingLive(false);
+    }
+  }, [apiClient]);
 
   React.useEffect(() => {
     setMounted(true);
-    setCurrentUser(getCurrentUser());
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    if (user) {
+      fetchLiveProfile();
+    }
 
     const handleStorageChange = () => {
-      setCurrentUser(getCurrentUser());
+      const u = getCurrentUser();
+      setCurrentUser(u);
+      if (u) {
+        fetchLiveProfile();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -43,11 +70,15 @@ export default function MyProfilePage(): React.JSX.Element {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('bodhai_auth_change', handleStorageChange);
     };
-  }, []);
+  }, [fetchLiveProfile]);
 
   const handleSelectDemoPersona = (demoAccount: DemoAccount) => {
     loginAsDemoUser(demoAccount.id);
-    setCurrentUser(getCurrentUser());
+    const u = getCurrentUser();
+    setCurrentUser(u);
+    if (u) {
+      fetchLiveProfile();
+    }
   };
 
   // Prevent hydration mismatches
@@ -61,13 +92,17 @@ export default function MyProfilePage(): React.JSX.Element {
 
   // 1. Authenticated: Render user's dedicated, individualized profile
   if (currentUser) {
-    const profileResult = getProfileForUser(currentUser);
+    // Prefer live profile from PostgreSQL, fallback to local profile generator
+    const profileResult = liveProfileResult || getProfileForUser(currentUser);
     if (profileResult) {
       if (profileResult.type === 'teacher') {
         return (
           <TeacherProfileDetail
             key={`teacher-${profileResult.profile.id}`}
             profile={profileResult.profile}
+            onProfileUpdated={(updated) => {
+              setLiveProfileResult({ type: 'teacher', profile: updated });
+            }}
           />
         );
       }
@@ -75,6 +110,9 @@ export default function MyProfilePage(): React.JSX.Element {
         <StudentProfileDetail
           key={`student-${profileResult.profile.id}`}
           profile={profileResult.profile}
+          onProfileUpdated={(updated) => {
+            setLiveProfileResult({ type: 'student', profile: updated });
+          }}
         />
       );
     }
@@ -87,11 +125,17 @@ export default function MyProfilePage(): React.JSX.Element {
       <div className="text-center space-y-4 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           <ShieldCheck className="w-4 h-4" />
-          <span>{locale === 'hi' ? 'DPDP 2023 अनुपालित निजी प्रोफ़ाइल' : 'DPDP Act 2023 Compliant Private Telemetry'}</span>
+          <span>
+            {locale === 'hi'
+              ? 'DPDP 2023 अनुपालित निजी प्रोफ़ाइल'
+              : 'DPDP Act 2023 Compliant Private Telemetry'}
+          </span>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-          {locale === 'hi' ? 'आपकी व्यक्तिगत अधिगम प्रोफ़ाइल' : 'Your Private Learning & Educator Profile'}
+          {locale === 'hi'
+            ? 'आपकी व्यक्तिगत अधिगम प्रोफ़ाइल'
+            : 'Your Private Learning & Educator Profile'}
         </h1>
 
         <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
@@ -117,7 +161,9 @@ export default function MyProfilePage(): React.JSX.Element {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
               <h2 className="text-base sm:text-lg font-bold text-foreground">
-                {locale === 'hi' ? 'त्वरित डेमो परीक्षण (1-क्लिक लॉगिन)' : 'Quick Demo Sign-In (Test Individual Telemetry)'}
+                {locale === 'hi'
+                  ? 'त्वरित डेमो परीक्षण (1-क्लिक लॉगिन)'
+                  : 'Quick Demo Sign-In (Test Individual Telemetry)'}
               </h2>
             </div>
             <p className="text-xs text-muted-foreground">

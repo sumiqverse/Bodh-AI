@@ -25,7 +25,13 @@ import {
   TableHead,
   TableCell,
 } from '@bodhai/ui';
-import { getWebApiClient, getAuthToken, getCurrentUser, clearAuthSession, setAuthSession } from '@/lib/api-client';
+import {
+  getWebApiClient,
+  getAuthToken,
+  getCurrentUser,
+  clearAuthSession,
+  setAuthSession,
+} from '@/lib/api-client';
 import type {
   ClassResponse,
   ClassHeatmapResponse,
@@ -124,25 +130,25 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           ]);
 
         // Prioritize real database responses
-        if (heatmapRes.status === 'fulfilled' && heatmapRes.value.students && heatmapRes.value.students.length > 0) {
+        if (heatmapRes.status === 'fulfilled' && heatmapRes.value) {
           setHeatmap(heatmapRes.value);
         } else {
           setHeatmap(getMockHeatmap(classId));
         }
 
-        if (clusterRes.status === 'fulfilled' && clusterRes.value.clusters && clusterRes.value.clusters.length > 0) {
+        if (clusterRes.status === 'fulfilled' && clusterRes.value) {
           setClusters(clusterRes.value);
         } else {
           setClusters(getMockGapClusters(classId));
         }
 
-        if (warningRes.status === 'fulfilled' && warningRes.value.warnings) {
+        if (warningRes.status === 'fulfilled' && warningRes.value) {
           setWarnings(warningRes.value);
         } else {
           setWarnings(getMockEarlyWarnings(classId, warningDays));
         }
 
-        if (suggRes.status === 'fulfilled' && suggRes.value.suggestions) {
+        if (suggRes.status === 'fulfilled' && suggRes.value) {
           setSuggestions(suggRes.value);
         } else {
           setSuggestions(getMockSuggestions(classId));
@@ -196,11 +202,16 @@ export default function TeacherDashboardPage(): React.JSX.Element {
       try {
         setIsLoading(true);
         const data = await apiClient.listClasses(activeToken);
-        const firstClass = data[0];
-        if (firstClass) {
+        if (data && data.length > 0) {
+          const params =
+            typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const targetId = params?.get('classId');
+          const matchedClass = targetId ? data.find((c) => c.id === targetId) : null;
+          const chosen = matchedClass ?? data[0]!;
+
           setClassesList(data);
-          setSelectedClassId(firstClass.id);
-          void loadActiveTelemetry(firstClass.id, activeToken);
+          setSelectedClassId(chosen.id);
+          void loadActiveTelemetry(chosen.id, activeToken);
         } else {
           // Provide default demo classrooms so the teacher dashboard is never blank
           const fallbackClasses: ClassResponse[] = [
@@ -222,12 +233,20 @@ export default function TeacherDashboardPage(): React.JSX.Element {
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to load classes';
-        if (msg.includes('401') || msg.toLowerCase().includes('expired') || msg.includes('authenticate')) {
+        if (
+          msg.includes('401') ||
+          msg.toLowerCase().includes('expired') ||
+          msg.includes('authenticate')
+        ) {
           clearAuthSession();
           router.push('/login?expired=true');
           return;
         }
-        if (msg.includes('403') || msg.includes('not authorized') || msg.includes("Role 'student'")) {
+        if (
+          msg.includes('403') ||
+          msg.includes('not authorized') ||
+          msg.includes("Role 'student'")
+        ) {
           router.replace('/student');
           return;
         }
@@ -285,17 +304,29 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
   // Dynamic simulation of student progress
   const handleSimulateStudentActivity = () => {
-    setSimulationToast('Simulating live student diagnostic attempts and updating Bayesian mastery...');
+    setSimulationToast(
+      'Simulating live student diagnostic attempts and updating Bayesian mastery...',
+    );
     setTimeout(() => {
       setHeatmap((prev) => {
         if (!prev) return null;
         // Shift a few cells from partial to mastered or not_learned to partial
         const updatedMatrix = prev.matrix.map((cell, idx) => {
           if (idx % 7 === 0 && cell.state === 'partial') {
-            return { ...cell, state: 'mastered', p_mastery: 0.88, attempts_count: cell.attempts_count + 1 };
+            return {
+              ...cell,
+              state: 'mastered',
+              p_mastery: 0.88,
+              attempts_count: cell.attempts_count + 1,
+            };
           }
           if (idx % 5 === 0 && cell.state === 'not_learned') {
-            return { ...cell, state: 'partial', p_mastery: 0.52, attempts_count: cell.attempts_count + 1 };
+            return {
+              ...cell,
+              state: 'partial',
+              p_mastery: 0.52,
+              attempts_count: cell.attempts_count + 1,
+            };
           }
           return cell;
         });
@@ -322,8 +353,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     setErrorMessage(null);
     setIsCreating(true);
 
-    const finalClassName =
-      className.trim() || `Class ${grade}-${section.trim() || 'A'} ${subject}`;
+    const finalClassName = className.trim() || `Class ${grade}-${section.trim() || 'A'} ${subject}`;
     const codePrefix = subject.slice(0, 4).toUpperCase();
 
     const newMockClass: ClassResponse = {
@@ -429,7 +459,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     });
 
     const token = getAuthToken();
-    if (!token || token.startsWith('mock_token_') || selectedClassId.startsWith('cls-mock-')) return;
+    if (!token || token.startsWith('mock_token_') || selectedClassId.startsWith('cls-mock-'))
+      return;
 
     try {
       await apiClient.recordTeacherDecision(
@@ -471,7 +502,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     setAssignments((prev) => [newAsgn, ...prev]);
 
     const token = getAuthToken();
-    if (!token || token.startsWith('mock_token_') || selectedClassId.startsWith('cls-mock-')) return;
+    if (!token || token.startsWith('mock_token_') || selectedClassId.startsWith('cls-mock-'))
+      return;
 
     try {
       await apiClient.createAssignment(selectedClassId, data, token);
@@ -534,7 +566,10 @@ export default function TeacherDashboardPage(): React.JSX.Element {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+            <Badge
+              variant="outline"
+              className="text-xs bg-primary/10 text-primary border-primary/30"
+            >
               Teacher Dashboard
             </Badge>
             <Badge variant="outline" className="text-xs text-muted-foreground">
@@ -545,7 +580,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
             {activeClass?.name || t('title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Academic Year: {activeClass?.academic_year || '2024-2025'} • Grade {activeClass?.grade} Section {activeClass?.section || 'A'}
+            Academic Year: {activeClass?.academic_year || '2024-2025'} • Grade {activeClass?.grade}{' '}
+            Section {activeClass?.section || 'A'}
           </p>
         </div>
 
@@ -590,7 +626,11 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                   onClick={handleCopyCode}
                   className="h-6 text-[10px] px-2 cursor-pointer"
                 >
-                  {codeCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {codeCopied ? (
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
                 </Button>
                 <Button
                   type="button"
@@ -600,7 +640,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                   disabled={rotatingId === activeClass.id}
                   className="h-6 text-[10px] px-2 text-muted-foreground cursor-pointer"
                 >
-                  <RefreshCw className={`w-3 h-3 ${rotatingId === activeClass.id ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`w-3 h-3 ${rotatingId === activeClass.id ? 'animate-spin' : ''}`}
+                  />
                 </Button>
               </div>
             </div>
@@ -649,7 +691,12 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs sm:text-sm text-primary font-medium flex items-center justify-between animate-in fade-in slide-in-from-top-1"
         >
           <span>{simulationToast}</span>
-          <Button variant="ghost" size="sm" onClick={() => setSimulationToast(null)} className="h-6 text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSimulationToast(null)}
+            className="h-6 text-xs"
+          >
             ✕
           </Button>
         </div>
@@ -747,7 +794,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   Showing real-time competency matrix for{' '}
-                  <strong className="text-foreground">{activeClass?.name}</strong>. Click any cell to inspect student mastery details.
+                  <strong className="text-foreground">{activeClass?.name}</strong>. Click any cell
+                  to inspect student mastery details.
                 </span>
                 <Link href={`/classes/${selectedClassId}`}>
                   <Button variant="outline" size="sm" className="text-xs h-7">
@@ -832,7 +880,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
             <CardHeader>
               <CardTitle className="text-lg font-bold">{t('createNewClass')}</CardTitle>
               <CardDescription className="text-xs">
-                Create a new section to automatically generate a student join code and assign NCERT curriculum.
+                Create a new section to automatically generate a student join code and assign NCERT
+                curriculum.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -927,7 +976,10 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                   <CardHeader>
                     <div className="flex items-center justify-between gap-2">
                       <CardTitle className="text-base font-bold truncate">{cls.name}</CardTitle>
-                      <Badge variant={isSelected ? 'default' : 'outline'} className="shrink-0 text-xs font-medium">
+                      <Badge
+                        variant={isSelected ? 'default' : 'outline'}
+                        className="shrink-0 text-xs font-medium"
+                      >
                         Class {cls.grade}
                         {cls.section ? `-${cls.section}` : ''}
                       </Badge>
@@ -991,9 +1043,12 @@ export default function TeacherDashboardPage(): React.JSX.Element {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold">Class Roster & Individual Profiles</CardTitle>
+                  <CardTitle className="text-lg font-bold">
+                    Class Roster & Individual Profiles
+                  </CardTitle>
                   <CardDescription className="text-xs">
-                    Click any student to inspect their Bayesian competency matrix, error patterns, and hint ladders.
+                    Click any student to inspect their Bayesian competency matrix, error patterns,
+                    and hint ladders.
                   </CardDescription>
                 </div>
               </div>
