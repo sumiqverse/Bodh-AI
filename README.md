@@ -1,116 +1,122 @@
 # BodhAI (बोधAI)
 
-> Adaptive learning platform for Classes 6–10 in India (web first).
-
-BodhAI provides personalized diagnostic assessments, mastery learning pathways, and competency-aligned practice for middle and high school students across India.
-
----
-
-## Architecture at a Glance
-
-This repository is structured as a **pnpm + Turborepo** monorepo:
-
-| Path                                         | Description                                                 | Tech Stack                                               |
-| :------------------------------------------- | :---------------------------------------------------------- | :------------------------------------------------------- |
-| [`apps/web`](apps/web)                       | Student web application (hello page, diagnostics, practice) | Next.js 15 App Router, React 19, Tailwind CSS, shadcn/ui |
-| [`apps/api`](apps/api)                       | High-performance backend API service                        | FastAPI, Python 3.12, `uv`                               |
-| [`packages/ui`](packages/ui)                 | Shared accessible design system & components                | React 19, Tailwind CSS, WCAG 2.2 AA compliant            |
-| [`packages/engine-ts`](packages/engine-ts)   | Adaptive learning algorithms & mastery estimation           | TypeScript strict, pure algorithms                       |
-| [`packages/api-client`](packages/api-client) | End-to-end typed client library for the API                 | TypeScript strict, fetch API                             |
-| [`packages/config`](packages/config)         | Shared compiler configurations                              | Base, Next.js, React, and Node `tsconfig` files          |
-| [`content/`](content/)                       | Curriculum standards & item banks for Classes 6–10          | JSON / YAML schema specifications                        |
-| [`infra/`](infra/)                           | Docker containers & local orchestration                     | Docker, Docker Compose, PostgreSQL                       |
-| [`docs/`](docs/)                             | Architecture, system design, and ADR records                | Markdown                                                 |
+> **Adaptive Mastery Learning Platform for Middle & Secondary School (Classes 6–10) in India.**  
+> Aligned with NCERT, CBSE, and the National Education Policy (NEP 2020) Pedagogical Framework.
 
 ---
 
-## Prerequisites
+## Architecture Overview
 
-- **Node.js**: `v24.x` (managed via `.nvmrc`)
-- **pnpm**: `v10.x` or `v11.x`
-- **Python**: `3.12.x`
-- **uv**: Python package and project manager (`curl -LsSf https://astral.sh/uv/install.sh | sh` or `pip install uv`)
-- **Git**: `2.30+`
+```mermaid
+graph TB
+    subgraph Client_Tier["Client Tier (PWA & Offline First)"]
+        Browser["Next.js 15 PWA Client (apps/web)<br/>React 19 | Tailwind CSS | WCAG 2.2 AA"]
+        IDB[("Encrypted IndexedDB<br/>Offline Storage")]
+        SyncQueue["Background Sync Queue<br/>Outbox Pattern"]
+        Browser <--> IDB
+        IDB --> SyncQueue
+    end
+
+    subgraph Edge_Infrastructure["Edge & Delivery Infrastructure"]
+        VercelCDN["Vercel Global Edge / Cloud Run<br/>Multi-Stage Container | Non-Root UID 1001"]
+        CSP["Strict CSP & Security Headers<br/>Nonced strict-dynamic | Zero unsafe-inline"]
+        VercelCDN --> CSP
+    end
+
+    subgraph API_Tier["API Tier (High-Throughput Microservice)"]
+        FastAPI["FastAPI 0.115+ (apps/api)<br/>Python 3.12 | uv"]
+        BKT["Bayesian Knowledge Tracing (BKT)<br/>Adaptive Mastery Engine"]
+        IRT["Item Response Theory (IRT)<br/>Difficulty & Discrimination Calibration"]
+        Tutor["Socratic AI Tutor Service<br/>Circuit Breaker & Fallback Ladder"]
+        Telemetry["Observability & Telemetry<br/>OpenTelemetry | Sentry PII Scrubbing | structlog"]
+        FastAPI --> BKT
+        FastAPI --> IRT
+        FastAPI --> Tutor
+        FastAPI --> Telemetry
+    end
+
+    subgraph Data_Tier["Data & Cache Tier (India Cloud Region)"]
+        Postgres[("Supabase Managed PostgreSQL 16<br/>PgBouncer Pooler | pgvector")]
+        Redis[("Upstash Serverless Redis<br/>Rate Limiting | Sliding Window")]
+        Backups[("Daily Encrypted Backups<br/>Gzip + SHA-256 Digest")]
+        Postgres --> Backups
+    end
+
+    Browser -->|HTTPS / WSS| VercelCDN
+    VercelCDN -->|API Proxied Requests| FastAPI
+    SyncQueue -->|Batch Sync| FastAPI
+    FastAPI -->|Async SQLAlchemy| Postgres
+    FastAPI -->|Token Bucket Rate Limiting| Redis
+```
 
 ---
 
-## Getting Started
+## Production & Pilot Readiness Highlights
 
-### 1. Clone & Install Dependencies
+### 1. Deploy & Infrastructure
 
-```powershell
-# Install Node workspaces dependencies and initialize Husky hooks
+- **Multi-Stage Dockerfiles**: Minimal, secure, non-root containers (`nextjs:nodejs` UID 1001 on Alpine Node 22; `appuser:appgroup` UID 1001 on Python 3.12 slim). Integrated container health check probes.
+- **Environment Parity**: Dedicated environment templates (`.env.development`, `.env.staging`, `.env.production`) with strict fail-fast validation for secrets, CORS, and connection strings.
+- **CI/CD Pipelines**: GitHub Actions workflow running PR verification (`pnpm verify`), cross-browser E2E (Chromium, Firefox, WebKit), Gitleaks secret scanning, dependency audits (`pnpm audit`, `pip-audit`), Semgrep SAST, and automated staging/production delivery (`cd.yml`).
+- **Zero-Downtime Migrations**: Expand-Contract schema migration strategy with rollback runbooks (`docs/migrations/MIGRATION_STRATEGY.md`).
+- **Hosting Targets ADR**: Architectural Decision Record (`docs/ADR/0002-production-infrastructure-targets.md`) detailing Vercel for Web, Cloud Run for API, Supabase for Postgres (pgvector), and Upstash for Redis.
+- **Terraform IaC**: Production blueprints in `infra/terraform/` for Cloud Run container hosting, Secret Manager secrets, and IAM service accounts.
+
+### 2. Observability & Telemetry
+
+- **Sentry Integration**: Dual client (`apps/web/src/lib/sentry.ts`) and server (`apps/api/app/core/telemetry.py`) error and performance tracking with strict DPDP-compliant PII scrubbing (redacting emails, Indian phone numbers, Bearer tokens).
+- **OpenTelemetry & Structured Logging**: `structlog` emitting standardized JSON in production; in-memory metrics registry tracking request counts, error rates, p50/p95/p99 latency, offline sync failures, and LLM token usage.
+- **SLOs & Dashboards**: Specifications defined in `docs/observability/DASHBOARDS.md`:
+  - **Availability Target**: **99.5%** monthly uptime.
+  - **Latency Target**: **p95 < 300 ms** across core learning interaction endpoints.
+  - Alert rules for error spikes ($> 1\%$), p95 latency breaches, and sync queue backlog.
+
+### 3. Operations & Disaster Recovery
+
+- **Automated Backup & Restore Drill**: Standalone scripts (`scripts/backup_db.py`, `scripts/restore_db.py`) executing gzip compression with SHA-256 verification. Tested and documented in `docs/runbooks/RESTORE_DRILL.md`.
+- **Feature Flags Engine**: Typed flags (`aiTutor`, `offlineMode`, `demoMode`, `detailedDiagnostics`, `feedbackForm`) allowing zero-downtime feature gating.
+- **Accessible Maintenance Mode**: Dedicated bilingual maintenance page (`apps/web/src/app/[locale]/maintenance/page.tsx`) with middleware redirect and bypass header.
+- **Comprehensive Runbooks**: In `docs/runbooks/`:
+  - [`INCIDENT_RESPONSE.md`](docs/runbooks/INCIDENT_RESPONSE.md): Severity matrix, Incident Commander workflows, and bilingual school notification templates.
+  - [`ROLLBACK.md`](docs/runbooks/ROLLBACK.md): Step-by-step rolling back of containers and migrations.
+  - [`KEY_ROTATION.md`](docs/runbooks/KEY_ROTATION.md): Rotating JWT keys, database roles, and OpenAI tokens without downtime.
+  - [`LLM_OUTAGE.md`](docs/runbooks/LLM_OUTAGE.md): Circuit breaker trip handling and deterministic Socratic hint fallbacks.
+- **Semantic Versioning**: Standardized `CHANGELOG.md` following Keep a Changelog.
+
+### 4. Pilot Readiness & Classroom Tools
+
+- **Privacy-Preserving Analytics**: Client-side event tracker (`apps/web/src/lib/analytics.ts`) with zero student PII, ephemeral session hashing, and DPDP Act 2023 compliance.
+- **Model Evaluation Dashboard**: Evaluation engine (`apps/api/app/engine/evaluation.py` and `/admin/evaluation` UI) computing ROC-AUC and Expected Calibration Error (ECE) of next-response predictions over real attempts using student-level holdout splits to prevent data leakage.
+- **In-App Feedback Modal**: Accessible, bilingual pilot feedback dialog (`apps/web/src/components/feedback-modal.tsx`) capturing classroom feedback.
+- **Judge & Evaluator Demo Mode**: Synthetic classroom data generator (`apps/web/src/lib/demo-data.ts`) enabling instant demonstration of analytics, heatmaps, and knowledge states without manual setup.
+- **Teacher Quick-Start Guides**: Pragmatic 5-minute onboarding guides in [English](docs/guides/TEACHER_QUICKSTART_EN.md) and [Hindi](docs/guides/TEACHER_QUICKSTART_HI.md).
+
+---
+
+## Quickstart & Local Development
+
+### Prerequisites
+
+- Node.js `v22+` / `v24+` (managed via `.nvmrc`)
+- `pnpm` `v10+`
+- Python `3.12+` & `uv`
+
+### Installation & Verification
+
+```bash
+# 1. Install Node dependencies
 pnpm install
 
-# Initialize Python virtual environment and dependencies for apps/api
-cd apps/api
-uv sync
-cd ../..
-```
+# 2. Setup Python virtual environment
+cd apps/api && uv sync --all-groups && cd ../..
 
-### 2. Environment Setup
-
-```powershell
-# Copy environment template
-cp .env.example .env
-cp apps/web/.env.example apps/web/.env.local
-cp apps/api/.env.example apps/api/.env
-```
-
-### 3. Verify the Codebase
-
-Run the comprehensive verification gate (lint, typecheck, unit tests, and build):
-
-```powershell
+# 3. Run full verification gate (Lint, Typecheck, Test, Build)
 pnpm verify
 ```
 
-_This must pass with 0 errors and 0 warnings._
+### Running Locally
 
----
-
-## Development
-
-Run both the web frontend and API backend in parallel:
-
-```powershell
-# Run dev servers across all workspaces
+```bash
+# Start Turborepo dev servers (Web on :3000, API on :8000)
 pnpm dev
 ```
-
-Or run individual services:
-
-```powershell
-# Frontend on http://localhost:3000
-pnpm --filter @bodhai/web dev
-
-# Backend on http://localhost:8000 (Interactive Docs: http://localhost:8000/docs)
-pnpm --filter @bodhai/api dev
-```
-
-### Verification Endpoints
-
-- **Web**: Open [http://localhost:3000](http://localhost:3000) to see the BodhAI home page.
-- **API Health Check**: GET [http://localhost:8000/health](http://localhost:8000/health) returns `{"status":"ok"}`.
-
----
-
-## Monorepo Scripts
-
-| Command          | Action                                                                             |
-| :--------------- | :--------------------------------------------------------------------------------- |
-| `pnpm verify`    | **Primary gate**: runs lint, typecheck, unit tests, and build. Fails on any issue. |
-| `pnpm lint`      | Runs JS/TS ESLint (`--max-warnings=0`), Python Ruff, and Prettier check.           |
-| `pnpm format`    | Formats all code with Prettier.                                                    |
-| `pnpm typecheck` | Runs TypeScript `tsc --noEmit` on all packages and `mypy --strict` on API.         |
-| `pnpm test`      | Runs all unit tests (Vitest for TS packages and pytest for Python API).            |
-| `pnpm build`     | Compiles and builds all packages and apps via Turborepo.                           |
-
----
-
-## Documentation & Guidelines
-
-- **Architecture Details**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Monorepo Decision (ADR)**: [docs/ADR/0001-monorepo.md](docs/ADR/0001-monorepo.md)
-- **Agent Rules & DoD**: [.agent/rules/bodhai.md](.agent/rules/bodhai.md)
-- **Contribution Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)

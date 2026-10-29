@@ -115,7 +115,9 @@ class CATDiagnosticEngine:
         )
 
         # Determine target skills to assess with randomized initial order
-        target_skills = list(initial_skills) if initial_skills else list(self.questions_by_skill.keys())
+        target_skills = (
+            list(initial_skills) if initial_skills else list(self.questions_by_skill.keys())
+        )
         random.shuffle(target_skills)
         for skill_id in target_skills:
             session.skill_states[skill_id] = SkillState(
@@ -226,15 +228,17 @@ class CATDiagnosticEngine:
             if eig > max_eig:
                 max_eig = eig
 
-            candidate_pool.append({
-                "skill_id": skill_id,
-                "skill_state": skill_state,
-                "candidate_qs": avail_qs,
-                "eig": eig,
-                "topic_exposure": topic_counts.get(t_key, 0),
-                "skill_exposure": skill_counts.get(skill_id, 0),
-                "topic_key": t_key,
-            })
+            candidate_pool.append(
+                {
+                    "skill_id": skill_id,
+                    "skill_state": skill_state,
+                    "candidate_qs": avail_qs,
+                    "eig": eig,
+                    "topic_exposure": topic_counts.get(t_key, 0),
+                    "skill_exposure": skill_counts.get(skill_id, 0),
+                    "topic_key": t_key,
+                }
+            )
 
         best_item: DiagnosticQuestionItem | None = None
         best_eig = 0.0
@@ -265,7 +269,8 @@ class CATDiagnosticEngine:
             chosen_qs.sort(key=lambda q: abs((q.difficulty / 5.0) - target_diff))
             min_diff_gap = abs((chosen_qs[0].difficulty / 5.0) - target_diff)
             best_matched_qs = [
-                q for q in chosen_qs
+                q
+                for q in chosen_qs
                 if abs(abs((q.difficulty / 5.0) - target_diff) - min_diff_gap) <= 0.35
             ]
             best_item = random.choice(best_matched_qs)

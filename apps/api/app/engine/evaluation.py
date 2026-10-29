@@ -141,10 +141,7 @@ def compute_brier_score(actuals: Sequence[bool], probabilities: Sequence[float])
     n = len(actuals)
     if n == 0:
         return 0.0
-    squared_errors = [
-        (probabilities[i] - (1.0 if actuals[i] else 0.0)) ** 2
-        for i in range(n)
-    ]
+    squared_errors = [(probabilities[i] - (1.0 if actuals[i] else 0.0)) ** 2 for i in range(n)]
     return round(sum(squared_errors) / n, 4)
 
 

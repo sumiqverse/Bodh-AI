@@ -38,7 +38,8 @@ def pii_scrubbing_processor(
             event_dict[key] = scrub_pii_string(value)
         elif isinstance(value, dict):
             event_dict[key] = {
-                k: "[REDACTED]" if any(s in k.lower() for s in ("password", "token", "auth"))
+                k: "[REDACTED]"
+                if any(s in k.lower() for s in ("password", "token", "auth"))
                 else (scrub_pii_string(v) if isinstance(v, str) else v)
                 for k, v in value.items()
             }
@@ -165,7 +166,8 @@ class MetricsRegistry:
         percentiles = self.get_latency_percentiles()
         total_reqs = sum(self.request_counts.values())
         error_reqs = sum(
-            count for key, count in self.request_counts.items()
+            count
+            for key, count in self.request_counts.items()
             if any(key.endswith(f":{code}") for code in range(500, 600))
         )
         error_rate = (error_reqs / total_reqs * 100.0) if total_reqs > 0 else 0.0

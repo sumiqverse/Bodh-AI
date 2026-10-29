@@ -135,6 +135,7 @@ async def get_admin_evaluation(
     else:
         # Synthetic pilot demonstration baseline for evaluation dashboard
         import random
+
         rng = random.Random(42)
         for s_idx in range(20):
             s_id = f"pilot-student-{s_idx:03d}"
@@ -193,5 +194,3 @@ async def submit_feedback(
         rating=feedback.get("rating"),
     )
     return {"status": "received", "message": "Thank you for your feedback!"}
-
-

@@ -46,3 +46,4 @@ Thumbs.db
 # uv / Python
 .uv/
 uv.lock
+.neon

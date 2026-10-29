@@ -60,3 +60,101 @@ jobs:
         run: pnpm verify
         env:
           CI: true
+
+  security:
+    name: Security Audits & SAST (Gitleaks, Audits, Semgrep, SBOM)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret Scanning (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Node Dependency Audit (pnpm audit)
+        run: pnpm audit --audit-level=high
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: 'latest'
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Python dependencies
+        run: |
+          cd apps/api
+          uv sync --all-groups
+
+      - name: Python Dependency Audit (pip-audit)
+        run: |
+          cd apps/api
+          uv run pip-audit
+
+      - name: SAST Security Scan (Semgrep)
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+        continue-on-error: true
+
+      - name: Generate Software Bill of Materials (SBOM)
+        run: |
+          npx -y @cyclonedx/cdxgen -r -o sbom-cyclonedx.json
+
+      - name: Archive SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: sbom-cyclonedx.json
+
+  e2e:
+    name: End-to-End Tests (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E Tests
+        run: pnpm --filter @bodhai/web test:e2e
+        env:
+          CI: true

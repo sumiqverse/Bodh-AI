@@ -1,7 +1,7 @@
 """Educational Profiles API Router: Student and Teacher profiles with distinct competencies and telemetry."""
 
-import uuid
 from typing import Any
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -228,7 +228,9 @@ async def list_student_profiles() -> list[dict[str, Any]]:
     return STUDENTS_DB
 
 
-@router.get("/students/{id_or_slug}", response_model=dict[str, Any], summary="Get distinct student profile")
+@router.get(
+    "/students/{id_or_slug}", response_model=dict[str, Any], summary="Get distinct student profile"
+)
 async def get_student_profile(id_or_slug: str) -> dict[str, Any]:
     """Retrieve individual student profile with distinct mastery, error patterns, and hint usage."""
     query = id_or_slug.lower().strip()

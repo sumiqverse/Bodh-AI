@@ -528,9 +528,13 @@ class AdaptiveService:
                 "stop_reason": summary.stop_reason,
                 "mastered_skills": [get_skill_name_or_code(sid) for sid in summary.mastered_skills],
                 "partial_skills": [get_skill_name_or_code(sid) for sid in summary.partial_skills],
-                "not_learned_skills": [get_skill_name_or_code(sid) for sid in summary.not_learned_skills],
+                "not_learned_skills": [
+                    get_skill_name_or_code(sid) for sid in summary.not_learned_skills
+                ],
                 "root_cause_gaps": [get_skill_name_or_code(sid) for sid in summary.root_cause_gaps],
-                "recommended_starting_skills": [get_skill_name_or_code(sid) for sid in summary.recommended_starting_skills],
+                "recommended_starting_skills": [
+                    get_skill_name_or_code(sid) for sid in summary.recommended_starting_skills
+                ],
                 "mean_uncertainty": summary.mean_uncertainty,
                 "skill_states": skill_states_list,
             }
@@ -576,7 +580,9 @@ class AdaptiveService:
                         else:
                             mastery_obj.p_mastery = round(skill_state.p_mastery, 4)
                             mastery_obj.confidence = round(confidence, 4)
-                            mastery_obj.attempts_count = max(mastery_obj.attempts_count + 1, obs_count)
+                            mastery_obj.attempts_count = max(
+                                mastery_obj.attempts_count + 1, obs_count
+                            )
                             if is_corr:
                                 mastery_obj.correct_count += 1
                             mastery_obj.last_attempted_at = now_utc
