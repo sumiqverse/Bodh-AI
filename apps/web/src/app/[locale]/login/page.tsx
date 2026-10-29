@@ -17,15 +17,27 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@bodhai/ui';
-import { getWebApiClient, setAuthSession } from '@/lib/api-client';
+import {
+  getWebApiClient,
+  setAuthSession,
+  getCurrentUser,
+  getAuthToken,
+  getUserDashboardPath,
+  syncSessionCookies,
+} from '@/lib/api-client';
+import { DEMO_ACCOUNTS, loginAsDemoUser, getStableEmployeeId } from '@/lib/profiles-data';
+import { Sparkles, ArrowRight } from 'lucide-react';
+import { useLocale } from 'next-intl';
 
 export default function LoginPage(): React.JSX.Element {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const router = useRouter();
   const apiClient = getWebApiClient();
 
   const [activeTab, setActiveTab] = React.useState<'teacher' | 'student'>('teacher');
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   // Teacher fields
@@ -37,21 +49,98 @@ export default function LoginPage(): React.JSX.Element {
   const [studentUsername, setStudentUsername] = React.useState<string>('');
   const [studentPin, setStudentPin] = React.useState<string>('');
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const user = getCurrentUser();
+      const token = getAuthToken();
+      if (user && token) {
+        syncSessionCookies(token, user);
+        router.replace(getUserDashboardPath(user));
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('registered') === 'true') {
+        setSuccessMessage(t('signupSuccess'));
+      } else if (params.get('expired') === 'true') {
+        setErrorMessage(t('sessionExpired'));
+      }
+      const prefillEmail = params.get('email');
+      if (prefillEmail) {
+        setEmail(prefillEmail);
+      }
+    }
+  }, [t, router]);
+
   const handleTeacherSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setErrorMessage(null);
+    setSuccessMessage(null);
     setIsLoading(true);
 
     try {
       const res = await apiClient.teacherLogin({ email, password });
       setAuthSession(res.access_token, res.user);
+
+      // Link any custom profile information captured during signup
+      if (typeof window !== 'undefined') {
+        try {
+          const pendingKey = `bodhai_pending_profile_${email.trim().toLowerCase()}`;
+          const pendingRaw = localStorage.getItem(pendingKey);
+          if (pendingRaw) {
+            const pending = JSON.parse(pendingRaw);
+            const userProfileKey = `bodhai_profile_${res.user.id}`;
+            const existingRaw = localStorage.getItem(userProfileKey);
+            const existing = existingRaw ? JSON.parse(existingRaw) : {};
+            const updated = {
+              ...existing,
+              id: res.user.id,
+              slug: `tchr-${(pending.fullName || res.user.full_name || 'educator').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+              fullName: pending.fullName || existing.fullName || res.user.full_name || 'Educator',
+              fullNameHi: pending.fullName || existing.fullNameHi || res.user.full_name || 'शिक्षक',
+              title: pending.title || existing.title || 'Mathematics & Science Educator',
+              titleHi: pending.title || existing.titleHi || 'गणित एवं विज्ञान शिक्षक',
+              schoolName: pending.schoolName || existing.schoolName || '',
+              experienceYears: pending.experienceYears !== undefined ? Number(pending.experienceYears) : (existing.experienceYears ?? 0),
+              email: res.user.email || email,
+              employeeId: existing.employeeId || getStableEmployeeId(res.user.id || email),
+              department: existing.department || 'Secondary Department',
+              qualifications: existing.qualifications || '',
+              bio: existing.bio || '',
+              bioHi: existing.bioHi || '',
+              avatarGradient: existing.avatarGradient || 'from-blue-600 via-indigo-600 to-purple-600',
+              officeHours: existing.officeHours || 'Monday – Friday, 2:00 PM – 4:00 PM',
+              verifiedEducator: true,
+              totalStudentsTaught: existing.totalStudentsTaught ?? 0,
+              activeClassesCount: existing.activeClassesCount ?? 0,
+              avgClassroomMastery: existing.avgClassroomMastery ?? 0,
+              totalAssignmentsCreated: existing.totalAssignmentsCreated ?? 0,
+              aiDecisionsReviewed: existing.aiDecisionsReviewed ?? 0,
+              classes: existing.classes || [],
+              pedagogicalDecisions: existing.pedagogicalDecisions || [],
+              schedule: existing.schedule || [],
+              specializations: existing.specializations || ['CBSE/NCERT Curriculum'],
+            };
+            localStorage.setItem(userProfileKey, JSON.stringify(updated));
+            localStorage.removeItem(pendingKey);
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
+
       if (res.user.role === 'admin') {
         router.push('/admin/stats');
       } else {
         router.push('/classes');
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('authFailed');
+      let msg = err instanceof Error ? err.message : t('authFailed');
+      if (msg.includes('Invalid email or password') || msg.includes('401')) {
+        msg = 'Invalid email or password. If you don\'t have an account yet, please sign up below.';
+      } else if (msg.includes('API Error')) {
+        msg = msg.replace(/^API Error \[\d+\]:\s*/, '');
+      }
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -79,8 +168,81 @@ export default function LoginPage(): React.JSX.Element {
     }
   };
 
+  const handleQuickDemoLogin = async (demoId: string) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      if (demoId === 'demo-rajesh') {
+        const res = await apiClient.teacherLogin({
+          email: 'rajesh.kumar@delhiedu.gov.in',
+          password: 'Password@123',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/classes');
+        return;
+      }
+      if (demoId === 'demo-sunita') {
+        const res = await apiClient.teacherLogin({
+          email: 'sunita.sharma@delhiedu.gov.in',
+          password: 'Password@123',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/classes');
+        return;
+      }
+      if (demoId === 'demo-aarav') {
+        const res = await apiClient.studentLogin({
+          join_code: 'MATH8A',
+          username: 'aarav_sharma',
+          pin: '1234',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/student');
+        return;
+      }
+      if (demoId === 'demo-priya') {
+        const res = await apiClient.studentLogin({
+          join_code: 'MATH8A',
+          username: 'priya_patel',
+          pin: '1234',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/student');
+        return;
+      }
+      if (demoId === 'demo-rohan') {
+        const res = await apiClient.studentLogin({
+          join_code: 'MATH8A',
+          username: 'rohan_verma',
+          pin: '1234',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/student');
+        return;
+      }
+      if (demoId === 'demo-ananya') {
+        const res = await apiClient.studentLogin({
+          join_code: 'MATH8A',
+          username: 'ananya_sen',
+          pin: '1234',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/student');
+        return;
+      }
+      // Fallback
+      loginAsDemoUser(demoId);
+      router.push('/classes');
+    } catch {
+      loginAsDemoUser(demoId);
+      router.push('/classes');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center px-4 py-12">
+    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-lg flex-col items-center justify-center px-4 py-12">
       <Card className="w-full shadow-floating">
         <CardHeader className="text-center">
           <CardTitle className="font-serif text-2xl font-bold tracking-tight text-foreground">
@@ -103,6 +265,15 @@ export default function LoginPage(): React.JSX.Element {
               <TabsTrigger value="teacher">{t('tabTeacher')}</TabsTrigger>
               <TabsTrigger value="student">{t('tabStudent')}</TabsTrigger>
             </TabsList>
+
+            {successMessage && !errorMessage && (
+              <div
+                role="status"
+                className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400 font-medium"
+              >
+                {successMessage}
+              </div>
+            )}
 
             {errorMessage && (
               <div
@@ -292,6 +463,56 @@ export default function LoginPage(): React.JSX.Element {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* 1-Click Demo Sign-In for Immediate Persona Testing */}
+      <div className="w-full mt-6 rounded-2xl border border-primary/20 bg-muted/30 p-5 space-y-4">
+        <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
+              {locale === 'hi' ? 'त्वरित 1-क्लिक डेमो लॉगिन' : 'Quick 1-Click Demo Sign-In'}
+            </h3>
+          </div>
+          <span className="text-[10px] text-muted-foreground font-medium">
+            {locale === 'hi' ? 'प्रत्येक प्रोफ़ाइल अलग है' : 'Isolated Profiles'}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {locale === 'hi'
+            ? 'किसी भी छात्र या शिक्षक पर क्लिक करें और उनका निजी प्रोफ़ाइल डेटा देखें:'
+            : 'Click any persona below to test their isolated individual profile:'}
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {DEMO_ACCOUNTS.map((acc) => (
+            <button
+              key={acc.id}
+              type="button"
+              onClick={() => handleQuickDemoLogin(acc.id)}
+              className="flex items-center justify-between p-2.5 rounded-xl border border-border/70 bg-card hover:bg-primary/5 hover:border-primary/50 transition-all text-left cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`w-7 h-7 rounded-lg bg-gradient-to-tr ${acc.avatarGradient} text-white flex items-center justify-center font-bold text-xs shrink-0`}
+                >
+                  {acc.name.replace('Mr. ', '').replace('Mrs. ', '').charAt(0)}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    {locale === 'hi' ? acc.nameHi : acc.name}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate font-mono">
+                    {acc.badge}
+                  </div>
+                </div>
+              </div>
+              <span className="text-primary text-[11px] font-semibold flex items-center gap-0.5 shrink-0 ml-2 group-hover:translate-x-0.5 transition-transform">
+                {locale === 'hi' ? 'लॉगिन' : 'Log In'}
+                <ArrowRight className="w-3 h-3" />
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

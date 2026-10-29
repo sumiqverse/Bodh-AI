@@ -14,7 +14,13 @@ import {
   Input,
   Select,
 } from '@bodhai/ui';
-import { getWebApiClient, setAuthSession } from '@/lib/api-client';
+import {
+  getWebApiClient,
+  getCurrentUser,
+  getAuthToken,
+  getUserDashboardPath,
+  syncSessionCookies,
+} from '@/lib/api-client';
 
 export default function SignupPage(): React.JSX.Element {
   const t = useTranslations('auth');
@@ -24,9 +30,23 @@ export default function SignupPage(): React.JSX.Element {
   const [fullName, setFullName] = React.useState<string>('');
   const [email, setEmail] = React.useState<string>('');
   const [password, setPassword] = React.useState<string>('');
+  const [schoolName, setSchoolName] = React.useState<string>('');
+  const [experienceYears, setExperienceYears] = React.useState<string>('5');
+  const [title, setTitle] = React.useState<string>('Secondary Mathematics Educator');
   const [preferredLanguage, setPreferredLanguage] = React.useState<string>('en');
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const user = getCurrentUser();
+      const token = getAuthToken();
+      if (user && token) {
+        syncSessionCookies(token, user);
+        router.replace(getUserDashboardPath(user));
+      }
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -34,14 +54,28 @@ export default function SignupPage(): React.JSX.Element {
     setIsLoading(true);
 
     try {
-      const res = await apiClient.teacherSignup({
-        email,
+      await apiClient.teacherSignup({
+        email: email.trim(),
         password,
         full_name: fullName.trim(),
         preferred_language: preferredLanguage,
       });
-      setAuthSession(res.access_token, res.user);
-      router.push('/classes');
+
+      // Save user's custom profile data for immediate linking upon login
+      if (typeof window !== 'undefined') {
+        const pendingProfile = {
+          fullName: fullName.trim(),
+          schoolName: schoolName.trim() || 'School',
+          experienceYears: Number(experienceYears) || 0,
+          title: title.trim() || 'Educator',
+        };
+        localStorage.setItem(
+          `bodhai_pending_profile_${email.trim().toLowerCase()}`,
+          JSON.stringify(pendingProfile),
+        );
+      }
+
+      router.push(`/login?registered=true&email=${encodeURIComponent(email.trim())}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('authFailed');
       setErrorMessage(msg);
@@ -56,7 +90,7 @@ export default function SignupPage(): React.JSX.Element {
   ];
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center px-4 py-12">
+    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-lg items-center justify-center px-4 py-12">
       <Card className="w-full shadow-floating">
         <CardHeader className="text-center">
           <CardTitle className="font-serif text-2xl font-bold tracking-tight text-foreground">
@@ -83,7 +117,7 @@ export default function SignupPage(): React.JSX.Element {
                 htmlFor="teacher-name"
                 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                {t('fullName')}
+                {t('fullName')} *
               </label>
               <Input
                 id="teacher-name"
@@ -100,7 +134,7 @@ export default function SignupPage(): React.JSX.Element {
                 htmlFor="teacher-signup-email"
                 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                {t('email')}
+                {t('email')} *
               </label>
               <Input
                 id="teacher-signup-email"
@@ -112,12 +146,66 @@ export default function SignupPage(): React.JSX.Element {
               />
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label
+                  htmlFor="teacher-school"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  School / Institution *
+                </label>
+                <Input
+                  id="teacher-school"
+                  type="text"
+                  required
+                  placeholder="e.g. Kendriya Vidyalaya No. 1"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="teacher-exp"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Teaching Experience (Years) *
+                </label>
+                <Input
+                  id="teacher-exp"
+                  type="number"
+                  min="0"
+                  max="50"
+                  required
+                  placeholder="e.g. 5"
+                  value={experienceYears}
+                  onChange={(e) => setExperienceYears(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="teacher-title"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Subject / Designation
+              </label>
+              <Input
+                id="teacher-title"
+                type="text"
+                placeholder="e.g. Secondary Mathematics Educator"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-2">
               <label
                 htmlFor="teacher-signup-password"
                 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                {t('password')}
+                {t('password')} *
               </label>
               <Input
                 id="teacher-signup-password"

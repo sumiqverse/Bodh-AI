@@ -126,6 +126,11 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${lora.variable} ${notoDevanagari.variable}`}
     >
       <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+          crossOrigin="anonymous"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

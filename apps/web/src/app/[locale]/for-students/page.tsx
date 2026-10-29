@@ -70,10 +70,15 @@ export default async function ForStudentsPage({ params }: PageProps): Promise<Re
         </Card>
       </div>
 
-      <div className="mt-14 text-center">
+      <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-center">
         <Link href="/diagnostic">
           <Button variant="primary" size="lg" className="shadow-md">
             {tCommon('tryDiagnostic')}
+          </Button>
+        </Link>
+        <Link href="/profile">
+          <Button variant="outline" size="lg" className="border-primary/40 text-primary font-bold hover:bg-primary/10">
+            {locale === 'hi' ? 'मेरी प्रोफ़ाइल' : 'My Profile'}
           </Button>
         </Link>
       </div>

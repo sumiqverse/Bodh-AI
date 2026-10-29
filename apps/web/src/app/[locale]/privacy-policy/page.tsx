@@ -53,12 +53,22 @@ export default async function PrivacyPolicyPage({ params }: PageProps): Promise<
 
       <Card className="p-2 sm:p-4 shadow-sm border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-lg font-serif">Data Processing Notice</CardTitle>
+          <CardTitle className="text-lg font-serif">
+            Digital Personal Data Protection (DPDP) Act 2023 Statutory Disclosure
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6 text-sm text-muted-foreground leading-relaxed">
           <p>{t('privacyP1')}</p>
           <p>{t('privacyP2')}</p>
           <p>{t('privacyP3')}</p>
+          <p>{t('privacyP4')}</p>
+          <p>{t('privacyP5')}</p>
+
+          <div className="mt-4 pt-4 border-t border-border">
+            <Badge variant="outline" className="font-mono text-xs text-muted-foreground">
+              {t('legalReviewDisclaimer')}
+            </Badge>
+          </div>
         </CardContent>
       </Card>
     </div>
