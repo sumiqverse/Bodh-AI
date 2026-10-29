@@ -164,7 +164,7 @@ export default function ProgressPage(): React.JSX.Element {
                     <Badge
                       variant={
                         item.state === 'mastered'
-                          ? 'default'
+                          ? 'success'
                           : item.state === 'partial'
                             ? 'warning'
                             : 'outline'

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getWebApiClient, getAuthToken, getCurrentUser, clearAuthSession } from '@/lib/api-client';
-import type { MasteryResponse, TopicResponse } from '@bodhai/api-client';
+import type { MasteryResponse, CurriculumGraphResponse } from '@bodhai/api-client';
 
 export interface ProgressHistoryItem {
   skillId: string;
@@ -63,30 +63,73 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
     staleTime: 30 * 1000,
   });
 
-  const topicsQuery = useQuery({
-    queryKey: ['curriculum-topics', curriculumCode],
-    queryFn: async (): Promise<TopicResponse[]> => {
-      return apiClient.getCurriculumTopics(curriculumCode);
+  const graphQuery = useQuery({
+    queryKey: ['curriculum-graph', curriculumCode],
+    queryFn: async (): Promise<CurriculumGraphResponse> => {
+      return apiClient.getCurriculumGraph(curriculumCode);
     },
     staleTime: 5 * 60 * 1000,
   });
 
   const { historyItems, stats } = React.useMemo(() => {
     const rawMastery = masteryQuery.data ?? [];
-    const topics = topicsQuery.data ?? [];
+    const graph = graphQuery.data;
 
     const skillMetadata = new Map<string, { name: string; topicName: string }>();
     let totalCurriculumSkills = 0;
 
-    topics.forEach((t) => {
-      t.skills.forEach((s) => {
+    if (graph?.nodes && Array.isArray(graph.nodes)) {
+      graph.nodes.forEach((node) => {
         totalCurriculumSkills++;
-        skillMetadata.set(String(s.id), {
-          name: s.name,
-          topicName: t.name,
-        });
+        const meta = {
+          name: node.name,
+          topicName: node.topic_name || 'NCERT Curriculum',
+        };
+        skillMetadata.set(String(node.id).toLowerCase(), meta);
+        if (node.code) {
+          skillMetadata.set(String(node.code).toLowerCase(), meta);
+        }
       });
-    });
+    }
+
+    // Merge any client-side diagnostic assessment states
+    const combinedMastery = [...rawMastery];
+    if (typeof window !== 'undefined') {
+      try {
+        const localDiag = localStorage.getItem('bodhai_last_diagnostic_summary');
+        if (localDiag) {
+          const parsed = JSON.parse(localDiag);
+          if (Array.isArray(parsed.skill_states)) {
+            const existingIds = new Set(combinedMastery.map((m) => String(m.skill_id).toLowerCase()));
+            parsed.skill_states.forEach((sk: {
+              skill_id?: string;
+              code?: string;
+              name?: string;
+              p_mastery?: number;
+              state?: string;
+              attempts_count?: number;
+            }) => {
+              const sid = String(sk.skill_id || sk.code || '').toLowerCase();
+              if (sid && !existingIds.has(sid)) {
+                existingIds.add(sid);
+                combinedMastery.push({
+                  skill_id: sk.skill_id || sk.code,
+                  p_mastery: sk.p_mastery ?? 0.85,
+                  confidence: 0.8,
+                  attempts_count: sk.attempts_count || 1,
+                  correct_count: sk.state === 'mastered' ? 1 : 0,
+                  state: sk.state || 'mastered',
+                  last_attempted_at: new Date().toISOString(),
+                  rationale: 'Calibrated from diagnostic assessment.',
+                } as unknown as MasteryResponse);
+              }
+            });
+          }
+        }
+      } catch {
+        // ignore local parse errors
+      }
+    }
 
     let totalAttempts = 0;
     let totalCorrect = 0;
@@ -94,33 +137,35 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
     let partial = 0;
     let notLearned = 0;
 
-    const items: ProgressHistoryItem[] = rawMastery.map((m) => {
-      totalAttempts += m.attempts_count;
-      totalCorrect += m.correct_count;
+    const items: ProgressHistoryItem[] = combinedMastery.map((m) => {
+      totalAttempts += m.attempts_count || 0;
+      totalCorrect += m.correct_count || 0;
 
       let state: 'not_learned' | 'partial' | 'mastered' = 'not_learned';
-      if (m.state === 'mastered' || m.p_mastery >= 0.85) {
+      if (m.state === 'mastered' || (m.p_mastery ?? 0) >= 0.85) {
         state = 'mastered';
         mastered++;
-      } else if (m.state === 'partial' || m.p_mastery >= 0.35 || m.attempts_count > 0) {
+      } else if (m.state === 'partial' || (m.p_mastery ?? 0) >= 0.35 || (m.attempts_count ?? 0) > 0) {
         state = 'partial';
         partial++;
       } else {
         notLearned++;
       }
 
-      const meta = skillMetadata.get(String(m.skill_id));
-      const accuracy =
-        m.attempts_count > 0 ? Math.round((m.correct_count / m.attempts_count) * 100) : 0;
+      const sid = String(m.skill_id).toLowerCase();
+      const meta = skillMetadata.get(sid);
+      const attempts = m.attempts_count || 0;
+      const correct = m.correct_count || 0;
+      const accuracy = attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
 
       return {
         skillId: String(m.skill_id),
-        skillName: meta?.name ?? 'Linear Equations in One Variable',
-        topicName: meta?.topicName ?? 'Algebra',
-        pMastery: m.p_mastery,
-        confidence: m.confidence,
-        attemptsCount: m.attempts_count,
-        correctCount: m.correct_count,
+        skillName: meta?.name ?? 'Curriculum Competency',
+        topicName: meta?.topicName ?? 'Mathematics',
+        pMastery: m.p_mastery ?? 0.5,
+        confidence: m.confidence ?? 0.7,
+        attemptsCount: attempts,
+        correctCount: correct,
         accuracyPercentage: accuracy,
         state,
         lastAttemptedAt: m.last_attempted_at ?? new Date().toISOString(),
@@ -148,16 +193,16 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
         totalSkills: totalTracked,
       },
     };
-  }, [masteryQuery.data, topicsQuery.data]);
+  }, [masteryQuery.data, graphQuery.data]);
 
   return {
     historyItems,
     stats,
-    isLoading: masteryQuery.isLoading || topicsQuery.isLoading,
-    error: (masteryQuery.error as Error) || (topicsQuery.error as Error) || null,
+    isLoading: masteryQuery.isLoading || graphQuery.isLoading,
+    error: (masteryQuery.error as Error) || (graphQuery.error as Error) || null,
     refetch: () => {
       void masteryQuery.refetch();
-      void topicsQuery.refetch();
+      void graphQuery.refetch();
     },
   };
 }
