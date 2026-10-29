@@ -181,3 +181,50 @@ def test_require_role_rejection() -> None:
     checker = require_role("teacher", "admin")
     with pytest.raises(AuthorizationError, match="Role 'student' is not authorized"):
         checker(user)
+
+
+def test_token_with_expires_delta() -> None:
+    """Test custom expires_delta parameters for access and refresh tokens."""
+    from datetime import timedelta
+
+    from app.core.security import create_access_token, create_refresh_token
+
+    t1 = create_access_token({"sub": "user1"}, expires_delta=timedelta(minutes=5))
+    assert t1 is not None
+    t2 = create_refresh_token({"sub": "user1"}, expires_delta=timedelta(days=2))
+    assert t2 is not None
+
+
+def test_insecure_secret_key_rejection_in_prod() -> None:
+    """Ensure production settings reject default development secret keys."""
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    with pytest.raises(ValidationError, match="Insecure default secret_key"):
+        Settings(app_env="production", secret_key="dev-insecure-secret-key-for-local-testing-only")
+
+
+def test_request_id_extraction_and_error_helpers() -> None:
+    """Test header-based request ID extraction in application error handler."""
+    from unittest.mock import MagicMock
+
+    from app.core.errors import _extract_request_id
+
+    req = MagicMock()
+    req.state = object()
+    req.headers = {"X-Request-ID": "custom-id-999"}
+    assert _extract_request_id(req) == "custom-id-999"
+
+
+def test_cli_main_routing() -> None:
+    """Test CLI main router for retention commands and invalid subcommands."""
+    from unittest.mock import patch
+
+    from app.cli.main import main
+
+    with patch("app.cli.main.handle_retention_purge", return_value=0):
+        assert main(["retention", "purge"]) == 0
+    assert main([]) == 1
+    assert main(["retention"]) == 1
+    assert main(["content"]) == 1

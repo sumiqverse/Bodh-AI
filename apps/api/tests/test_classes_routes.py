@@ -64,3 +64,84 @@ async def test_teacher_class_lifecycle(
     assert resp_rotate.status_code == 200
     new_code = resp_rotate.json()["join_code"]
     assert new_code != old_code
+
+
+@pytest.mark.asyncio
+async def test_teacher_dashboard_analytics_routes(
+    client: AsyncClient,
+    teacher_auth: tuple[User, str, dict[str, str]],
+) -> None:
+    """Test teacher dashboard API routes: heatmap, gap-clusters, early-warnings,
+    suggestions, assignments, progress, export.
+    """
+    _t_user, _t_token, t_headers = teacher_auth
+
+    # 1. Create class
+    resp_create = await client.post(
+        "/api/v1/classes",
+        json={
+            "name": "Analytics Class 8C",
+            "grade": 8,
+            "section": "C",
+            "academic_year": "2024-2025",
+        },
+        headers=t_headers,
+    )
+    assert resp_create.status_code == 201
+    class_id = resp_create.json()["id"]
+
+    # 2. Heatmap
+    resp_heatmap = await client.get(f"/api/v1/classes/{class_id}/heatmap", headers=t_headers)
+    assert resp_heatmap.status_code == 200
+    assert "matrix" in resp_heatmap.json()
+
+    # 3. Gap clusters
+    resp_clusters = await client.get(f"/api/v1/classes/{class_id}/gap-clusters", headers=t_headers)
+    assert resp_clusters.status_code == 200
+    assert "clusters" in resp_clusters.json()
+
+    # 4. Early warnings
+    resp_warnings = await client.get(
+        f"/api/v1/classes/{class_id}/early-warnings", headers=t_headers
+    )
+    assert resp_warnings.status_code == 200
+    assert "warnings" in resp_warnings.json()
+
+    # 5. Suggestions & Decision
+    resp_sug = await client.get(f"/api/v1/classes/{class_id}/suggestions", headers=t_headers)
+    assert resp_sug.status_code == 200
+    suggestions = resp_sug.json().get("suggestions", [])
+    if suggestions:
+        sug_id = suggestions[0]["suggestion_id"]
+        resp_dec = await client.post(
+            f"/api/v1/classes/{class_id}/suggestions/{sug_id}/decision",
+            json={"action": "accepted", "teacher_notes": "Reviewed and agreed"},
+            headers=t_headers,
+        )
+        assert resp_dec.status_code == 201
+
+    # 6. Create & List assignments
+    resp_create_assign = await client.post(
+        f"/api/v1/classes/{class_id}/assignments",
+        json={
+            "title": "Fraction Revision",
+            "skill_ids": ["SKILL_FRAC_01"],
+            "description": "Practice set",
+        },
+        headers=t_headers,
+    )
+    assert resp_create_assign.status_code == 201
+
+    resp_assign = await client.get(f"/api/v1/classes/{class_id}/assignments", headers=t_headers)
+    assert resp_assign.status_code == 200
+    assert len(resp_assign.json()) >= 1
+
+    # 7. Progress summary
+    resp_prog = await client.get(f"/api/v1/classes/{class_id}/progress-summary", headers=t_headers)
+    assert resp_prog.status_code == 200
+    assert "overall_mastery_pct" in resp_prog.json()
+
+    # 8. Export CSV
+    resp_csv = await client.get(f"/api/v1/classes/{class_id}/export/csv", headers=t_headers)
+    assert resp_csv.status_code == 200
+    assert resp_csv.headers["content-type"].startswith("text/csv")

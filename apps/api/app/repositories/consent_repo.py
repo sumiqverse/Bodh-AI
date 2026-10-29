@@ -43,8 +43,13 @@ class ConsentRepository(BaseRepository[Consent]):
         result = await self.session.execute(statement)
         return result.scalars().all()
 
-    async def has_consent(self, student_id: uuid.UUID, scope: str | None = None) -> bool:
-        """Verify whether a student has an active granted consent."""
+    async def has_consent(
+        self,
+        student_id: uuid.UUID,
+        scope: str | None = None,
+        required_version: str | None = None,
+    ) -> bool:
+        """Verify whether a student has an active granted consent matching required version."""
         conditions = [
             Consent.student_id == student_id,
             Consent.is_granted == True,  # noqa: E712
@@ -52,15 +57,17 @@ class ConsentRepository(BaseRepository[Consent]):
         ]
         if scope:
             conditions.append(Consent.scope.in_([scope, "all"]))
-        statement = select(Consent).where(*conditions)
+        if required_version:
+            conditions.append(Consent.version == required_version)
+        statement = select(Consent).where(*conditions).limit(1)
         result = await self.session.execute(statement)
-        return result.scalar_one_or_none() is not None
+        return result.scalars().first() is not None
 
     async def grant_consent(
         self,
         student_id: uuid.UUID,
         scope: str,
-        version: str = "2024.1",
+        version: str = "2026.1",
         guardian_id: uuid.UUID | None = None,
         ip_address: str | None = None,
     ) -> Consent:

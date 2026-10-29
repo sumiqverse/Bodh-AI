@@ -95,7 +95,6 @@ async def get_curriculum(
 async def get_curriculum_topics(
     code: str,
     session: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> Sequence[TopicResponse]:
     """Retrieve ordered topics for a specific curriculum framework."""
     repo = CurriculumRepository(session)
@@ -122,7 +121,6 @@ async def get_curriculum_topics(
 async def get_curriculum_graph(
     code: str,
     session: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[User, Depends(require_role("student", "teacher", "admin"))],
 ) -> SkillGraphResponse:
     """Retrieve full curriculum topic and skill nodes with directed prerequisite DAG edges."""
     from sqlalchemy import select

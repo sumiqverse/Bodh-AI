@@ -11,6 +11,7 @@ from app.api.v1.consents import router as consents_router
 from app.api.v1.curricula import router as curricula_router
 from app.api.v1.data_rights import router as data_rights_router
 from app.api.v1.mastery import router as mastery_router
+from app.api.v1.profiles import router as profiles_router
 from app.api.v1.questions import router as questions_router
 from app.api.v1.skills import router as skills_router
 from app.api.v1.sync import router as sync_router
@@ -20,6 +21,7 @@ api_v1_router = APIRouter(prefix="/api/v1")
 
 api_v1_router.include_router(auth_router)
 api_v1_router.include_router(classes_router)
+api_v1_router.include_router(profiles_router)
 api_v1_router.include_router(admin_router)
 api_v1_router.include_router(consents_router)
 api_v1_router.include_router(data_rights_router)

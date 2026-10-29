@@ -4,8 +4,10 @@ prerequisite traversal.
 
 from __future__ import annotations
 
+import random
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 import networkx as nx  # type: ignore[import-untyped]
 
@@ -37,6 +39,8 @@ class DiagnosticQuestionItem:
     skill_code: str
     difficulty: int
     question_type: str = "mcq"
+    topic_id: str | None = None
+    topic_name: str | None = None
 
 
 @dataclass
@@ -110,8 +114,9 @@ class CATDiagnosticEngine:
             curriculum_code=curriculum_code,
         )
 
-        # Determine target skills to assess
-        target_skills = initial_skills or list(self.questions_by_skill.keys())
+        # Determine target skills to assess with randomized initial order
+        target_skills = list(initial_skills) if initial_skills else list(self.questions_by_skill.keys())
+        random.shuffle(target_skills)
         for skill_id in target_skills:
             session.skill_states[skill_id] = SkillState(
                 skill_id=skill_id,
@@ -192,37 +197,87 @@ class CATDiagnosticEngine:
             )
 
         # Otherwise, choose candidate skill and question maximizing Expected Information Gain (EIG)
-        best_item: DiagnosticQuestionItem | None = None
-        best_eig = -1.0
-        best_rationale = ""
+        # while actively balancing curriculum topics to avoid clustering in a single chapter.
+        skill_counts: dict[str, int] = {}
+        topic_counts: dict[str, int] = {}
+        for qid in session.attempted_question_ids:
+            q_obj = self.question_by_id.get(qid)
+            if q_obj:
+                skill_counts[q_obj.skill_id] = skill_counts.get(q_obj.skill_id, 0) + 1
+                t_key = q_obj.topic_name or q_obj.topic_id or q_obj.skill_id
+                topic_counts[t_key] = topic_counts.get(t_key, 0) + 1
+
+        candidate_pool: list[dict[str, Any]] = []
+        max_eig = -1.0
 
         for skill_id, skill_state in session.skill_states.items():
-            candidate_qs = [
+            avail_qs = [
                 q
                 for q in self.questions_by_skill.get(skill_id, [])
                 if q.question_id not in session.attempted_question_ids
             ]
-            if not candidate_qs:
+            if not avail_qs:
                 continue
 
             eig = expected_information_gain(skill_state.p_mastery, self.bkt_params)
+            first_q = avail_qs[0]
+            t_key = first_q.topic_name or first_q.topic_id or skill_id
 
-            # Sort candidate questions by difficulty matching student mastery
-            # If student has low mastery, pick easier question; if high, pick harder question
-            candidate_qs.sort(key=lambda q: abs((q.difficulty / 5.0) - skill_state.p_mastery))
-            candidate = candidate_qs[0]
+            if eig > max_eig:
+                max_eig = eig
 
-            if eig > best_eig:
-                best_eig = eig
-                best_item = candidate
-                best_rationale = (
-                    f"CAT Diagnostic: Selected item '{candidate.code}' on skill "
-                    f"'{candidate.skill_code}' to maximize Expected Information Gain "
-                    f"({eig:.4f}) and reduce student uncertainty."
-                )
+            candidate_pool.append({
+                "skill_id": skill_id,
+                "skill_state": skill_state,
+                "candidate_qs": avail_qs,
+                "eig": eig,
+                "topic_exposure": topic_counts.get(t_key, 0),
+                "skill_exposure": skill_counts.get(skill_id, 0),
+                "topic_key": t_key,
+            })
+
+        best_item: DiagnosticQuestionItem | None = None
+        best_eig = 0.0
+        best_rationale = ""
+
+        if candidate_pool:
+            # 1. Filter skills that have top Expected Information Gain (within 0.08 of max)
+            high_eig_pool = [c for c in candidate_pool if c["eig"] >= max(0.0, max_eig - 0.08)]
+            if not high_eig_pool:
+                high_eig_pool = candidate_pool
+
+            # 2. Topic diversity: prioritize topics that have lowest prior exposure in this session
+            min_topic_exp = min(c["topic_exposure"] for c in high_eig_pool)
+            diverse_topic_pool = [c for c in high_eig_pool if c["topic_exposure"] == min_topic_exp]
+
+            # 3. Lowest skill exposure within those diverse topics
+            min_skill_exp = min(c["skill_exposure"] for c in diverse_topic_pool)
+            final_pool = [c for c in diverse_topic_pool if c["skill_exposure"] == min_skill_exp]
+
+            # 4. Randomly sample from best candidates so each diagnostic test is uniquely fresh
+            selected_candidate = random.choice(final_pool)
+            chosen_skill_state = selected_candidate["skill_state"]
+            chosen_qs = selected_candidate["candidate_qs"]
+            best_eig = selected_candidate["eig"]
+
+            # 5. Difficulty matching with randomized candidate pool
+            target_diff = chosen_skill_state.p_mastery
+            chosen_qs.sort(key=lambda q: abs((q.difficulty / 5.0) - target_diff))
+            min_diff_gap = abs((chosen_qs[0].difficulty / 5.0) - target_diff)
+            best_matched_qs = [
+                q for q in chosen_qs
+                if abs(abs((q.difficulty / 5.0) - target_diff) - min_diff_gap) <= 0.35
+            ]
+            best_item = random.choice(best_matched_qs)
+            topic_label = best_item.topic_name or best_item.skill_code
+            best_rationale = (
+                f"CAT Diagnostic: Selected item '{best_item.code}' on topic "
+                f"'{topic_label}' to maximize Expected Information Gain "
+                f"({best_eig:.4f}) and ensure broad topic coverage."
+            )
 
         if best_item is None:
-            # Fallback to any unattempted question
+            # Fallback to any unattempted question with random selection
             unattempted = [
                 q for q in self.questions if q.question_id not in session.attempted_question_ids
             ]
@@ -237,7 +292,7 @@ class CATDiagnosticEngine:
                     stop_reason=session.stop_reason,
                     rationale="Diagnostic completed: No more questions available.",
                 )
-            best_item = unattempted[0]
+            best_item = random.choice(unattempted)
             best_rationale = f"Selected remaining diagnostic question '{best_item.code}'."
             best_eig = expected_information_gain(
                 session.skill_states.get(
@@ -295,7 +350,7 @@ class CATDiagnosticEngine:
                     if q.question_id not in session.attempted_question_ids
                 ]
                 if candidate_qs:
-                    selected_q = candidate_qs[0]
+                    selected_q = random.choice(candidate_qs[: min(3, len(candidate_qs))])
                     p_val = p_state.p_mastery if p_state else self.bkt_params.p_init
                     eig = expected_information_gain(p_val, self.bkt_params)
                     rationale = (

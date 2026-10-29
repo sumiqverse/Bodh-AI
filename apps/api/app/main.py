@@ -13,10 +13,13 @@ from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import (
+    CSRFOriginValidationMiddleware,
+    PayloadSizeLimitMiddleware,
     RedisRateLimiter,
     RequestIdMiddleware,
     SecurityHeadersMiddleware,
 )
+from app.core.telemetry import configure_telemetry
 from app.db.redis import close_redis, get_redis_client
 from app.db.session import get_engine
 
@@ -28,6 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Manage application lifecycle for database and Redis pools."""
     settings = get_settings()
     configure_logging(settings.debug)
+    configure_telemetry()
     logger.info("Starting BodhAI API service", env=settings.app_env)
 
     # Initialize Redis connection in application state
@@ -66,7 +70,13 @@ def create_app() -> FastAPI:
     # 2. OWASP security response headers
     application.add_middleware(SecurityHeadersMiddleware)
 
-    # 3. Strict CORS allow-list
+    # 3. Payload size limiting (anti-DoS / OOM protection)
+    application.add_middleware(PayloadSizeLimitMiddleware)
+
+    # 4. CSRF origin check on state-changing methods
+    application.add_middleware(CSRFOriginValidationMiddleware)
+
+    # 5. Strict CORS allow-list
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,

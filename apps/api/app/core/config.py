@@ -25,12 +25,16 @@ class Settings(BaseSettings):
         description="Cryptographic secret key for signing sessions and tokens",
     )
     cors_origins: str = Field(
-        default="http://localhost:3000,http://127.0.0.1:3000",
+        default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://testserver",
         description="Comma-separated allow-list of origin URLs for CORS",
+    )
+    current_consent_version: str = Field(
+        default="2026.1",
+        description="Active DPDP policy consent version required for student learning access",
     )
     jwt_algorithm: str = Field(default="HS256", description="Algorithm for signing JWTs")
     access_token_expire_minutes: int = Field(
-        default=15,
+        default=1440,
         description="Access token lifespan in minutes",
     )
     refresh_token_expire_days: int = Field(
@@ -41,11 +45,23 @@ class Settings(BaseSettings):
         default="",
         description="Supabase JWT secret for validating external OAuth tokens",
     )
+    neon_auth_base_url: str = Field(
+        default="",
+        description="Neon Auth Base URL for authentication service",
+    )
+    neon_auth_jwks_url: str = Field(
+        default="",
+        description="Neon Auth JWKS URL for JSON Web Key Set validation",
+    )
 
     # Database & Cache
     database_url: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/bodhai_dev",
         description="Async SQLAlchemy database connection string",
+    )
+    database_url_unpooled: str = Field(
+        default="",
+        description="Direct unpooled database connection string for migrations",
     )
     redis_url: str = Field(
         default="redis://localhost:6379/0",
@@ -116,12 +132,51 @@ class Settings(BaseSettings):
         description="Days to retain privacy interaction logs before pruning",
     )
 
+    # Observability & Monitoring
+    sentry_dsn: str = Field(
+        default="",
+        description="Sentry DSN for error and performance monitoring",
+    )
+    sentry_traces_sample_rate: float = Field(
+        default=0.1,
+        description="Sentry trace sampling rate between 0.0 and 1.0",
+    )
+    otel_exporter_otlp_endpoint: str = Field(
+        default="",
+        description="OpenTelemetry collector OTLP exporter endpoint",
+    )
+
+    # Feature Flags & Maintenance
+    feature_flags: str = Field(
+        default="aiTutor,offlineMode,detailedDiagnostics,feedbackForm",
+        description="Comma-separated list of enabled feature flags",
+    )
+    maintenance_mode: bool = Field(
+        default=False,
+        description="Whether the service is under scheduled maintenance",
+    )
+
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env.local", ".env", "../../.env.local", "../../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
     )
+
+    @field_validator("database_url", "database_url_unpooled", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Ensure connection string uses asyncpg driver and clean SSL options."""
+        if isinstance(v, str) and v:
+            if v.startswith("postgres://"):
+                v = "postgresql+asyncpg://" + v[len("postgres://") :]
+            elif v.startswith("postgresql://"):
+                v = "postgresql+asyncpg://" + v[len("postgresql://") :]
+            # asyncpg prefers ssl=require or sslmode=require without channel_binding
+            v = v.replace("channel_binding=require&", "").replace("&channel_binding=require", "").replace("channel_binding=require", "")
+            if "sslmode=require" in v and "ssl=require" not in v:
+                v = v.replace("sslmode=require", "ssl=require")
+        return v
 
     @field_validator("secret_key")
     @classmethod

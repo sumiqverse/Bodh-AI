@@ -143,6 +143,8 @@ class DiagnosticItemResponse(BaseModel):
     difficulty: int
     prompt: str
     options: list[dict[str, Any]] | None = None
+    question_type: str = "mcq"
+    topic_name: str | None = None
 
 
 class DiagnosticResponse(BaseModel):
@@ -157,6 +159,10 @@ class DiagnosticResponse(BaseModel):
     )
     stop_reason: str | None = None
     summary: dict[str, Any] | None = None
+    last_is_correct: bool | None = None
+    correct_answer_id: str | None = None
+    explanation: str | None = None
+    is_weakness_review: bool = False
 
 
 class NextItemResponse(BaseModel):

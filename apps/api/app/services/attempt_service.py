@@ -4,6 +4,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.errors import ConsentRequiredError, NotFoundError
 from app.repositories.attempt_repo import AttemptRepository
 from app.repositories.consent_repo import ConsentRepository
@@ -30,12 +31,16 @@ class AttemptService:
         request: AttemptSubmitRequest,
     ) -> AttemptResponse:
         """Process an attempt with idempotency guard and Bayesian posterior update."""
-        # 1. Enforce Guardian Consent under DPDP Act 2023
-        has_consent = await self.consent_repo.has_consent(student_id)
+        # 1. Enforce Guardian Consent under DPDP Act 2023 with version check
+        settings = get_settings()
+        has_consent = await self.consent_repo.has_consent(
+            student_id, required_version=settings.current_consent_version
+        )
         if not has_consent:
             raise ConsentRequiredError(
-                f"Valid parental or guardian consent is required for student '{student_id}' "
-                "before recording assessment attempts under DPDP Act 2023."
+                f"Guardian consent (version '{settings.current_consent_version}') "
+                f"is required for student '{student_id}' before recording attempts "
+                "under DPDP Act 2023."
             )
 
         # 2. Idempotency Check

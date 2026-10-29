@@ -160,21 +160,21 @@ async def find_deepest_unmastered_sql_cte(
         WITH RECURSIVE prereq_tree(skill_id, depth, path) AS (
             -- Anchor step: immediate prerequisites of target skill
             SELECT
-                sp.prerequisite_id AS skill_id,
+                sp.parent_skill_id AS skill_id,
                 1 AS depth,
-                CAST(sp.prerequisite_id AS TEXT) AS path
-            FROM skill_prerequisites sp
-            WHERE sp.skill_id = :target_skill_id
+                CAST(sp.parent_skill_id AS TEXT) AS path
+            FROM prerequisites sp
+            WHERE sp.child_skill_id = :target_skill_id
 
             UNION ALL
 
             -- Recursive step: prerequisites of prerequisites
             SELECT
-                sp.prerequisite_id AS skill_id,
+                sp.parent_skill_id AS skill_id,
                 pt.depth + 1 AS depth,
-                pt.path || '->' || CAST(sp.prerequisite_id AS TEXT) AS path
-            FROM skill_prerequisites sp
-            JOIN prereq_tree pt ON sp.skill_id = pt.skill_id
+                pt.path || '->' || CAST(sp.parent_skill_id AS TEXT) AS path
+            FROM prerequisites sp
+            JOIN prereq_tree pt ON sp.child_skill_id = pt.skill_id
             WHERE pt.depth < 10
         )
         SELECT
@@ -190,11 +190,19 @@ async def find_deepest_unmastered_sql_cte(
         """
     )
 
+    # In SQLite, bind UUIDs as hex strings; in Postgres keep UUID object
+    bind = getattr(session, "bind", None) or getattr(
+        getattr(session, "sync_session", None), "bind", None
+    )
+    is_sqlite = bind is not None and hasattr(bind, "dialect") and bind.dialect.name == "sqlite"
+    t_id: uuid.UUID | str = target_skill_id.hex if is_sqlite else target_skill_id
+    s_id: uuid.UUID | str = student_id.hex if is_sqlite else student_id
+
     result = await session.execute(
         query,
         {
-            "target_skill_id": target_skill_id,
-            "student_id": student_id,
+            "target_skill_id": t_id,
+            "student_id": s_id,
             "threshold": unmastered_threshold,
         },
     )
@@ -202,16 +210,34 @@ async def find_deepest_unmastered_sql_cte(
     if row is None:
         return None
 
-    skill_id_str = str(row[0])
+    raw_skill_id = str(row[0])
+    if len(raw_skill_id) == 32:
+        try:
+            skill_id_str = str(uuid.UUID(hex=raw_skill_id))
+        except ValueError:
+            skill_id_str = raw_skill_id
+    else:
+        skill_id_str = raw_skill_id
+
     depth = int(row[1])
     p_mastery = float(row[2])
     path_str = str(row[3])
-    path_list = [str(target_skill_id), *path_str.split("->")]
+    raw_path_tokens = path_str.split("->")
+    normalized_path: list[str] = [str(target_skill_id)]
+    for token in raw_path_tokens:
+        clean_token = token.strip()
+        if len(clean_token) == 32:
+            try:
+                normalized_path.append(str(uuid.UUID(hex=clean_token)))
+                continue
+            except ValueError:
+                pass
+        normalized_path.append(clean_token)
 
     return RootCauseResult(
         skill_id=skill_id_str,
         depth=depth,
         p_mastery=p_mastery,
         state=MasteryState.NOT_LEARNED,
-        path_from_target=path_list,
+        path_from_target=normalized_path,
     )

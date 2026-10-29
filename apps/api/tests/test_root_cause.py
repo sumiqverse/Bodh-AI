@@ -1,6 +1,7 @@
 """Unit tests for root-cause search algorithms: NetworkX vs Recursive vs SQL CTE equivalence."""
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.engine.models import MasteryState, SkillState
 from app.engine.root_cause import (
@@ -148,3 +149,44 @@ def test_root_cause_when_all_mastered() -> None:
     }
     res = find_deepest_unmastered_networkx("C", edges, states, 0.40)
     assert res is None
+
+
+@pytest.mark.asyncio
+async def test_find_root_cause_sql(db_session: AsyncSession) -> None:
+    """Verify recursive CTE execution via find_root_cause_sql."""
+    import uuid
+
+    from app.engine.root_cause import find_deepest_unmastered_sql_cte
+    from app.models.assessment import Mastery
+    from app.models.curriculum import Prerequisite
+    from tests.factories import SkillFactory
+
+    student_id = uuid.uuid4()
+    sk_parent = SkillFactory.build(difficulty=0.3)
+    sk_child = SkillFactory.build(difficulty=0.7)
+    db_session.add_all([sk_parent, sk_child])
+    await db_session.flush()
+
+    prereq = Prerequisite(
+        parent_skill_id=sk_parent.id, child_skill_id=sk_child.id, relation_type="hard"
+    )
+    mastery = Mastery(
+        student_id=student_id,
+        skill_id=sk_parent.id,
+        p_mastery=0.15,
+        confidence=0.8,
+        attempts_count=2,
+    )
+    db_session.add_all([prereq, mastery])
+    await db_session.flush()
+
+    result = await find_deepest_unmastered_sql_cte(
+        session=db_session,
+        target_skill_id=sk_child.id,
+        student_id=student_id,
+        unmastered_threshold=0.40,
+    )
+    assert result is not None
+    assert result.skill_id == str(sk_parent.id)
+    assert result.depth == 1
+    assert result.p_mastery == 0.15

@@ -32,7 +32,7 @@ async def setup_adaptive_data(
 
     # Grant parental consent for student
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
 
     curr_repo = BaseRepository[Curriculum](Curriculum, db_session)
     topic_repo = BaseRepository[Topic](Topic, db_session)

@@ -59,7 +59,7 @@ async def test_authorization_matrix(
 
     # Grant consent for student 1 so attempts/sync work
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="diagnostic", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="all", version="2026.1")
 
     # Seed School & Class owned by teacher
     school_repo = BaseRepository[School](School, db_session)
@@ -236,6 +236,22 @@ async def test_authorization_matrix(
     assert "students" not in stats_data
     assert "student_emails" not in stats_data
 
+    # Admin audit-logs review
+    assert (await client.get("/api/v1/admin/audit-logs", headers=anon_h)).status_code == 401
+    assert (await client.get("/api/v1/admin/audit-logs", headers=student_h)).status_code == 403
+    assert (await client.get("/api/v1/admin/audit-logs", headers=teacher_h)).status_code == 403
+    admin_logs_res = await client.get("/api/v1/admin/audit-logs?limit=10&offset=0", headers=admin_h)
+    assert admin_logs_res.status_code == 200
+    assert "items" in admin_logs_res.json()
+    assert "total" in admin_logs_res.json()
+
+    # Filtered audit logs
+    filtered_logs_res = await client.get(
+        f"/api/v1/admin/audit-logs?action=login&resource_type=user&user_id={student.id}&limit=5&offset=0",
+        headers=admin_h,
+    )
+    assert filtered_logs_res.status_code == 200
+
     # =========================================================================
     # 4. CONSENTS: Guardian consent creation, withdrawal, inspection
     # =========================================================================
@@ -245,8 +261,8 @@ async def test_authorization_matrix(
         "guardian_name": "Sita Devi",
         "guardian_phone": "+919876500000",
         "guardian_relationship": "Mother",
-        "scopes": ["diagnostic"],
-        "version": "2024.1",
+        "scopes": ["diagnostic", "practice"],
+        "version": "2026.1",
     }
     # Anonymous -> 401
     assert (
@@ -277,6 +293,22 @@ async def test_authorization_matrix(
     assert (
         await client.get(f"/api/v1/consents/student/{student.id}", headers=admin_h)
     ).status_code == 200
+
+    # POST /consents/withdraw
+    withdraw_payload = {"scope": "diagnostic", "student_id": str(student.id)}
+    assert (
+        await client.post(
+            "/api/v1/consents/withdraw", json=withdraw_payload, headers=other_student_h
+        )
+    ).status_code == 403
+    withdraw_res = await client.post(
+        "/api/v1/consents/withdraw", json=withdraw_payload, headers=student_h
+    )
+    assert withdraw_res.status_code == 200
+    assert "Successfully withdrawn" in withdraw_res.json()["message"]
+
+    # Re-grant consent for subsequent attempt tests
+    await client.post("/api/v1/consents", json=consent_payload, headers=student_h)
 
     # =========================================================================
     # 5. DATA RIGHTS: Export and Delete under DPDP
@@ -334,6 +366,28 @@ async def test_authorization_matrix(
         await client.get(f"/api/v1/curricula/{curriculum.code}", headers=admin_h)
     ).status_code == 200
 
+    # Topics and graph routes
+    topics_res = await client.get(f"/api/v1/curricula/{curriculum.code}/topics", headers=student_h)
+    assert topics_res.status_code == 200
+    graph_res = await client.get(f"/api/v1/curricula/{curriculum.code}/graph", headers=student_h)
+    assert graph_res.status_code == 200
+    assert (
+        await client.get("/api/v1/curricula/NONEXISTENT/topics", headers=student_h)
+    ).status_code == 404
+    assert (
+        await client.get("/api/v1/curricula/NONEXISTENT/graph", headers=student_h)
+    ).status_code == 404
+    assert (await client.get("/api/v1/curricula/NONEXISTENT", headers=student_h)).status_code == 404
+
+    # Skills sub-routes
+    prereqs_res = await client.get(f"/api/v1/skills/{skill.id}/prerequisites", headers=student_h)
+    assert prereqs_res.status_code == 200
+    topic_skills_res = await client.get(f"/api/v1/skills/by-topic/{topic.id}", headers=student_h)
+    assert topic_skills_res.status_code == 200
+    assert (
+        await client.get(f"/api/v1/skills/{uuid.uuid4()}", headers=student_h)
+    ).status_code == 404
+
     # =========================================================================
     # 7. ATTEMPTS: Students submit attempts
     # =========================================================================
@@ -367,6 +421,21 @@ async def test_authorization_matrix(
     assert (await client.get(mastery_url, headers=student_h)).status_code == 200
     assert (await client.get(mastery_url, headers=teacher_h)).status_code == 200
     assert (await client.get(mastery_url, headers=admin_h)).status_code == 200
+
+    # Specific skill mastery
+    assert (
+        await client.get(
+            f"/api/v1/mastery/{skill.id}?student_id={student.id}", headers=other_student_h
+        )
+    ).status_code == 403
+    assert (
+        await client.get(f"/api/v1/mastery/{skill.id}?student_id={student.id}", headers=student_h)
+    ).status_code == 200
+    assert (
+        await client.get(
+            f"/api/v1/mastery/{uuid.uuid4()}?student_id={student.id}", headers=student_h
+        )
+    ).status_code == 404
 
     # =========================================================================
     # 9. DATA RIGHTS DELETE: Student requests self deletion, other-student blocked

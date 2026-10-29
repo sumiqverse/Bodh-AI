@@ -97,7 +97,7 @@ async def test_attempt_submission_and_idempotency(db_session: AsyncSession) -> N
     attempt_service = AttemptService(db_session)
     student_id = uuid.uuid4()
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2026.1")
 
     idempotency_key = f"test_submission_{uuid.uuid4()}"
 
@@ -138,7 +138,7 @@ async def test_attempt_submission_non_existent_question(db_session: AsyncSession
     attempt_service = AttemptService(db_session)
     student_id = uuid.uuid4()
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2026.1")
 
     req = AttemptSubmitRequest(
         question_id=uuid.uuid4(),
@@ -196,7 +196,7 @@ async def test_sync_service_process_batch(db_session: AsyncSession) -> None:
 
     student_id = uuid.uuid4()
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student_id, scope="practice", version="2026.1")
 
     sync_service = SyncService(db_session)
 

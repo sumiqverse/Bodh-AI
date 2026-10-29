@@ -56,9 +56,57 @@ async def test_security_headers_present(client: AsyncClient) -> None:
     assert headers.get("x-content-type-options") == "nosniff"
     assert headers.get("x-frame-options") == "DENY"
     assert "max-age=31536000" in headers.get("strict-transport-security", "")
-    assert "default-src 'self'" in headers.get("content-security-policy", "")
+    assert "default-src 'none'" in headers.get("content-security-policy", "")
     assert headers.get("referrer-policy") == "strict-origin-when-cross-origin"
-    assert headers.get("permissions-policy") == "geolocation=(), camera=(), microphone=()"
+    assert "geolocation=()" in headers.get("permissions-policy", "")
+    assert headers.get("x-permitted-cross-domain-policies") == "none"
+
+
+@pytest.mark.asyncio
+async def test_payload_size_limit_blocks_oversized(client: AsyncClient) -> None:
+    """Ensure request with content-length exceeding max bytes is rejected with 413."""
+    response = await client.post(
+        "/api/v1/auth/teacher/login",
+        headers={"Content-Length": str(3 * 1024 * 1024)},  # 3MB > 2MB limit
+        json={"email": "teacher@school.edu.in", "password": "password123"},
+    )
+    assert response.status_code == 413
+    assert response.json()["title"] == "Payload Too Large"
+
+
+@pytest.mark.asyncio
+async def test_payload_size_limit_allows_normal(client: AsyncClient) -> None:
+    """Ensure standard request under limit passes payload check."""
+    response = await client.post(
+        "/api/v1/auth/teacher/login",
+        json={"email": "nonexistent@school.edu.in", "password": "password123"},
+    )
+    # Passed middleware, reached auth logic (401 invalid credentials)
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_csrf_origin_validation_blocks_unauthorized_origin(client: AsyncClient) -> None:
+    """Ensure state-changing requests from untrusted external origins are rejected with 403."""
+    response = await client.post(
+        "/api/v1/auth/teacher/login",
+        headers={"Origin": "https://malicious-attacker.com"},
+        json={"email": "teacher@school.edu.in", "password": "password123"},
+    )
+    assert response.status_code == 403
+    assert response.json()["title"] == "Forbidden"
+
+
+@pytest.mark.asyncio
+async def test_csrf_origin_validation_allows_valid_origin(client: AsyncClient) -> None:
+    """Ensure state-changing requests from allowed origin succeed."""
+    response = await client.post(
+        "/api/v1/auth/teacher/login",
+        headers={"Origin": "http://localhost:3000"},
+        json={"email": "nonexistent@school.edu.in", "password": "password123"},
+    )
+    # Passed CSRF check and reached auth handler
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio

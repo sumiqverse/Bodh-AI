@@ -168,7 +168,7 @@ async def test_attempts_endpoints(
     """Test POST /api/v1/attempts submission and duplicate idempotency."""
     student, _, headers = student_auth
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
 
     curr_repo = BaseRepository[Curriculum](Curriculum, db_session)
     topic_repo = BaseRepository[Topic](Topic, db_session)
@@ -239,7 +239,7 @@ async def test_mastery_endpoints(
     """Test GET /api/v1/mastery and GET /api/v1/mastery/{skill_id}."""
     student, _, headers = student_auth
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
 
     curr_repo = BaseRepository[Curriculum](Curriculum, db_session)
     topic_repo = BaseRepository[Topic](Topic, db_session)
@@ -339,7 +339,7 @@ async def test_sync_endpoints(
     """Test POST /api/v1/sync offline batch processing."""
     student, _, headers = student_auth
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
 
     curr_repo = BaseRepository[Curriculum](Curriculum, db_session)
     topic_repo = BaseRepository[Topic](Topic, db_session)

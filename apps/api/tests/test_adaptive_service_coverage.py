@@ -25,6 +25,7 @@ from app.repositories.skill_repo import SkillRepository
 from app.schemas.assessment import (
     AttemptSubmitRequest,
     DiagnosticProgressRequest,
+    DiagnosticStartRequest,
 )
 from app.services.adaptive_service import AdaptiveService
 from tests.factories import (
@@ -64,7 +65,7 @@ async def test_adaptive_service_question_not_found(
     """Ensure Attempt submission for non-existent question raises NotFoundError."""
     student, _, _ = student_auth
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
 
     service = AdaptiveService(db_session)
     dummy_req = AttemptSubmitRequest(
@@ -88,7 +89,7 @@ async def test_adaptive_service_verified_answer_text_question(
     """Ensure numeric/text question with verified_answer is correctly evaluated."""
     student, _, _ = student_auth
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
 
     curr_repo = BaseRepository[Curriculum](Curriculum, db_session)
     topic_repo = BaseRepository[Topic](Topic, db_session)
@@ -130,6 +131,11 @@ async def test_adaptive_service_verified_answer_text_question(
     assert resp.is_correct is True
     assert resp.is_duplicate is False
     assert "worked_solution" in resp.explanation or "40" in resp.explanation
+
+    # Verify idempotency replay returns duplicate response
+    resp_dup = await service.submit_attempt(student.id, req)
+    assert resp_dup.is_duplicate is True
+    assert "Idempotent" in resp_dup.explanation
 
 
 @pytest.mark.asyncio
@@ -227,3 +233,61 @@ def test_em_fitting_pybkt_format() -> None:
     assert 0.0 <= fitted.p_guess <= 1.0
     assert 0.0 <= fitted.p_slip <= 1.0
     assert fitted.p_guess + fitted.p_slip < 1.0
+
+
+@pytest.mark.asyncio
+async def test_adaptive_service_select_next_item_and_diagnostic(
+    db_session: AsyncSession,
+    student_auth: tuple[User, str, dict[str, str]],
+) -> None:
+    """Ensure select_next_item and diagnostic session lifecycle are exercised."""
+    student, _, _ = student_auth
+    consent_repo = ConsentRepository(db_session)
+    await consent_repo.grant_consent(student_id=student.id, scope="practice", version="2026.1")
+    await consent_repo.grant_consent(student_id=student.id, scope="diagnostic", version="2026.1")
+
+    # Ensure at least one active question exists in database
+    skill_repo = SkillRepository(db_session)
+    question_repo = QuestionRepository(db_session)
+    sfx = uuid.uuid4().hex[:6]
+    sk = await skill_repo.create(SkillFactory.build(code=f"SK-DIAG-{sfx}"))
+    q = await question_repo.create(
+        QuestionFactory.build(
+            skill_id=sk.id,
+            code=f"Q-DIAG-{sfx}",
+            difficulty=2,
+            is_active=True,
+            is_deleted=False,
+        )
+    )
+    await question_repo.add_translation(
+        question_id=q.id,
+        language="en",
+        prompt="Sample diagnostic item prompt",
+        verified_answer="B",
+    )
+
+    service = AdaptiveService(db_session)
+
+    # 1. Select next item
+    next_item = await service.get_next_item(student.id)
+    assert next_item is not None
+    assert next_item.question_id is not None
+
+    # 2. Start diagnostic session
+    diag_start = await service.start_diagnostic(
+        student.id,
+        DiagnosticStartRequest(curriculum_code="NCERT-MATH-C8"),
+    )
+    assert diag_start.session_id is not None
+    if diag_start.next_item:
+        # 3. Advance diagnostic session
+        prog_req = DiagnosticProgressRequest(
+            session_id=diag_start.session_id,
+            question_id=diag_start.next_item.question_id,
+            selected_answer="B",
+            time_spent_ms=4500,
+            hint_level=0,
+        )
+        diag_prog = await service.progress_diagnostic(student.id, prog_req)
+        assert diag_prog.session_id == diag_start.session_id

@@ -36,3 +36,36 @@ class AuditRepository(BaseRepository[AuditLog]):
         self.session.add(audit_entry)
         await self.session.flush()
         return audit_entry
+
+    async def get_audit_logs(
+        self,
+        action: str | None = None,
+        resource_type: str | None = None,
+        user_id: uuid.UUID | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[int, list[AuditLog]]:
+        """Retrieve paginated audit logs with optional filters."""
+        from sqlalchemy import func, select
+
+        conditions = []
+        if action:
+            conditions.append(AuditLog.action == action)
+        if resource_type:
+            conditions.append(AuditLog.resource_type == resource_type)
+        if user_id:
+            conditions.append(AuditLog.user_id == user_id)
+
+        count_stmt = select(func.count(AuditLog.id))
+        if conditions:
+            count_stmt = count_stmt.where(*conditions)
+        total_res = await self.session.execute(count_stmt)
+        total = int(total_res.scalar() or 0)
+
+        query_stmt = select(AuditLog)
+        if conditions:
+            query_stmt = query_stmt.where(*conditions)
+        query_stmt = query_stmt.order_by(AuditLog.created_at.desc()).limit(limit).offset(offset)
+
+        res = await self.session.execute(query_stmt)
+        return total, list(res.scalars().all())

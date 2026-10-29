@@ -39,11 +39,11 @@ async def set_rls_context(
     if bind and hasattr(bind, "dialect") and bind.dialect.name == "postgresql":
         uid_val = str(user_id) if user_id is not None else ""
         await session.execute(
-            text("SET LOCAL app.user_id = :uid;"),
+            text("SELECT set_config('app.user_id', :uid, true);"),
             {"uid": uid_val},
         )
         await session.execute(
-            text("SET LOCAL app.role = :role;"),
+            text("SELECT set_config('app.role', :role, true);"),
             {"role": role},
         )
 

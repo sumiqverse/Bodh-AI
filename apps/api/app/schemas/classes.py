@@ -85,3 +85,25 @@ class AdminSchoolStatsResponse(BaseModel):
     total_attempts: int
     average_mastery: float
     grade_distribution: dict[int, int]
+
+
+class AuditLogItemResponse(BaseModel):
+    """Single security or compliance audit log record."""
+
+    id: uuid.UUID
+    user_id: uuid.UUID | None
+    action: str
+    resource_type: str
+    resource_id: str
+    changes: dict[str, object]
+    ip_address: str | None
+    created_at: datetime
+
+
+class AuditLogListResponse(BaseModel):
+    """Paginated list of security audit log records."""
+
+    total: int
+    items: list[AuditLogItemResponse]
+    limit: int
+    offset: int

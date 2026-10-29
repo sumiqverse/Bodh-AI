@@ -12,7 +12,7 @@ class ConsentCreateRequest(BaseModel):
     scope: str = Field(
         description="Consent scope, e.g. 'diagnostic', 'learning', 'data_sharing', 'offline_sync'",
     )
-    version: str = Field(default="2024.1", description="Policy version consented to")
+    version: str = Field(default="2026.1", description="Policy version consented to")
     guardian_id: uuid.UUID | None = Field(
         default=None, description="Guardian UUID if student is minor"
     )
@@ -32,7 +32,7 @@ class GuardianConsentCreateRequest(BaseModel):
         default=["diagnostic", "learning", "data_sharing"],
         description="List of consented processing scopes",
     )
-    version: str = Field(default="2024.1", description="DPDP notice version")
+    version: str = Field(default="2026.1", description="DPDP notice version")
 
 
 class ConsentWithdrawRequest(BaseModel):

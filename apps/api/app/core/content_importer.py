@@ -500,7 +500,10 @@ class ContentImporter:
                     report.glossary_updated += 1
 
         # 6. Upsert Questions & Translations
-        for q_data in pack_data.get("questions", []):
+        q_list = pack_data.get("questions", [])
+        for idx, q_data in enumerate(q_list, 1):
+            if idx % 25 == 0 or idx == len(q_list):
+                print(f"   [PROGRESS] Processing question {idx}/{len(q_list)}...", flush=True)
             q_code = q_data["code"]
             target_skill = skill_map[q_data["skill_code"]]
             difficulty = int(q_data.get("difficulty", 3))

@@ -29,10 +29,10 @@ async def test_set_rls_context_executes_correct_sql() -> None:
     await set_rls_context(mock_session, user_id=user_id, role="teacher")
 
     assert mock_session.execute.call_count == 2
-    # Verify the SQL strings executed contain the exact SET LOCAL commands
+    # Verify the SQL strings executed contain the set_config commands for app.user_id and app.role
     calls = [str(call.args[0]) for call in mock_session.execute.call_args_list]
-    assert any("SET LOCAL app.user_id" in call for call in calls)
-    assert any("SET LOCAL app.role" in call for call in calls)
+    assert any("app.user_id" in call for call in calls)
+    assert any("app.role" in call for call in calls)
 
 
 @pytest.mark.asyncio

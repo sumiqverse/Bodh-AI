@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -119,7 +120,7 @@ class QuestionTranslation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
 
-class QuestionVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+class QuestionVersion(Base, UUIDPrimaryKeyMixin):
     """Immutable audit snapshot of question and translations per version update."""
 
     __tablename__ = "question_versions"
@@ -139,6 +140,11 @@ class QuestionVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=True,
     )
     change_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
 
     question: Mapped["Question"] = relationship(back_populates="version_history")
 

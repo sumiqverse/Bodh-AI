@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import uuid
+from datetime import UTC, datetime
 from typing import Any, ClassVar
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
 from app.core.errors import ConsentRequiredError, NotFoundError
 from app.engine.diagnostic import (
     CATDiagnosticEngine,
@@ -29,8 +34,8 @@ from app.engine.models import (
     SkillState,
 )
 from app.engine.ranker import CandidateItem, RecommendationRanker
-from app.models.assessment import Attempt, Question
-from app.models.curriculum import Prerequisite
+from app.models.assessment import Attempt, Mastery, Question
+from app.models.curriculum import Prerequisite, Skill, Topic
 from app.repositories.attempt_repo import AttemptRepository
 from app.repositories.consent_repo import ConsentRepository
 from app.repositories.mastery_repo import MasteryRepository
@@ -79,12 +84,16 @@ class AdaptiveService:
         request: AttemptSubmitRequest,
     ) -> AttemptResponse:
         """Process question attempt with strict idempotency and Bayesian update."""
-        # 1. Enforce DPDP guardian consent
-        has_consent = await self.consent_repo.has_consent(student_id)
+        # 1. Enforce DPDP guardian consent with active version check
+        settings = get_settings()
+        has_consent = await self.consent_repo.has_consent(
+            student_id, required_version=settings.current_consent_version
+        )
         if not has_consent:
             raise ConsentRequiredError(
-                f"Valid parental or guardian consent is required for student '{student_id}' "
-                "before recording assessment attempts under DPDP Act 2023."
+                f"Guardian consent (version '{settings.current_consent_version}') "
+                f"is required for student '{student_id}' before recording attempts "
+                "under DPDP Act 2023."
             )
 
         # 2. Idempotency Check via idempotency_key
@@ -326,7 +335,15 @@ class AdaptiveService:
         request: DiagnosticStartRequest,
     ) -> DiagnosticResponse:
         """Start a CAT diagnostic assessment session for a student."""
-        # 1. Load curriculum skills and questions
+        # 1. Load curriculum skills, topics, and questions
+        s_stmt = select(Skill).where(Skill.is_deleted == False)  # noqa: E712
+        s_res = await self.session.execute(s_stmt)
+        skills_by_id = {str(s.id): s for s in s_res.scalars().all()}
+
+        t_stmt = select(Topic).where(Topic.is_deleted == False)  # noqa: E712
+        t_res = await self.session.execute(t_stmt)
+        topics_by_id = {str(t.id): t for t in t_res.scalars().all()}
+
         q_stmt = (
             select(Question)
             .where(Question.is_active == True, Question.is_deleted == False)  # noqa: E712
@@ -346,20 +363,29 @@ class AdaptiveService:
         for q in questions:
             qid_str = str(q.id)
             trans = q.translations[0] if q.translations else None
+            sk_obj = skills_by_id.get(str(q.skill_id))
+            skill_code = sk_obj.name if sk_obj else (q.code or str(q.skill_id))
+            top_obj = topics_by_id.get(str(sk_obj.topic_id)) if sk_obj and sk_obj.topic_id else None
+            topic_id = str(top_obj.id) if top_obj else None
+            topic_name = top_obj.name if top_obj else None
+
             diagnostic_items.append(
                 DiagnosticQuestionItem(
                     question_id=qid_str,
                     code=q.code or qid_str,
                     skill_id=str(q.skill_id),
-                    skill_code=q.code or str(q.skill_id),
+                    skill_code=skill_code,
                     difficulty=q.difficulty,
                     question_type=q.question_type,
+                    topic_id=topic_id,
+                    topic_name=topic_name,
                 )
             )
             raw_items_dict[qid_str] = {
                 "prompt": trans.prompt if trans else "",
                 "options": trans.options if trans else [],
                 "verified_answer": trans.verified_answer if trans else "",
+                "topic_name": topic_name,
             }
 
         engine = CATDiagnosticEngine(
@@ -380,6 +406,7 @@ class AdaptiveService:
             engine,
             session_state,
             raw_items_dict,
+            skills_by_id,
         )
 
         # Pick first item
@@ -396,6 +423,8 @@ class AdaptiveService:
                 difficulty=decision.item.difficulty,
                 prompt=raw.get("prompt", ""),
                 options=raw.get("options", []),
+                question_type=decision.item.question_type or "mcq",
+                topic_name=getattr(decision.item, "topic_name", None) or raw.get("topic_name"),
             )
 
         return DiagnosticResponse(
@@ -416,24 +445,35 @@ class AdaptiveService:
         _ = student_id
         session_entry = self._diagnostic_sessions.get(request.session_id)
         if session_entry is None:
-            raise NotFoundError("DiagnosticSession", request.session_id)
+            # If server restarted or in-memory session was cleared, gracefully re-initialize
+            # rather than failing with a disruptive 404
+            return await self.start_diagnostic(
+                student_id=student_id,
+                request=DiagnosticStartRequest(curriculum_code="NCERT-MATH-C8"),
+            )
 
-        engine, session_state, raw_items_dict = session_entry
+        engine = session_entry[0]
+        session_state = session_entry[1]
+        raw_items_dict = session_entry[2]
+        skills_by_id = session_entry[3] if len(session_entry) > 3 else {}
 
         # Evaluate correctness
         raw = raw_items_dict.get(request.question_id, {})
         is_correct = False
+        correct_answer_id: str | None = None
         options = raw.get("options")
         if options:
             for opt in options:
+                if bool(opt.get("is_correct")):
+                    correct_answer_id = str(opt.get("id"))
                 if str(
                     opt.get("id")
                 ).strip().upper() == request.selected_answer.strip().upper() and bool(
                     opt.get("is_correct")
                 ):
                     is_correct = True
-                    break
         elif raw.get("verified_answer"):
+            correct_answer_id = str(raw.get("verified_answer"))
             is_correct = (
                 raw["verified_answer"].strip().lower() == request.selected_answer.strip().lower()
             )
@@ -443,14 +483,18 @@ class AdaptiveService:
             HintLevel(request.hint_level) if request.hint_level in (0, 1, 2, 3) else HintLevel.NONE
         )
 
-        # Record response
-        engine.record_response(
-            session=session_state,
-            question_id=request.question_id,
-            is_correct=is_correct,
-            time_spent_s=time_spent_s,
-            hint_level=hint_level,
-        )
+        # Record response if not already recorded for this question (prevents duplicate counting on client retries)
+        if (
+            request.question_id not in session_state.attempted_question_ids
+            and not session_state.is_completed
+        ):
+            engine.record_response(
+                session=session_state,
+                question_id=request.question_id,
+                is_correct=is_correct,
+                time_spent_s=time_spent_s,
+                hint_level=hint_level,
+            )
 
         # Check next item or termination
         decision = engine.pick_next_item(session_state)
@@ -460,16 +504,123 @@ class AdaptiveService:
 
         if decision.is_completed:
             summary = engine.generate_summary(session_state)
+
+            def get_skill_name_or_code(sid: str) -> str:
+                s = skills_by_id.get(str(sid))
+                if s:
+                    return s.name or s.code
+                return sid
+
+            skill_states_list = [
+                {
+                    "skill_id": sid,
+                    "code": skills_by_id[sid].code if sid in skills_by_id else sid,
+                    "name": skills_by_id[sid].name if sid in skills_by_id else sid,
+                    "p_mastery": round(st.p_mastery, 4),
+                    "state": st.state.value if hasattr(st.state, "value") else str(st.state),
+                    "attempts_count": st.observations_count,
+                }
+                for sid, st in session_state.skill_states.items()
+            ]
+
             summary_dict = {
                 "total_questions": summary.total_questions,
                 "stop_reason": summary.stop_reason,
-                "mastered_skills": summary.mastered_skills,
-                "partial_skills": summary.partial_skills,
-                "not_learned_skills": summary.not_learned_skills,
-                "root_cause_gaps": summary.root_cause_gaps,
-                "recommended_starting_skills": summary.recommended_starting_skills,
+                "mastered_skills": [get_skill_name_or_code(sid) for sid in summary.mastered_skills],
+                "partial_skills": [get_skill_name_or_code(sid) for sid in summary.partial_skills],
+                "not_learned_skills": [get_skill_name_or_code(sid) for sid in summary.not_learned_skills],
+                "root_cause_gaps": [get_skill_name_or_code(sid) for sid in summary.root_cause_gaps],
+                "recommended_starting_skills": [get_skill_name_or_code(sid) for sid in summary.recommended_starting_skills],
                 "mean_uncertainty": summary.mean_uncertainty,
+                "skill_states": skill_states_list,
             }
+
+            now_utc = datetime.now(UTC)
+
+            try:
+                # 1. Batch fetch all existing masteries for this student in ONE query
+                existing_m_stmt = select(Mastery).where(Mastery.student_id == student_id)
+                existing_m_res = await self.session.execute(existing_m_stmt)
+                existing_masteries = {m.skill_id: m for m in existing_m_res.scalars().all()}
+
+                # Persist each calibrated skill's Bayesian mastery in memory
+                for skill_id_str, skill_state in session_state.skill_states.items():
+                    try:
+                        sk_uuid = uuid.UUID(skill_id_str)
+                        if sk_uuid not in skills_by_id:
+                            continue
+                        obs_count = max(1, skill_state.observations_count)
+                        confidence = min(
+                            0.99, max(0.40, 1.0 - (0.60 * math.exp(-0.25 * obs_count)))
+                        )
+                        is_corr = skill_state.p_mastery >= self.thresholds.mastered_min
+                        corr_cnt = (
+                            skill_state.correct_count
+                            if hasattr(skill_state, "correct_count")
+                            else (1 if is_corr else 0)
+                        )
+
+                        mastery_obj = existing_masteries.get(sk_uuid)
+                        if mastery_obj is None:
+                            new_m = Mastery(
+                                student_id=student_id,
+                                skill_id=sk_uuid,
+                                p_mastery=round(skill_state.p_mastery, 4),
+                                confidence=round(confidence, 4),
+                                attempts_count=obs_count,
+                                correct_count=corr_cnt,
+                                last_attempted_at=now_utc,
+                            )
+                            self.session.add(new_m)
+                            existing_masteries[sk_uuid] = new_m
+                        else:
+                            mastery_obj.p_mastery = round(skill_state.p_mastery, 4)
+                            mastery_obj.confidence = round(confidence, 4)
+                            mastery_obj.attempts_count = max(mastery_obj.attempts_count + 1, obs_count)
+                            if is_corr:
+                                mastery_obj.correct_count += 1
+                            mastery_obj.last_attempted_at = now_utc
+                    except Exception as sk_err:
+                        logger.warning("Failed preparing mastery for %s: %s", skill_id_str, sk_err)
+
+                # 2. Batch fetch existing diagnostic attempt keys in ONE query
+                sess_short = session_state.session_id.replace("-", "")[:12]
+                diag_prefix = f"dg_{sess_short}_"
+                existing_keys_stmt = select(Attempt.idempotency_key).where(
+                    Attempt.student_id == student_id,
+                    Attempt.idempotency_key.like(f"{diag_prefix}%"),
+                )
+                existing_keys_res = await self.session.execute(existing_keys_stmt)
+                existing_keys = set(existing_keys_res.scalars().all())
+
+                for q_id_str, sk_id_str, was_correct in session_state.question_history:
+                    try:
+                        q_uuid = uuid.UUID(q_id_str)
+                        sk_uuid = uuid.UUID(sk_id_str)
+                        q_short = q_uuid.hex[:12]
+                        # Fits comfortably in VARCHAR(64): 3 + 12 + 12 = 27 characters
+                        diag_key = f"{diag_prefix}{q_short}"
+                        if diag_key not in existing_keys:
+                            new_att = Attempt(
+                                student_id=student_id,
+                                question_id=q_uuid,
+                                skill_id=sk_uuid,
+                                idempotency_key=diag_key,
+                                selected_answer="verified",
+                                is_correct=was_correct,
+                                time_spent_ms=int(time_spent_s * 1000),
+                                client_timestamp=now_utc,
+                            )
+                            self.session.add(new_att)
+                            existing_keys.add(diag_key)
+                    except Exception as att_err:
+                        logger.warning("Failed preparing attempt: %s", att_err)
+
+                # Single commit for all rows
+                await self.session.commit()
+            except Exception as commit_err:
+                logger.error("Error committing diagnostic results: %s", commit_err)
+                await self.session.rollback()
         elif decision.item:
             raw_next = raw_items_dict.get(decision.item.question_id, {})
             next_item_resp = DiagnosticItemResponse(
@@ -480,7 +631,13 @@ class AdaptiveService:
                 difficulty=decision.item.difficulty,
                 prompt=raw_next.get("prompt", ""),
                 options=raw_next.get("options", []),
+                question_type=decision.item.question_type or "mcq",
+                topic_name=getattr(decision.item, "topic_name", None) or raw_next.get("topic_name"),
             )
+
+        is_weakness_review = bool(
+            decision.item and ("backward walk" in decision.rationale.lower() or not is_correct)
+        )
 
         return DiagnosticResponse(
             session_id=session_state.session_id,
@@ -490,4 +647,8 @@ class AdaptiveService:
             rationale=decision.rationale,
             stop_reason=decision.stop_reason,
             summary=summary_dict,
+            last_is_correct=is_correct,
+            correct_answer_id=correct_answer_id,
+            explanation=raw.get("explanation"),
+            is_weakness_review=is_weakness_review,
         )

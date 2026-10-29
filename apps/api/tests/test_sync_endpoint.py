@@ -31,7 +31,7 @@ async def test_sync_batch_replays_attempts_and_returns_canonical_mastery(
 
     # Grant consent for assessment attempts under DPDP Act 2023
     consent_repo = ConsentRepository(db_session)
-    await consent_repo.grant_consent(student_id=_student.id, scope="practice", version="2024.1")
+    await consent_repo.grant_consent(student_id=_student.id, scope="practice", version="2026.1")
 
     # 1. Setup skill & question
     curr_repo = CurriculumRepository(db_session)
@@ -199,7 +199,7 @@ async def test_sync_naive_future_timestamp(
 ) -> None:
     """Test that naive future timestamp without tzinfo is coerced to UTC and flagged."""
     _, _, headers = student_auth
-    naive_future = datetime.utcnow() + timedelta(minutes=20)
+    naive_future = datetime.now(UTC) + timedelta(minutes=20)
 
     payload = {
         "events": [
