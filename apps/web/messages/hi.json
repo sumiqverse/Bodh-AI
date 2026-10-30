@@ -194,6 +194,8 @@
     "noAccount": "क्या शिक्षक खाता नहीं है?",
     "signupLink": "यहाँ पंजीकरण करें",
     "studentJoinCode": "कक्षा कोड",
+    "studentJoinCodeOptional": "कक्षा कोड (यदि पहले जुड़ चुके हैं तो वैकल्पिक)",
+    "studentJoinCodeOptionalHelp": "यदि पहले से कक्षा में नामांकित हैं तो इसे खाली छोड़ दें",
     "studentJoinCodePlaceholder": "उदा. EQZXR2",
     "studentUsername": "विद्यार्थी यूज़रनेम",
     "studentUsernamePlaceholder": "उदा. rahul_8a",

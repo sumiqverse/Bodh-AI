@@ -49,7 +49,7 @@ class TeacherLoginRequest(BaseModel):
 class StudentLoginRequest(BaseModel):
     """Sign-in payload for minor students using class join code and PIN."""
 
-    join_code: str = Field(min_length=4, max_length=12, description="Teacher-issued class code")
+    join_code: str | None = Field(default=None, description="Optional teacher-issued class code")
     username: str = Field(min_length=3, max_length=50, description="Student unique username")
     pin: str = Field(min_length=4, max_length=8, description="Student PIN")
 

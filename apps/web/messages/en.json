@@ -194,6 +194,8 @@
     "noAccount": "Don't have an educator account?",
     "signupLink": "Sign up here",
     "studentJoinCode": "Class Join Code",
+    "studentJoinCodeOptional": "Class Code (Optional if already joined)",
+    "studentJoinCodeOptionalHelp": "Leave empty if already enrolled in a classroom",
     "studentJoinCodePlaceholder": "e.g. EQZXR2",
     "studentUsername": "Student Username",
     "studentUsernamePlaceholder": "e.g. rahul_8a",

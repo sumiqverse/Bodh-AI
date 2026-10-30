@@ -87,6 +87,10 @@ export default function LoginPage(): React.JSX.Element {
       if (params.get('reset') === 'true') {
         setIsResetOpen(true);
       }
+      const savedCode = localStorage.getItem('bodhai_last_join_code');
+      if (savedCode) {
+        setJoinCode(savedCode);
+      }
     }
   }, [t, router]);
 
@@ -213,13 +217,17 @@ export default function LoginPage(): React.JSX.Element {
     setIsLoading(true);
 
     try {
+      const code = joinCode.trim() ? joinCode.trim().toUpperCase() : undefined;
       const res = await apiClient.studentLogin({
-        join_code: joinCode.trim().toUpperCase(),
+        join_code: code,
         username: studentUsername.trim(),
         pin: studentPin.trim(),
       });
       setAuthSession(res.access_token, res.user);
       if (typeof window !== 'undefined') {
+        if (code) {
+          localStorage.setItem('bodhai_last_join_code', code);
+        }
         try {
           const pRes = await apiClient.getMyProfile(res.access_token);
           if (pRes?.profile?.curriculumCode) {
@@ -550,29 +558,10 @@ export default function LoginPage(): React.JSX.Element {
 
                 <div className="space-y-2">
                   <label
-                    htmlFor="student-join-code"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                  >
-                    {t('studentJoinCode')}
-                  </label>
-                  <Input
-                    id="student-join-code"
-                    type="text"
-                    required
-                    maxLength={6}
-                    placeholder={t('studentJoinCodePlaceholder')}
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    className="font-mono uppercase tracking-widest text-center"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
                     htmlFor="student-username"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    {t('studentUsername')}
+                    {t('studentUsername')} *
                   </label>
                   <Input
                     id="student-username"
@@ -589,7 +578,7 @@ export default function LoginPage(): React.JSX.Element {
                     htmlFor="student-pin"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    {t('studentPin')}
+                    {t('studentPin')} *
                   </label>
                   <Input
                     id="student-pin"
@@ -601,6 +590,29 @@ export default function LoginPage(): React.JSX.Element {
                     onChange={(e) => setStudentPin(e.target.value)}
                     className="text-center tracking-widest"
                   />
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="student-join-code"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      {t('studentJoinCodeOptional')}
+                    </label>
+                  </div>
+                  <Input
+                    id="student-join-code"
+                    type="text"
+                    maxLength={6}
+                    placeholder={t('studentJoinCodePlaceholder')}
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    className="font-mono uppercase tracking-widest text-center"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('studentJoinCodeOptionalHelp')}
+                  </p>
                 </div>
 
                 <Button

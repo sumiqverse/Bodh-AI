@@ -1292,9 +1292,9 @@ export interface components {
     StudentLoginRequest: {
       /**
        * Join Code
-       * @description Teacher-issued class code
+       * @description Optional teacher-issued class code
        */
-      join_code: string;
+      join_code?: string | null;
       /**
        * Username
        * @description Student unique username

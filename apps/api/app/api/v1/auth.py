@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, Request, Response, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
@@ -23,6 +24,7 @@ from app.core.security import (
     verify_supabase_token,
 )
 from app.models.auth import User
+from app.models.organization import Enrollment
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.class_repo import ClassRepository
 from app.repositories.user_repo import UserRepository
@@ -303,27 +305,17 @@ async def student_login(
     audit_repo = AuditRepository(session)
     client_ip = request.client.host if request.client else None
 
-    # 1. Validate join code
-    school_class = await class_repo.get_by_join_code(payload.join_code)
-    if school_class is None:
-        raise NotFoundError("Class with join code", payload.join_code)
-
-    # 2. Find student by username
-    student = await user_repo.get_by_username(payload.username)
+    # 1. Find student by username
+    student = await user_repo.get_by_username(payload.username.strip())
     if student is None:
         raise AuthenticationError("Invalid username or PIN.")
 
-    # 3. Check lockout
+    # 2. Check lockout
     if _is_locked(student.locked_until):
         s_until = student.locked_until.isoformat() if student.locked_until else ""
         raise AccountLockedError(f"Account is temporarily locked until {s_until}.")
 
-    # 4. Check enrollment in class
-    enrollment = await class_repo.get_enrollment(school_class.id, student.id)
-    if enrollment is None or enrollment.status == "removed":
-        raise AuthenticationError("Student is not enrolled in this classroom.")
-
-    # 5. Verify PIN using Argon2
+    # 3. Verify PIN using Argon2
     if not student.pin_hash or not verify_secret(student.pin_hash, payload.pin):
         await user_repo.record_login_failure(student)
         await audit_repo.log_action(
@@ -335,12 +327,38 @@ async def student_login(
         )
         raise AuthenticationError("Invalid username or PIN.")
 
+    # 4. Resolve classroom enrollment (optional join_code)
+    school_class_id_str: str | None = None
+    if payload.join_code and payload.join_code.strip():
+        school_class = await class_repo.get_by_join_code(payload.join_code.strip().upper())
+        if school_class is None:
+            raise NotFoundError("Class with join code", payload.join_code)
+        enrollment = await class_repo.get_enrollment(school_class.id, student.id)
+        if enrollment is None or enrollment.status == "removed":
+            # Auto-enroll in new class if not already enrolled
+            await class_repo.add_enrollment(school_class.id, student.id, status="pending")
+        school_class_id_str = str(school_class.id)
+    else:
+        # Retrieve student's existing active or pending classroom enrollment
+        enr_stmt = (
+            select(Enrollment)
+            .where(
+                Enrollment.student_id == student.id,
+                Enrollment.status.in_(["active", "pending"]),
+            )
+            .order_by(Enrollment.created_at.desc())
+            .limit(1)
+        )
+        enr = (await session.execute(enr_stmt)).scalar_one_or_none()
+        if enr:
+            school_class_id_str = str(enr.class_id)
+
     await user_repo.record_login_success(student)
     await audit_repo.log_action(
         action="student_login_success",
         resource_type="user",
         resource_id=str(student.id),
-        changes={"class_id": str(school_class.id)},
+        changes={"class_id": school_class_id_str} if school_class_id_str else {},
         user_id=student.id,
         ip_address=client_ip,
     )
