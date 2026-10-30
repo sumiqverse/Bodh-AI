@@ -277,15 +277,6 @@ export default function LoginPage(): React.JSX.Element {
         router.push('/classes');
         return;
       }
-      if (demoId === 'demo-apple') {
-        const res = await apiClient.teacherLogin({
-          email: 'cleb8ke4c@mozmail.com',
-          password: 'Password@123',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/classes');
-        return;
-      }
       if (demoId === 'demo-aarav') {
         const res = await apiClient.studentLogin({
           join_code: 'MATH8A',

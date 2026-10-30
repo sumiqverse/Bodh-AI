@@ -626,10 +626,10 @@ export function StudentProfileDetail({
                         className="text-[11px] font-semibold py-0.5 px-2"
                       >
                         {sk.state === 'mastered'
-                          ? '✓ Mastered'
+                          ? 'Mastered'
                           : sk.state === 'partial'
-                            ? '◐ In Progress'
-                            : '○ Needs Attention'}
+                            ? 'In Progress'
+                            : 'Needs Attention'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">

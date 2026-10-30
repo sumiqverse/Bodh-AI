@@ -1979,154 +1979,40 @@ export function getProfileForUser(
       };
     }
 
-    // 3. For teacher 'apple' or any other real teacher: create their OWN individualized profile
-    const isApple =
-      user.email === 'cleb8ke4c@mozmail.com' ||
-      user.full_name?.toLowerCase() === 'apple' ||
-      user.username === 'apple';
+    // 3. For any registered teacher: create their OWN individualized dynamic profile starting fresh
+    const teacherName = user.full_name || user.username || 'Educator';
+    const teacherSlug = `tchr-${teacherName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
-    const initialTeacher: TeacherProfile = isApple
-      ? {
-          id: userId,
-          slug: 'tchr-apple',
-          fullName: user.full_name || 'apple',
-          fullNameHi: user.full_name || 'apple',
-          title: 'Secondary Mathematics & Science Educator',
-          titleHi: 'माध्यमिक गणित एवं विज्ञान शिक्षक',
-          employeeId: getStableEmployeeId(userId),
-          email: user.email || 'cleb8ke4c@mozmail.com',
-          phone: '',
-          schoolName: 'Kendriya Vidyalaya No. 1, Delhi',
-          department: 'Secondary Department (Classes 8–10)',
-          qualifications: 'M.Sc. (Mathematics), B.Ed, CTET Certified',
-          experienceYears: 8,
-          avatarGradient: 'from-blue-600 via-indigo-600 to-purple-600',
-          bio: 'Dedicated secondary educator with 8+ years experience guiding Class 8-10 students through NCERT competency-based mastery. Specialized in addressing algebra misconceptions and interactive problem solving.',
-          bioHi:
-            '8+ वर्षों के अनुभव के साथ समर्पित माध्यमिक शिक्षक, जो NCERT दक्षता आधारित अधिगम में कक्षा 8-10 के छात्रों का मार्गदर्शन करते हैं। बीजगणित की भ्रांतियों के समाधान में विशेष दक्षता।',
-          officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
-          verifiedEducator: true,
-          totalStudentsTaught: 50,
-          activeClassesCount: 1,
-          avgClassroomMastery: 56.3,
-          totalAssignmentsCreated: 4,
-          aiDecisionsReviewed: 6,
-          classes: [
-            {
-              id: '1c26a0d3-e856-4c80-b361-9c8b56d0e157',
-              name: 'Class 9-A Mathematics & Science',
-              grade: 9,
-              section: 'A',
-              academicYear: '2024-2025',
-              studentCount: 50,
-              avgMastery: 56.3,
-              activeAssignments: 4,
-              joinCode: '9GRBDG',
-              status: 'active',
-            },
-          ],
-          pedagogicalDecisions: [
-            {
-              id: 'dec-1',
-              className: 'Class 9-A Mathematics & Science',
-              suggestionTitle: 'Polynomial Factorization Sign Errors',
-              action: 'accepted',
-              timestamp: '2026-10-29T15:58:15Z',
-              rationale:
-                'Approved BodhAI AI recommendation to assign middle-term splitting scaffold module.',
-              skillName: 'Polynomials Factorization',
-            },
-            {
-              id: 'dec-2',
-              className: 'Class 9-A Mathematics & Science',
-              suggestionTitle: 'Euclidean Axiom Pacing Adjustment',
-              action: 'edited',
-              timestamp: '2026-10-29T15:58:15Z',
-              rationale:
-                'Edited pacing to add hands-on axiom visualization before formal theorem proofs.',
-              skillName: 'Euclidean Geometry & Lines',
-            },
-            {
-              id: 'dec-3',
-              className: 'Class 9-A Mathematics & Science',
-              suggestionTitle: 'Peer-Pairing Recommendation for Irrational Representation',
-              action: 'accepted',
-              timestamp: '2026-10-29T15:58:15Z',
-              rationale: 'Accepted peer-pairing matrix for collaborative problem solving.',
-              skillName: 'Number Systems Irrational Representation',
-            },
-          ],
-          schedule: [
-            {
-              day: 'Monday',
-              period: 'Period 1',
-              timeSlot: '08:30 AM – 09:15 AM',
-              className: 'Class 9-A',
-              subject: 'Mathematics',
-              room: 'Room 200',
-            },
-            {
-              day: 'Tuesday',
-              period: 'Period 2',
-              timeSlot: '09:30 AM – 10:15 AM',
-              className: 'Class 9-A',
-              subject: 'Mathematics',
-              room: 'Room 201',
-            },
-            {
-              day: 'Wednesday',
-              period: 'Period 4',
-              timeSlot: '11:15 AM – 12:00 PM',
-              className: 'Class 9-A',
-              subject: 'Mathematics',
-              room: 'Room 202',
-            },
-            {
-              day: 'Thursday',
-              period: 'Period 6',
-              timeSlot: '01:30 PM – 02:15 PM',
-              className: 'Class 9-A',
-              subject: 'Mathematics',
-              room: 'Room 203',
-            },
-          ],
-          specializations: [
-            'NCERT Class 8-10 Mathematics',
-            'Linear Equations & Algebraic Identities',
-            'Rational Numbers & Exponents',
-            'Formative Diagnostic Assessment',
-          ],
-        }
-      : {
-          id: userId,
-          slug: `tchr-${(user.full_name || user.username || 'educator').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-          fullName: user.full_name || 'Educator',
-          fullNameHi: user.full_name || 'शिक्षक',
-          title: 'Mathematics & Science Educator',
-          titleHi: 'गणित एवं विज्ञान शिक्षक',
-          employeeId: getStableEmployeeId(userId),
-          email: user.email || '',
-          phone: '',
-          schoolName: 'Kendriya Vidyalaya No. 1, Delhi',
-          department: 'Secondary Department',
-          qualifications: 'B.Ed / CTET Certified',
-          experienceYears: 4,
-          avatarGradient: 'from-blue-600 via-indigo-600 to-purple-600',
-          bio: 'Secondary educator mentoring students in foundational and conceptual NCERT competencies.',
-          bioHi:
-            'मूलभूत और वैचारिक NCERT दक्षताओं में छात्रों का मार्गदर्शन करने वाले माध्यमिक शिक्षक।',
-          officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
-          verifiedEducator: true,
-          totalStudentsTaught: 0,
-          activeClassesCount: 0,
-          avgClassroomMastery: 0,
-          totalAssignmentsCreated: 0,
-          aiDecisionsReviewed: 0,
-          classes: [],
-          pedagogicalDecisions: [],
-          schedule: [],
-          specializations: ['CBSE/NCERT Class 6-10 Curriculum', 'Rational Numbers & Algebra'],
-        };
+    const initialTeacher: TeacherProfile = {
+      id: userId,
+      slug: teacherSlug,
+      fullName: teacherName,
+      fullNameHi: teacherName,
+      title: 'Secondary Educator',
+      titleHi: 'माध्यमिक शिक्षक',
+      employeeId: getStableEmployeeId(userId),
+      email: user.email || '',
+      phone: '',
+      schoolName: 'Kendriya Vidyalaya, Delhi',
+      department: 'Secondary Department',
+      qualifications: 'B.Ed / CTET Certified',
+      experienceYears: 4,
+      avatarGradient: 'from-blue-600 via-indigo-600 to-purple-600',
+      bio: 'Secondary educator mentoring students in foundational and conceptual NCERT competencies.',
+      bioHi:
+        'मूलभूत और वैचारिक NCERT दक्षताओं में छात्रों का मार्गदर्शन करने वाले माध्यमिक शिक्षक।',
+      officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
+      verifiedEducator: true,
+      totalStudentsTaught: 0,
+      activeClassesCount: 0,
+      avgClassroomMastery: 0,
+      totalAssignmentsCreated: 0,
+      aiDecisionsReviewed: 0,
+      classes: [],
+      pedagogicalDecisions: [],
+      schedule: [],
+      specializations: ['CBSE/NCERT Class 6-10 Curriculum', 'Adaptive Learning'],
+    };
 
     // Permanently persist so page reloads always return the exact same profile
     if (typeof window !== 'undefined') {
@@ -2424,26 +2310,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
       email: 'kavita.deshmukh@delhiedu.gov.in',
       username: 'kavita_deshmukh',
       full_name: 'Ms. Kavita Deshmukh',
-      role: 'teacher',
-      preferred_language: 'en',
-      is_minor: false,
-      created_at: '2026-08-01T00:00:00Z',
-    },
-  },
-  {
-    id: 'demo-apple',
-    name: 'apple (You)',
-    nameHi: 'apple (आपका खाता)',
-    role: 'teacher',
-    badge: 'Class 9-A Math & Science • 50 Students',
-    description: 'Your Personal Teacher Account (cleb8ke4c@mozmail.com)',
-    descriptionHi: 'आपका व्यक्तिगत शिक्षक खाता (cleb8ke4c@mozmail.com)',
-    avatarGradient: 'from-indigo-600 to-blue-700',
-    user: {
-      id: '729a8837-8062-4f17-a9a3-a99b57f307bb',
-      email: 'cleb8ke4c@mozmail.com',
-      username: 'apple',
-      full_name: 'apple',
       role: 'teacher',
       preferred_language: 'en',
       is_minor: false,

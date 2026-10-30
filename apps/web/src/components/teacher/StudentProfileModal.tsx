@@ -118,7 +118,11 @@ export function StudentProfileModal({
             </div>
             <div className="flex items-center gap-2">
               <Link href={`/profiles/students/${studentSlug}`}>
-                <Button variant="outline" size="sm" className="text-xs font-semibold text-primary border-primary/40">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-semibold text-primary border-primary/40"
+                >
                   Full Profile Page ↗
                 </Button>
               </Link>
@@ -234,10 +238,10 @@ export function StudentProfileModal({
                                 className="text-[11px]"
                               >
                                 {item.state === 'mastered'
-                                  ? '✓ Mastered'
+                                  ? 'Mastered'
                                   : item.state === 'partial'
-                                    ? '◐ In Progress'
-                                    : '○ Not Started'}
+                                    ? 'In Progress'
+                                    : 'Not Started'}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs font-mono text-right">

@@ -129,15 +129,9 @@ describe('ClassHeatmapView Component', () => {
     // Check KPI counts
     expect(screen.getAllByText('3').length).toBe(3);
 
-    // Check accessible visual symbols are present
-    const checkmarks = screen.getAllByText('✓');
-    expect(checkmarks.length).toBeGreaterThan(0);
-
-    const splitMoons = screen.getAllByText('◐');
-    expect(splitMoons.length).toBeGreaterThan(0);
-
-    const circles = screen.getAllByText('○');
-    expect(circles.length).toBeGreaterThan(0);
+    // Check percentage values are rendered in cells
+    const percentageCells = screen.getAllByText(/95%/);
+    expect(percentageCells.length).toBeGreaterThan(0);
   });
 
   it('renders student rows and skill columns with accessible aria-labels (not color alone)', () => {

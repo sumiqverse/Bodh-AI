@@ -39,7 +39,7 @@ export default function StudentHomePage(): React.JSX.Element {
             size="sm"
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-0.5 px-2.5"
           >
-            ✓ {t('stateMastered')}
+            {t('stateMastered')}
           </Badge>
         );
       case 'partial':
@@ -49,7 +49,7 @@ export default function StudentHomePage(): React.JSX.Element {
             size="sm"
             className="bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/30 font-medium text-xs py-0.5 px-2.5"
           >
-            ⚡ {t('statePartial')}
+            {t('statePartial')}
           </Badge>
         );
       case 'not_learned':
@@ -60,7 +60,7 @@ export default function StudentHomePage(): React.JSX.Element {
             size="sm"
             className="text-muted-foreground border-border font-normal text-xs py-0.5 px-2.5"
           >
-            ○ {t('stateNotLearned')}
+            {t('stateNotLearned')}
           </Badge>
         );
     }

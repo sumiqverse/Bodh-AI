@@ -258,27 +258,6 @@ TEACHER_CONFIGS = [
         "student_count": 46,
         "roll_prefix": 600,
     },
-    # Also expand apple's class (user's personal teacher account)
-    {
-        "email": "cleb8ke4c@mozmail.com",
-        "name": "apple",
-        "title": "Secondary Mathematics & Science Educator",
-        "experience": 5,
-        "school_dept": "Secondary Department",
-        "bio": (
-            "Adaptive learning mentor using BodhAI Bayesian knowledge tracing "
-            "for targeted class interventions."
-        ),
-        "gradient": "from-indigo-600 via-purple-600 to-blue-700",
-        "class_name": "Class 9-A Mathematics & Science",
-        "grade": 9,
-        "section": "A",
-        "join_code": "9GRBDG",
-        "subject": "mathematics",
-        "curriculum_code": "NCERT-MATH-C9",
-        "student_count": 50,
-        "roll_prefix": 950,
-    },
 ]
 
 

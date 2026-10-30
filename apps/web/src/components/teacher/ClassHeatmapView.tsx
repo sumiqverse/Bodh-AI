@@ -74,12 +74,7 @@ export function ClassHeatmapView({
                 {heatmap.summary.mastered.toLocaleString()}
               </p>
             </div>
-            <div
-              className="h-9 w-9 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500 flex items-center justify-center font-bold text-emerald-700 dark:text-emerald-300"
-              aria-hidden="true"
-            >
-              ✓
-            </div>
+            <div className="h-2.5 w-8 rounded-full bg-emerald-500" aria-hidden="true" />
           </CardContent>
         </Card>
 
@@ -93,12 +88,7 @@ export function ClassHeatmapView({
                 {heatmap.summary.partial.toLocaleString()}
               </p>
             </div>
-            <div
-              className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-500 flex items-center justify-center font-bold text-amber-700 dark:text-amber-300"
-              aria-hidden="true"
-            >
-              ◐
-            </div>
+            <div className="h-2.5 w-8 rounded-full bg-amber-500" aria-hidden="true" />
           </CardContent>
         </Card>
 
@@ -112,31 +102,26 @@ export function ClassHeatmapView({
                 {heatmap.summary.not_learned.toLocaleString()}
               </p>
             </div>
-            <div
-              className="h-9 w-9 rounded-full bg-muted border border-dashed border-border flex items-center justify-center font-bold text-muted-foreground"
-              aria-hidden="true"
-            >
-              ○
-            </div>
+            <div className="h-2.5 w-8 rounded-full bg-muted-foreground/30" aria-hidden="true" />
           </CardContent>
         </Card>
 
         <Card className="bg-muted/40 border-border">
-          <CardContent className="p-3 text-xs space-y-1">
+          <CardContent className="p-3 text-xs space-y-1.5">
             <p className="font-semibold text-foreground flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-primary" />
               {t('patternLegend')}
             </p>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="font-bold text-emerald-600">✓</span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="w-3 h-3 rounded-xs bg-emerald-500 inline-block shrink-0" />
               <span>{t('masteredPattern')}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="font-bold text-amber-600">◐</span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="w-3 h-3 rounded-xs bg-amber-500 inline-block shrink-0" />
               <span>{t('partialPattern')}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="font-bold text-slate-500">○</span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="w-3 h-3 rounded-xs bg-muted border border-border inline-block shrink-0" />
               <span>{t('notLearnedPattern')}</span>
             </div>
           </CardContent>
@@ -250,20 +235,18 @@ export function ClassHeatmapView({
                         const cell = cellMap.get(`${st.student_id}:${sk.skill_id}`);
                         const state = cell?.state || 'not_learned';
                         const pScore = cell?.p_mastery ?? 0;
+                        const pct = Math.round(pScore * 100);
 
                         let bgClass = 'bg-muted/20 text-muted-foreground border-border/30';
-                        let patternSymbol = '○';
                         let stateLabel = t('notLearned');
 
                         if (state === 'mastered') {
                           bgClass =
                             'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-200 border-emerald-400/50 dark:border-emerald-700/60 font-semibold';
-                          patternSymbol = '✓';
                           stateLabel = t('mastered');
                         } else if (state === 'partial') {
                           bgClass =
                             'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-200 border-amber-400/50 dark:border-amber-700/60 font-semibold';
-                          patternSymbol = '◐';
                           stateLabel = t('partial');
                         }
 
@@ -271,19 +254,16 @@ export function ClassHeatmapView({
                           <td
                             key={sk.skill_id}
                             className={`p-1 text-center border-r border-border/30 ${bgClass} transition-colors`}
-                            title={`${st.student_name} • ${sk.skill_name}: ${stateLabel} (${Math.round(pScore * 100)}%)`}
+                            title={`${st.student_name} • ${sk.skill_name}: ${stateLabel} (${pct}%)`}
                           >
                             <button
                               type="button"
                               onClick={() => onSelectStudent(st.student_id)}
-                              aria-label={`${st.student_name}: ${sk.skill_name} is ${stateLabel}`}
-                              className="w-full h-8 flex flex-col items-center justify-center rounded-sm hover:scale-105 active:scale-95 transition-transform focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
+                              aria-label={`${st.student_name}: ${sk.skill_name} is ${stateLabel} (${pct}%)`}
+                              className="w-full h-8 flex items-center justify-center rounded-sm hover:scale-105 active:scale-95 transition-transform focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                             >
-                              <span className="text-sm leading-none" aria-hidden="true">
-                                {patternSymbol}
-                              </span>
-                              <span className="text-[9px] opacity-80 mt-0.5">
-                                {pScore > 0 ? `${Math.round(pScore * 100)}%` : '—'}
+                              <span className="text-xs font-semibold">
+                                {pScore > 0 ? `${pct}%` : '—'}
                               </span>
                             </button>
                           </td>
