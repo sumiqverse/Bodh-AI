@@ -84,6 +84,47 @@ export default function SignupPage(): React.JSX.Element {
     }
   };
 
+  const handleDirectResetWithEnteredPassword = async (): Promise<void> => {
+    if (!email || !password) return;
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long.');
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await apiClient.resetPassword({
+        email: email.trim(),
+        new_password: password,
+      });
+      setAuthSession(res.access_token, res.user);
+
+      // Persist profile metadata
+      if (typeof window !== 'undefined') {
+        const pendingProfile = {
+          fullName: fullName.trim() || res.user.full_name,
+          schoolName: schoolName.trim() || 'School',
+          experienceYears: Number(experienceYears) || 0,
+          title: title.trim() || 'Educator',
+        };
+        localStorage.setItem(
+          `bodhai_pending_profile_${email.trim().toLowerCase()}`,
+          JSON.stringify(pendingProfile),
+        );
+      }
+
+      router.push('/classes');
+    } catch (err: unknown) {
+      let msg = err instanceof Error ? err.message : t('authFailed');
+      if (msg.includes('API Error')) {
+        msg = msg.replace(/^API Error \[\d+\]:\s*/, '');
+      }
+      setErrorMessage(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const languageOptions = [
     { value: 'en', label: t('langEnglish') },
     { value: 'hi', label: t('langHindi') },
@@ -106,23 +147,37 @@ export default function SignupPage(): React.JSX.Element {
             {errorMessage && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium space-y-2"
+                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3.5 text-sm text-destructive font-medium space-y-2.5"
               >
                 <div>{errorMessage}</div>
                 {(errorMessage.includes('already exists') || errorMessage.includes('409')) && (
-                  <div className="flex flex-wrap items-center gap-3 pt-1.5 border-t border-destructive/20 mt-1">
-                    <Link
-                      href={`/login?email=${encodeURIComponent(email.trim())}`}
-                      className="text-xs font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
-                    >
-                      Sign in with this account →
-                    </Link>
-                    <Link
-                      href={`/login?email=${encodeURIComponent(email.trim())}&reset=true`}
-                      className="text-xs font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
-                    >
-                      Forgot / Reset Password →
-                    </Link>
+                  <div className="space-y-2 pt-2 border-t border-destructive/20 mt-1">
+                    {password && password.length >= 8 && (
+                      <button
+                        type="button"
+                        onClick={handleDirectResetWithEnteredPassword}
+                        disabled={isLoading}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+                      >
+                        {isLoading
+                          ? 'Updating & Signing in...'
+                          : '👉 Account exists: Set this password & Sign In'}
+                      </button>
+                    )}
+                    <div className="flex flex-wrap items-center gap-3 text-xs">
+                      <Link
+                        href={`/login?email=${encodeURIComponent(email.trim())}`}
+                        className="font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
+                      >
+                        Sign in with this account →
+                      </Link>
+                      <Link
+                        href={`/login?email=${encodeURIComponent(email.trim())}&reset=true`}
+                        className="font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
+                      >
+                        Forgot / Reset Password →
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>

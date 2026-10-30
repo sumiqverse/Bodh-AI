@@ -130,6 +130,39 @@ export default function LoginPage(): React.JSX.Element {
     }
   };
 
+  const handleDirectResetWithEnteredPassword = async (): Promise<void> => {
+    if (!email || !password) return;
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long to save.');
+      return;
+    }
+    setResetLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await apiClient.resetPassword({
+        email: email.trim(),
+        new_password: password,
+      });
+      setAuthSession(res.access_token, res.user);
+      setSuccessMessage('Password updated successfully! Redirecting to your classes...');
+      setTimeout(() => {
+        if (res.user.role === 'admin') {
+          router.push('/admin/stats');
+        } else {
+          router.push('/classes');
+        }
+      }, 500);
+    } catch (err: unknown) {
+      let msg = err instanceof Error ? err.message : 'Failed to update password.';
+      if (msg.includes('API Error')) {
+        msg = msg.replace(/^API Error \[\d+\]:\s*/, '');
+      }
+      setErrorMessage(msg);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleTeacherSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setErrorMessage(null);
@@ -340,11 +373,25 @@ export default function LoginPage(): React.JSX.Element {
             {errorMessage && (
               <div
                 role="alert"
-                className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium space-y-2"
+                className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3.5 text-sm text-destructive font-medium space-y-2.5"
               >
                 <div>{errorMessage}</div>
+                {email && password && password.length >= 8 && (
+                  <div className="pt-2 border-t border-destructive/20">
+                    <button
+                      type="button"
+                      onClick={handleDirectResetWithEnteredPassword}
+                      disabled={resetLoading || isLoading}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+                    >
+                      {resetLoading
+                        ? 'Saving password & signing in...'
+                        : '👉 Set entered password as your BodhAI password & Sign In'}
+                    </button>
+                  </div>
+                )}
                 {email && (
-                  <div className="pt-1 border-t border-destructive/20 mt-1">
+                  <div className="pt-1 flex items-center justify-between text-xs">
                     <button
                       type="button"
                       onClick={() => {
@@ -352,9 +399,9 @@ export default function LoginPage(): React.JSX.Element {
                         setResetError(null);
                         setIsResetOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 text-xs font-semibold underline underline-offset-2 hover:opacity-80 cursor-pointer text-primary dark:text-primary-foreground"
+                      className="inline-flex items-center gap-1 underline underline-offset-2 hover:opacity-80 cursor-pointer text-primary dark:text-primary-foreground font-semibold"
                     >
-                      Forgot password? Reset password for {email} →
+                      Or enter a different new password →
                     </button>
                   </div>
                 )}
