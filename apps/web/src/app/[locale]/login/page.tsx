@@ -219,6 +219,16 @@ export default function LoginPage(): React.JSX.Element {
         pin: studentPin.trim(),
       });
       setAuthSession(res.access_token, res.user);
+      if (typeof window !== 'undefined') {
+        try {
+          const pRes = await apiClient.getMyProfile(res.access_token);
+          if (pRes?.profile?.curriculumCode) {
+            localStorage.setItem('bodhai_student_curriculum', pRes.profile.curriculumCode);
+          }
+        } catch {
+          // ignore
+        }
+      }
       router.push('/consent');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('authFailed');

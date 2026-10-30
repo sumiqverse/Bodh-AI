@@ -15,7 +15,7 @@ import {
   Skeleton,
 } from '@bodhai/ui';
 import { useQuery } from '@tanstack/react-query';
-import { getWebApiClient } from '@/lib/api-client';
+import { getAuthToken, getWebApiClient } from '@/lib/api-client';
 import { useDiagnostic } from '@/hooks/useDiagnostic';
 import { KatexRenderer } from '@/components/katex-renderer';
 
@@ -23,6 +23,20 @@ export default function DiagnosticPage(): React.JSX.Element {
   const t = useTranslations('diagnostic');
   const router = useRouter();
   const apiClient = getWebApiClient();
+
+  const token = typeof window !== 'undefined' ? getAuthToken() : null;
+  const profileQuery = useQuery({
+    queryKey: ['student-profile-me'],
+    queryFn: () => apiClient.getMyProfile(token || undefined),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const enrolledCurriculum =
+    profileQuery.data?.profile?.curriculumCode ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('bodhai_student_curriculum') || undefined
+      : undefined);
 
   const {
     currentItem,
@@ -39,11 +53,15 @@ export default function DiagnosticPage(): React.JSX.Element {
     feedback,
     advanceToNext,
     isPendingCompletion,
-  } = useDiagnostic({ totalTarget: 15 });
+  } = useDiagnostic({
+    curriculumCode: enrolledCurriculum,
+    totalTarget: 15,
+  });
 
+  const targetCurriculum = enrolledCurriculum || 'NCERT-MATH-C8';
   const graphQuery = useQuery({
-    queryKey: ['curriculum-graph', 'NCERT-MATH-C8'],
-    queryFn: () => apiClient.getCurriculumGraph('NCERT-MATH-C8'),
+    queryKey: ['curriculum-graph', targetCurriculum],
+    queryFn: () => apiClient.getCurriculumGraph(targetCurriculum),
     staleTime: 10 * 60 * 1000,
   });
 
@@ -72,7 +90,7 @@ export default function DiagnosticPage(): React.JSX.Element {
       if (mapped) return mapped;
       return raw;
     },
-    [skillNameMap]
+    [skillNameMap],
   );
 
   const [selectedOption, setSelectedOption] = React.useState<string | null>(null);
@@ -219,8 +237,12 @@ export default function DiagnosticPage(): React.JSX.Element {
             {/* Quick Metrics Grid */}
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="rounded-xl border border-border bg-muted/30 p-3">
-                <span className="block text-2xl font-extrabold text-foreground">{totalAnswered}</span>
-                <span className="text-xs text-muted-foreground font-medium">Questions Assessed</span>
+                <span className="block text-2xl font-extrabold text-foreground">
+                  {totalAnswered}
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Questions Assessed
+                </span>
               </div>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
                 <span className="block text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
@@ -345,7 +367,9 @@ export default function DiagnosticPage(): React.JSX.Element {
           <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                {currentItem?.topic_name || formatSkillName(currentItem?.skill_code) || 'NCERT Class 8'}
+                {currentItem?.topic_name ||
+                  formatSkillName(currentItem?.skill_code) ||
+                  'NCERT Class 8'}
               </span>
               <span className="text-[11px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
                 {currentItem?.code}
@@ -529,19 +553,19 @@ export default function DiagnosticPage(): React.JSX.Element {
                           ? '🎉 Diagnostic Complete! Bilkul Sahi!'
                           : '🏁 Diagnostic Assessment Completed!'
                         : feedback.isCorrect
-                        ? '🎉 Excellent! Bilkul Sahi!'
-                        : '💪 Work on your weakness!'}
+                          ? '🎉 Excellent! Bilkul Sahi!'
+                          : '💪 Work on your weakness!'}
                     </h4>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {isPendingCompletion
                         ? 'You have answered all diagnostic questions! Click below to view your personalized learning summary and mastery roadmap.'
                         : feedback.isCorrect
-                        ? 'Mastery score increased on this concept. Keep going!'
-                        : `Correct answer was Option ${feedback.correctAnswerId}. ${
-                            feedback.isWeaknessReview
-                              ? "We've adapted your next question to strengthen this prerequisite foundation!"
-                              : "Let's learn from this and conquer the concept."
-                          }`}
+                          ? 'Mastery score increased on this concept. Keep going!'
+                          : `Correct answer was Option ${feedback.correctAnswerId}. ${
+                              feedback.isWeaknessReview
+                                ? "We've adapted your next question to strengthen this prerequisite foundation!"
+                                : "Let's learn from this and conquer the concept."
+                            }`}
                     </p>
                   </div>
                 </div>

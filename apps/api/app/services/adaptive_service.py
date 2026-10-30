@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
+from app.core.curriculum import resolve_curriculum_code
 from app.core.errors import ConsentRequiredError, NotFoundError
 from app.engine.diagnostic import (
     CATDiagnosticEngine,
@@ -33,7 +34,8 @@ from app.engine.models import (
 )
 from app.engine.ranker import CandidateItem, RecommendationRanker
 from app.models.assessment import Attempt, Mastery, Question
-from app.models.curriculum import Prerequisite, Skill, Topic
+from app.models.curriculum import Curriculum, Prerequisite, Skill, Topic
+from app.models.organization import Enrollment
 from app.repositories.attempt_repo import AttemptRepository
 from app.repositories.consent_repo import ConsentRepository
 from app.repositories.mastery_repo import MasteryRepository
@@ -334,27 +336,90 @@ class AdaptiveService:
         student_id: uuid.UUID,
         request: DiagnosticStartRequest,
     ) -> DiagnosticResponse:
-        """Start a CAT diagnostic assessment session for a student."""
-        # 1. Load curriculum skills, topics, and questions
-        s_stmt = select(Skill).where(Skill.is_deleted == False)  # noqa: E712
-        s_res = await self.session.execute(s_stmt)
-        skills_by_id = {str(s.id): s for s in s_res.scalars().all()}
-
-        t_stmt = select(Topic).where(Topic.is_deleted == False)  # noqa: E712
-        t_res = await self.session.execute(t_stmt)
-        topics_by_id = {str(t.id): t for t in t_res.scalars().all()}
-
-        q_stmt = (
-            select(Question)
-            .where(Question.is_active == True, Question.is_deleted == False)  # noqa: E712
-            .options(selectinload(Question.translations))
+        """Start a CAT diagnostic assessment session for a student scoped to their class subject."""
+        # 1. Resolve student's target curriculum from classroom enrollment
+        target_curriculum_code = request.curriculum_code
+        enr_stmt = (
+            select(Enrollment)
+            .options(selectinload(Enrollment.school_class))
+            .where(
+                Enrollment.student_id == student_id,
+                Enrollment.status.in_(["active", "pending"]),
+            )
+            .order_by(Enrollment.created_at.desc())
+            .limit(1)
         )
-        q_res = await self.session.execute(q_stmt)
-        questions = q_res.scalars().all()
+        enr = (await self.session.execute(enr_stmt)).scalar_one_or_none()
+        if enr and enr.school_class:
+            class_curriculum = resolve_curriculum_code(
+                enr.school_class.grade, enr.school_class.name
+            )
+            # Prioritize class curriculum if client sent default or empty
+            if not request.curriculum_code or request.curriculum_code == "NCERT-MATH-C8":
+                target_curriculum_code = class_curriculum
 
-        p_stmt = select(Prerequisite)
-        p_res = await self.session.execute(p_stmt)
-        prereqs = p_res.scalars().all()
+        # 2. Scope skills, topics, and questions to target curriculum
+        curric_stmt = select(Curriculum).where(Curriculum.code == target_curriculum_code)
+        curric = (await self.session.execute(curric_stmt)).scalar_one_or_none()
+
+        if curric:
+            t_stmt = select(Topic).where(
+                Topic.curriculum_id == curric.id,
+                Topic.is_deleted == False,  # noqa: E712
+            )
+            t_res = await self.session.execute(t_stmt)
+            curric_topics = t_res.scalars().all()
+            topic_ids = [t.id for t in curric_topics]
+            topics_by_id = {str(t.id): t for t in curric_topics}
+
+            s_stmt = select(Skill).where(
+                Skill.topic_id.in_(topic_ids),
+                Skill.is_deleted == False,  # noqa: E712
+            )
+            s_res = await self.session.execute(s_stmt)
+            curric_skills = s_res.scalars().all()
+            skill_ids = [s.id for s in curric_skills]
+            skills_by_id = {str(s.id): s for s in curric_skills}
+
+            q_stmt = (
+                select(Question)
+                .where(
+                    Question.is_active == True,  # noqa: E712
+                    Question.is_deleted == False,  # noqa: E712
+                    Question.skill_id.in_(skill_ids),
+                )
+                .options(selectinload(Question.translations))
+            )
+            q_res = await self.session.execute(q_stmt)
+            questions = q_res.scalars().all()
+
+            p_stmt = select(Prerequisite).where(
+                Prerequisite.parent_skill_id.in_(skill_ids),
+                Prerequisite.child_skill_id.in_(skill_ids),
+            )
+            p_res = await self.session.execute(p_stmt)
+            prereqs = p_res.scalars().all()
+        else:
+            # Fallback if specific curriculum row not found
+            s_stmt = select(Skill).where(Skill.is_deleted == False)  # noqa: E712
+            s_res = await self.session.execute(s_stmt)
+            skills_by_id = {str(s.id): s for s in s_res.scalars().all()}
+
+            t_stmt = select(Topic).where(Topic.is_deleted == False)  # noqa: E712
+            t_res = await self.session.execute(t_stmt)
+            topics_by_id = {str(t.id): t for t in t_res.scalars().all()}
+
+            q_stmt = (
+                select(Question)
+                .where(Question.is_active == True, Question.is_deleted == False)  # noqa: E712
+                .options(selectinload(Question.translations))
+            )
+            q_res = await self.session.execute(q_stmt)
+            questions = q_res.scalars().all()
+
+            p_stmt = select(Prerequisite)
+            p_res = await self.session.execute(p_stmt)
+            prereqs = p_res.scalars().all()
 
         edges = [(str(p.parent_skill_id), str(p.child_skill_id)) for p in prereqs]
 
@@ -388,17 +453,23 @@ class AdaptiveService:
                 "topic_name": topic_name,
             }
 
+        min_q = min(15, max(3, len(questions)))
+        max_q = min(20, max(5, len(questions)))
         engine = CATDiagnosticEngine(
             edges=edges,
             questions=diagnostic_items,
-            config=DiagnosticConfig(),
+            config=DiagnosticConfig(
+                min_questions=min_q,
+                max_questions=max_q,
+            ),
             bkt_params=self.bkt_params,
             thresholds=self.thresholds,
         )
 
         session_state = engine.start_session(
             student_id=str(student_id),
-            curriculum_code=request.curriculum_code,
+            curriculum_code=target_curriculum_code,
+            initial_skills=list(skills_by_id.keys()),
         )
 
         # Store session in memory cache
@@ -445,12 +516,7 @@ class AdaptiveService:
         _ = student_id
         session_entry = self._diagnostic_sessions.get(request.session_id)
         if session_entry is None:
-            # If server restarted or in-memory session was cleared, gracefully re-initialize
-            # rather than failing with a disruptive 404
-            return await self.start_diagnostic(
-                student_id=student_id,
-                request=DiagnosticStartRequest(curriculum_code="NCERT-MATH-C8"),
-            )
+            raise NotFoundError("DiagnosticSession", request.session_id)
 
         engine = session_entry[0]
         session_state = session_entry[1]

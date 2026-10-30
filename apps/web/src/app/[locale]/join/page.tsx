@@ -37,13 +37,24 @@ export default function StudentJoinPage(): React.JSX.Element {
     setIsLoading(true);
 
     try {
-      await apiClient.studentJoin({
+      const joinRes = await apiClient.studentJoin({
         join_code: joinCode.trim().toUpperCase(),
         username: username.trim(),
         pin: pin.trim(),
         full_name: fullName.trim(),
         preferred_language: 'en',
       });
+
+      if (typeof window !== 'undefined' && joinRes?.access_token) {
+        try {
+          const pRes = await apiClient.getMyProfile(joinRes.access_token);
+          if (pRes?.profile?.curriculumCode) {
+            localStorage.setItem('bodhai_student_curriculum', pRes.profile.curriculumCode);
+          }
+        } catch {
+          // ignore
+        }
+      }
 
       setSuccessMessage(t('joinSuccess'));
       setTimeout(() => {

@@ -375,7 +375,11 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     setErrorMessage(null);
     setIsCreating(true);
 
-    const finalClassName = className.trim() || `Class ${grade}-${section.trim() || 'A'} ${subject}`;
+    const finalClassName = className.trim()
+      ? className.trim().toLowerCase().includes(subject.toLowerCase())
+        ? className.trim()
+        : `${className.trim()} ${subject}`
+      : `Class ${grade}-${section.trim() || 'A'} ${subject}`;
     const codePrefix = subject.slice(0, 4).toUpperCase();
 
     const newMockClass: ClassResponse = {

@@ -28,7 +28,10 @@ export interface UseDiagnosticReturn {
   errorMessage: string | null;
   summary: Record<string, unknown> | null;
   startSession: () => Promise<void>;
-  submitAnswer: (selectedOption: string, timeSpentMs: number) => Promise<DiagnosticResponse | undefined>;
+  submitAnswer: (
+    selectedOption: string,
+    timeSpentMs: number,
+  ) => Promise<DiagnosticResponse | undefined>;
   retry: () => void;
   feedback: DiagnosticFeedback | null;
   isWeaknessReview: boolean;
@@ -37,14 +40,16 @@ export interface UseDiagnosticReturn {
 }
 
 export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticReturn {
-  const curriculumCode = options?.curriculumCode ?? 'NCERT-MATH-C8';
+  const curriculumCode = options?.curriculumCode;
   const totalQuestions = options?.totalTarget ?? 15;
 
   const queryClient = useQueryClient();
   const apiClient = getWebApiClient();
 
   const [activeSession, setActiveSession] = React.useState<DiagnosticResponse | null>(null);
-  const [pendingNextSession, setPendingNextSession] = React.useState<DiagnosticResponse | null>(null);
+  const [pendingNextSession, setPendingNextSession] = React.useState<DiagnosticResponse | null>(
+    null,
+  );
   const [feedback, setFeedback] = React.useState<DiagnosticFeedback | null>(null);
   const [sessionKey, setSessionKey] = React.useState<number>(() => Date.now());
 
@@ -53,7 +58,8 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
     queryKey: ['diagnostic-session-init', curriculumCode, sessionKey],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
-      return apiClient.startDiagnostic({ curriculum_code: curriculumCode }, token);
+      const payload = curriculumCode ? { curriculum_code: curriculumCode } : {};
+      return apiClient.startDiagnostic(payload, token);
     },
     staleTime: 0,
     gcTime: 0,
@@ -94,7 +100,8 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
           'status' in err &&
           (err as { status: number }).status === 404
         ) {
-          return await apiClient.startDiagnostic({ curriculum_code: curriculumCode }, token);
+          const payload = curriculumCode ? { curriculum_code: curriculumCode } : {};
+          return await apiClient.startDiagnostic(payload, token);
         }
         throw err;
       }
@@ -134,7 +141,10 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
       if (nextData.is_completed) {
         if (typeof window !== 'undefined' && nextData.summary) {
           try {
-            localStorage.setItem('bodhai_last_diagnostic_summary', JSON.stringify(nextData.summary));
+            localStorage.setItem(
+              'bodhai_last_diagnostic_summary',
+              JSON.stringify(nextData.summary),
+            );
           } catch {
             // ignore storage error
           }

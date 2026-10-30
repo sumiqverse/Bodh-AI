@@ -13,10 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_user, get_db
+from app.core.curriculum import resolve_curriculum_code
 from app.core.security import generate_join_code
 from app.models.assessment import Attempt, Mastery
 from app.models.auth import Role, User
-from app.models.curriculum import Skill
+from app.models.curriculum import Curriculum, Skill, Topic
 from app.models.organization import Enrollment, School, SchoolClass
 from app.models.teacher import Assignment, TeacherDecision
 
@@ -243,14 +244,21 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         .options(selectinload(Enrollment.school_class))
         .where(
             Enrollment.student_id == student.id,
-            Enrollment.status == "active",
+            Enrollment.status.in_(["active", "pending"]),
         )
+        .order_by(Enrollment.created_at.desc())
         .limit(1)
     )
     enr = (await session.execute(enr_stmt)).scalar_one_or_none()
     grade = enr.school_class.grade if (enr and enr.school_class) else 8
     section = enr.school_class.section if (enr and enr.school_class) else "A"
     roll_num = enr.roll_number if enr else "101"
+    class_name = enr.school_class.name if (enr and enr.school_class) else f"Class {grade}-{section}"
+    curriculum_code = (
+        resolve_curriculum_code(grade, enr.school_class.name)
+        if (enr and enr.school_class)
+        else f"NCERT-MATH-C{grade}"
+    )
 
     assigned_teacher_name = "Mr. Rajesh Kumar"
     assigned_teacher_slug = "tchr-rajesh-kumar"
@@ -276,7 +284,7 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         sk = m.skill
         p_mast = float(m.p_mastery)
         p_sum += p_mast
-        topic_name = sk.topic.name if (sk and sk.topic) else "General Mathematics"
+        topic_name = sk.topic.name if (sk and sk.topic) else "General Curriculum"
         topic_code = sk.topic.code if (sk and sk.topic) else "CH01"
         def_state = (
             "mastered" if p_mast >= 0.85 else ("partial" if p_mast >= 0.50 else "not_learned")
@@ -285,7 +293,7 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
             {
                 "skillId": str(m.skill_id),
                 "skillCode": sk.code if sk else "SK-01",
-                "skillName": sk.name if sk else "Mathematics Competency",
+                "skillName": sk.name if sk else "Curriculum Competency",
                 "topicName": topic_name,
                 "topicCode": topic_code,
                 "difficulty": sk.difficulty if sk else 3,
@@ -299,13 +307,19 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         )
 
     if not skills_list:
-        skills_raw = (
-            (await session.execute(select(Skill).options(selectinload(Skill.topic)).limit(6)))
-            .scalars()
-            .all()
+        curric_res = await session.execute(
+            select(Curriculum).where(Curriculum.code == curriculum_code)
         )
+        curric = curric_res.scalar_one_or_none()
+        skills_query = select(Skill).options(selectinload(Skill.topic))
+        if curric:
+            skills_query = skills_query.join(Topic, Skill.topic_id == Topic.id).where(
+                Topic.curriculum_id == curric.id
+            )
+        skills_raw = (await session.execute(skills_query.limit(6))).scalars().all()
+
         for idx, sk in enumerate(skills_raw):
-            topic_name = sk.topic.name if sk.topic else "Mathematics"
+            topic_name = sk.topic.name if sk.topic else "Curriculum"
             p_mast = 0.92 if idx < 2 else (0.64 if idx < 4 else 0.35)
             skills_list.append(
                 {
@@ -339,9 +353,9 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
 
     stu_bio = (
         "Enthusiastic NCERT learner focusing on developing conceptual "
-        "clarity in mathematics and science."
+        "clarity across class competencies."
     )
-    stu_bio_hi = "NCERT गणित और विज्ञान में वैचारिक स्पष्टता विकसित करने वाले विद्यार्थी।"
+    stu_bio_hi = "NCERT कक्षा दक्षताओं में वैचारिक स्पष्टता विकसित करने वाले विद्यार्थी।"
 
     return {
         "id": str(student.id),
@@ -351,6 +365,9 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         "rollNumber": roll_num,
         "grade": grade,
         "section": section,
+        "className": class_name,
+        "curriculumCode": curriculum_code,
+        "classId": str(enr.school_class.id) if (enr and enr.school_class) else None,
         "academicYear": "2024-2025",
         "schoolName": p_data.get("schoolName") or "Govt. Model Senior Secondary School, Delhi",
         "schoolUdise": "07010100101",

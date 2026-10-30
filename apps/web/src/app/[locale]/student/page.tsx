@@ -14,14 +14,31 @@ import {
   Badge,
   Skeleton,
 } from '@bodhai/ui';
+import { useQuery } from '@tanstack/react-query';
+import { getAuthToken, getWebApiClient } from '@/lib/api-client';
 import { useSkillMap, type MasteryState, type SkillItem } from '@/hooks/useSkillMap';
 
 export default function StudentHomePage(): React.JSX.Element {
   const t = useTranslations('skillMap');
   const router = useRouter();
+  const apiClient = getWebApiClient();
+
+  const token = typeof window !== 'undefined' ? getAuthToken() : null;
+  const profileQuery = useQuery({
+    queryKey: ['student-profile-me'],
+    queryFn: () => apiClient.getMyProfile(token || undefined),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const enrolledCurriculum =
+    profileQuery.data?.profile?.curriculumCode ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('bodhai_student_curriculum') || 'NCERT-MATH-C8'
+      : 'NCERT-MATH-C8');
 
   const { topics, skills, skillsByTopic, summary, nextAction, isLoading, error, refetch } =
-    useSkillMap('NCERT-MATH-C8');
+    useSkillMap(enrolledCurriculum);
 
   const [selectedTopic, setSelectedTopic] = React.useState<string>('all');
 
