@@ -34,6 +34,14 @@ const notoDevanagari = Noto_Sans_Devanagari({
 export const metadata: Metadata = {
   manifest: '/manifest.json',
   metadataBase: new URL('https://bodhai.org.in'),
+  icons: {
+    icon: [
+      { url: '/image.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: [{ url: '/image.png', sizes: '180x180', type: 'image/png' }],
+  },
   title: {
     default: 'BodhAI (बोधAI) — Adaptive Mastery Learning for Classes 6–10 in India',
     template: '%s | BodhAI',
