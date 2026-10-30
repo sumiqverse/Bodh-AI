@@ -405,11 +405,11 @@ async def student_join(
     await session.flush()
     await session.refresh(student, ["role"])
 
-    # 4. Create active enrollment
+    # 4. Create pending enrollment for teacher approval
     await class_repo.add_enrollment(
         class_id=school_class.id,
         student_id=student.id,
-        status="active",
+        status="pending",
     )
 
     await audit_repo.log_action(

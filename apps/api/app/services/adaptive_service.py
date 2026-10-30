@@ -8,8 +8,6 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
-logger = logging.getLogger(__name__)
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -51,6 +49,8 @@ from app.schemas.assessment import (
     MasteryResponse,
     NextItemResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AdaptiveService:
@@ -483,7 +483,8 @@ class AdaptiveService:
             HintLevel(request.hint_level) if request.hint_level in (0, 1, 2, 3) else HintLevel.NONE
         )
 
-        # Record response if not already recorded for this question (prevents duplicate counting on client retries)
+        # Record response if not already recorded for this question
+        # (prevents duplicate counting on client retries)
         if (
             request.question_id not in session_state.attempted_question_ids
             and not session_state.is_completed

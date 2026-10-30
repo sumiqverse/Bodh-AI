@@ -34,6 +34,8 @@ import {
 } from '@/lib/api-client';
 import type {
   ClassResponse,
+  ClassDetailResponse,
+  StudentRosterItem,
   ClassHeatmapResponse,
   ClassGapClustersResponse,
   ClassEarlyWarningsResponse,
@@ -49,7 +51,6 @@ import {
   getMockSuggestions,
   getMockAssignments,
   getMockProgressSummary,
-  MOCK_STUDENTS,
 } from '@/lib/teacher-mock-data';
 
 import { ClassHeatmapView } from '@/components/teacher/ClassHeatmapView';
@@ -69,10 +70,11 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
   // Primary state
   const [classesList, setClassesList] = React.useState<ClassResponse[]>([]);
-  const [selectedClassId, setSelectedClassId] = React.useState<string>('cls-mock-1');
+  const [selectedClassId, setSelectedClassId] = React.useState<string>('');
   const [activeTab, setActiveTab] = React.useState<string>('overview');
 
   // Telemetry state for selected class
+  const [classDetail, setClassDetail] = React.useState<ClassDetailResponse | null>(null);
   const [heatmap, setHeatmap] = React.useState<ClassHeatmapResponse | null>(null);
   const [clusters, setClusters] = React.useState<ClassGapClustersResponse | null>(null);
   const [warnings, setWarnings] = React.useState<ClassEarlyWarningsResponse | null>(null);
@@ -88,6 +90,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isCreating, setIsCreating] = React.useState<boolean>(false);
   const [rotatingId, setRotatingId] = React.useState<string | null>(null);
+  const [actionInProgressId, setActionInProgressId] = React.useState<string | null>(null);
   const [codeCopied, setCodeCopied] = React.useState<boolean>(false);
   const [simulationToast, setSimulationToast] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -119,8 +122,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
       }
 
       try {
-        const [heatmapRes, clusterRes, warningRes, suggRes, asgnRes, progRes] =
+        const [detailRes, heatmapRes, clusterRes, warningRes, suggRes, asgnRes, progRes] =
           await Promise.allSettled([
+            apiClient.getClassDetails(classId, token),
             apiClient.getClassHeatmap(classId, token),
             apiClient.getClassGapClusters(classId, undefined, undefined, token),
             apiClient.getClassEarlyWarnings(classId, warningDays, token),
@@ -129,49 +133,70 @@ export default function TeacherDashboardPage(): React.JSX.Element {
             apiClient.getClassProgressSummary(classId, token),
           ]);
 
-        // Prioritize real database responses
+        if (detailRes.status === 'fulfilled' && detailRes.value) {
+          setClassDetail(detailRes.value);
+        } else {
+          setClassDetail(null);
+        }
+
         if (heatmapRes.status === 'fulfilled' && heatmapRes.value) {
           setHeatmap(heatmapRes.value);
         } else {
-          setHeatmap(getMockHeatmap(classId));
+          setHeatmap({
+            class_id: classId,
+            total_students: 0,
+            total_skills: 0,
+            students: [],
+            skills: [],
+            matrix: [],
+            summary: { mastered: 0, partial: 0, not_learned: 0 },
+          });
         }
 
         if (clusterRes.status === 'fulfilled' && clusterRes.value) {
           setClusters(clusterRes.value);
         } else {
-          setClusters(getMockGapClusters(classId));
+          setClusters({ class_id: classId, total_clusters: 0, clusters: [] });
         }
 
         if (warningRes.status === 'fulfilled' && warningRes.value) {
           setWarnings(warningRes.value);
         } else {
-          setWarnings(getMockEarlyWarnings(classId, warningDays));
+          setWarnings({ class_id: classId, days_threshold: warningDays, warnings: [] });
         }
 
         if (suggRes.status === 'fulfilled' && suggRes.value) {
           setSuggestions(suggRes.value);
         } else {
-          setSuggestions(getMockSuggestions(classId));
+          setSuggestions({ class_id: classId, suggestions: [] });
         }
 
         if (asgnRes.status === 'fulfilled' && asgnRes.value) {
           setAssignments(asgnRes.value);
         } else {
-          setAssignments(getMockAssignments(classId));
+          setAssignments([]);
         }
 
         if (progRes.status === 'fulfilled' && progRes.value) {
           setProgress(progRes.value);
         } else {
-          setProgress(getMockProgressSummary(classId));
+          setProgress(null);
         }
       } catch {
-        setHeatmap(getMockHeatmap(classId));
-        setClusters(getMockGapClusters(classId));
-        setWarnings(getMockEarlyWarnings(classId, warningDays));
-        setSuggestions(getMockSuggestions(classId));
-        setAssignments(getMockAssignments(classId));
-        setProgress(getMockProgressSummary(classId));
+        setHeatmap({
+          class_id: classId,
+          total_students: 0,
+          total_skills: 0,
+          students: [],
+          skills: [],
+          matrix: [],
+          summary: { mastered: 0, partial: 0, not_learned: 0 },
+        });
+        setClusters({ class_id: classId, total_clusters: 0, clusters: [] });
+        setWarnings({ class_id: classId, days_threshold: warningDays, warnings: [] });
+        setSuggestions({ class_id: classId, suggestions: [] });
+        setAssignments([]);
+        setProgress(null);
       }
     },
     [apiClient, warningDays],
@@ -213,23 +238,16 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           setSelectedClassId(chosen.id);
           void loadActiveTelemetry(chosen.id, activeToken);
         } else {
-          // Provide default demo classrooms so the teacher dashboard is never blank
-          const fallbackClasses: ClassResponse[] = [
-            {
-              id: 'cls-mock-1',
-              name: 'Class 8-A Mathematics',
-              grade: 8,
-              section: 'A',
-              academic_year: '2024-2025',
-              join_code: 'MATH8A',
-              school_id: 'sch-001',
-              teacher_id: user?.id ?? 'tchr-001',
-              created_at: '2026-08-01T00:00:00Z',
-            },
-          ];
-          setClassesList(fallbackClasses);
-          setSelectedClassId('cls-mock-1');
-          void loadActiveTelemetry('cls-mock-1', token);
+          // Zero classes: show empty state with Create Class CTA
+          setClassesList([]);
+          setSelectedClassId('');
+          setClassDetail(null);
+          setHeatmap(null);
+          setClusters(null);
+          setWarnings(null);
+          setSuggestions(null);
+          setAssignments([]);
+          setProgress(null);
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to load classes';
@@ -250,23 +268,27 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           router.replace('/student');
           return;
         }
-        // Fallback gracefully to demo classes
-        const fallbackClasses: ClassResponse[] = [
-          {
-            id: 'cls-mock-1',
-            name: 'Class 8-A Mathematics',
-            grade: 8,
-            section: 'A',
-            academic_year: '2024-2025',
-            join_code: 'MATH8A',
-            school_id: 'sch-001',
-            teacher_id: user?.id ?? 'tchr-001',
-            created_at: '2026-08-01T00:00:00Z',
-          },
-        ];
-        setClassesList(fallbackClasses);
-        setSelectedClassId('cls-mock-1');
-        void loadActiveTelemetry('cls-mock-1', token);
+        if (token.startsWith('mock_token_')) {
+          const fallbackClasses: ClassResponse[] = [
+            {
+              id: 'cls-mock-1',
+              name: 'Class 8-A Mathematics',
+              grade: 8,
+              section: 'A',
+              academic_year: '2024-2025',
+              join_code: 'MATH8A',
+              school_id: 'sch-001',
+              teacher_id: user?.id ?? 'tchr-001',
+              created_at: '2026-08-01T00:00:00Z',
+            },
+          ];
+          setClassesList(fallbackClasses);
+          setSelectedClassId('cls-mock-1');
+          void loadActiveTelemetry('cls-mock-1', token);
+        } else {
+          setClassesList([]);
+          setSelectedClassId('');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -391,14 +413,67 @@ export default function TeacherDashboardPage(): React.JSX.Element {
       setSelectedClassId(created.id);
       void loadActiveTelemetry(created.id, token);
       setClassName('');
-    } catch {
-      // Graceful local creation
-      setClassesList((prev) => [newMockClass, ...prev]);
-      setSelectedClassId(newMockClass.id);
-      void loadActiveTelemetry(newMockClass.id, token);
-      setClassName('');
+      setActiveTab('overview');
+    } catch (err: unknown) {
+      if (token.startsWith('mock_token_')) {
+        setClassesList((prev) => [newMockClass, ...prev]);
+        setSelectedClassId(newMockClass.id);
+        void loadActiveTelemetry(newMockClass.id, token);
+        setClassName('');
+        setActiveTab('overview');
+      } else {
+        setErrorMessage(err instanceof Error ? err.message : 'Error creating class');
+      }
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Approve pending student join request
+  const handleApprove = async (studentId: string): Promise<void> => {
+    const token = getAuthToken();
+    if (!token || !selectedClassId) return;
+
+    setActionInProgressId(studentId);
+    try {
+      await apiClient.approveStudent(selectedClassId, studentId, token);
+      setClassDetail((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          students: prev.students.map((s) =>
+            s.student_id === studentId ? { ...s, status: 'active' } : s,
+          ),
+        };
+      });
+      void loadActiveTelemetry(selectedClassId, token);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Error approving student');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
+  // Remove student from roster
+  const handleRemove = async (studentId: string): Promise<void> => {
+    const token = getAuthToken();
+    if (!token || !selectedClassId) return;
+
+    setActionInProgressId(studentId);
+    try {
+      await apiClient.removeStudent(selectedClassId, studentId, token);
+      setClassDetail((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          students: prev.students.filter((s) => s.student_id !== studentId),
+        };
+      });
+      void loadActiveTelemetry(selectedClassId, token);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Error removing student');
+    } finally {
+      setActionInProgressId(null);
     }
   };
 
@@ -559,6 +634,126 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     { value: 'English', label: 'English (NCERT)' },
     { value: 'Hindi', label: 'Hindi (NCERT)' },
   ];
+
+  // If teacher has 0 classes, render the onboarding / create class view directly
+  if (classesList.length === 0) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-12 space-y-8">
+        <div className="text-center space-y-3">
+          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+            Teacher Onboarding
+          </Badge>
+          <h1 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            Create Your First Classroom
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-lg mx-auto">
+            Set up your class to automatically import official NCERT curriculum, generate a unique
+            student join code, and track student competency mastery in real-time.
+          </p>
+        </div>
+
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive font-medium"
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        <Card className="shadow-md border-border/80">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">{t('createNewClass')}</CardTitle>
+            <CardDescription className="text-xs">
+              Choose your grade and subject to import NCERT topics and skills. You can add, edit, or
+              customize chapters at any time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={handleCreateClass}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 items-end"
+            >
+              <div className="space-y-1.5 lg:col-span-2">
+                <label
+                  htmlFor="new-class-name-empty"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  {t('className')} (or auto-generates)
+                </label>
+                <Input
+                  id="new-class-name-empty"
+                  placeholder={`e.g. Class ${grade}-${section} ${subject}`}
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="new-class-grade-empty"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  {t('grade')}
+                </label>
+                <Select
+                  id="new-class-grade-empty"
+                  options={gradeOptions}
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="new-class-subject-empty"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Subject
+                </label>
+                <Select
+                  id="new-class-subject-empty"
+                  options={subjectOptions}
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="new-class-section-empty"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  {t('section')}
+                </label>
+                <Input
+                  id="new-class-section-empty"
+                  placeholder={t('sectionPlaceholder')}
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-full cursor-pointer py-2 font-semibold text-xs min-h-[40px]"
+                  disabled={isCreating}
+                >
+                  {isCreating ? t('creating') : '➕ Create Class'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const enrolledStudents: StudentRosterItem[] = classDetail?.students ?? [];
+  const pendingStudents = enrolledStudents.filter((s) => s.status === 'pending');
+  const activeStudents = enrolledStudents.filter((s) => s.status === 'active');
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -770,7 +965,12 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               value="roster"
               className="rounded-t-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card px-4 py-2 text-xs font-semibold cursor-pointer"
             >
-              👥 Students ({heatmap?.students.length || MOCK_STUDENTS.length})
+              👥 Students ({enrolledStudents.length})
+              {pendingStudents.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                  {pendingStudents.length} pending
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="assignments"
@@ -789,7 +989,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
         {/* Tab 1: Overview & Heatmap */}
         <TabsContent value="overview">
-          {heatmap ? (
+          {heatmap && heatmap.students.length > 0 ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
@@ -810,9 +1010,32 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               />
             </div>
           ) : (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              Loading class heatmap telemetry...
-            </div>
+            <Card className="p-8 sm:p-12 text-center border-dashed border-2 border-border/80 bg-muted/10 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <h3 className="text-base font-bold text-foreground">No Enrolled Students Yet</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Students join using code{' '}
+                  <strong className="font-mono text-primary font-bold">
+                    {activeClass?.join_code}
+                  </strong>
+                  . Once they submit join requests and you accept them in the Students tab, their
+                  real-time competency heatmap will appear here.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab('roster')}
+                    className="text-xs cursor-pointer"
+                  >
+                    View Class Roster & Pending Requests →
+                  </Button>
+                </div>
+              </div>
+            </Card>
           )}
         </TabsContent>
 
@@ -1038,65 +1261,159 @@ export default function TeacherDashboardPage(): React.JSX.Element {
         </TabsContent>
 
         {/* Tab 6: Students Roster */}
-        <TabsContent value="roster">
+        <TabsContent value="roster" className="space-y-6">
+          {/* Pending Requests Section */}
+          {pendingStudents.length > 0 && (
+            <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-bold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                  <span>⏳</span> Pending Join Requests ({pendingStudents.length})
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Review and approve students who requested to join with class code{' '}
+                  {activeClass?.join_code}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Roll No.</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingStudents.map((st) => (
+                      <TableRow key={st.student_id}>
+                        <TableCell className="font-semibold text-foreground">
+                          {st.full_name}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{st.username}</TableCell>
+                        <TableCell>{st.roll_number || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant="warning" className="text-xs">
+                            Pending Approval
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              disabled={actionInProgressId === st.student_id}
+                              onClick={() => handleApprove(st.student_id)}
+                              className="text-xs font-semibold cursor-pointer"
+                            >
+                              {actionInProgressId === st.student_id ? 'Accepting...' : '✓ Accept'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={actionInProgressId === st.student_id}
+                              onClick={() => handleRemove(st.student_id)}
+                              className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+                            >
+                              ✕ Decline
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Active Students Section */}
           <Card className="shadow-xs">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold">
-                    Class Roster & Individual Profiles
+                    Class Roster & Individual Profiles ({activeStudents.length})
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Click any student to inspect their Bayesian competency matrix, error patterns,
-                    and hint ladders.
+                    Enrolled students in {activeClass?.name}. Click any student to inspect their
+                    Bayesian competency matrix.
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Roll No.</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Telemetry Profile</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {MOCK_STUDENTS.map((st) => (
-                    <TableRow key={st.student_id}>
-                      <TableCell className="font-medium text-foreground">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedStudentId(st.student_id)}
-                          className="hover:underline text-left cursor-pointer font-semibold text-primary"
-                        >
-                          {st.full_name}
-                        </button>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{st.username}</TableCell>
-                      <TableCell>#{st.roll_number}</TableCell>
-                      <TableCell>
-                        <Badge variant="success" className="text-xs">
-                          Active
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="cursor-pointer text-xs"
-                          onClick={() => setSelectedStudentId(st.student_id)}
-                        >
-                          View Profile →
-                        </Button>
-                      </TableCell>
+              {activeStudents.length === 0 ? (
+                <div className="py-12 text-center space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    No active students enrolled in this class yet.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ask students to visit <strong className="text-foreground">/join</strong> and
+                    enter join code{' '}
+                    <strong className="font-mono text-primary font-bold">
+                      {activeClass?.join_code}
+                    </strong>
+                    .
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Roll No.</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {activeStudents.map((st) => (
+                      <TableRow key={st.student_id}>
+                        <TableCell className="font-medium text-foreground">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStudentId(st.student_id)}
+                            className="hover:underline text-left cursor-pointer font-semibold text-primary"
+                          >
+                            {st.full_name}
+                          </button>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{st.username}</TableCell>
+                        <TableCell>{st.roll_number ? `#${st.roll_number}` : '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant="success" className="text-xs">
+                            Active
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="cursor-pointer text-xs"
+                              onClick={() => setSelectedStudentId(st.student_id)}
+                            >
+                              View Profile →
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={actionInProgressId === st.student_id}
+                              onClick={() => handleRemove(st.student_id)}
+                              className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

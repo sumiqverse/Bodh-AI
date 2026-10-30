@@ -125,13 +125,48 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
 
       if (detailRes.status === 'fulfilled') {
         const detail = detailRes.value;
-        // If class has no students enrolled yet, enhance with demo telemetry for exploration
-        if (detail.students.length === 0) {
-          const mockDetail = getMockClassDetail(classId, detail.name);
-          setClassDetail({
-            ...detail,
-            students: mockDetail.students,
+        setClassDetail(detail);
+        if (heatmapRes.status === 'fulfilled' && heatmapRes.value) {
+          setHeatmap(heatmapRes.value);
+        } else {
+          setHeatmap({
+            class_id: classId,
+            total_students: detail.students.length,
+            total_skills: 0,
+            students: [],
+            skills: [],
+            matrix: [],
+            summary: { mastered: 0, partial: 0, not_learned: 0 },
           });
+        }
+        if (clusterRes.status === 'fulfilled' && clusterRes.value) {
+          setClusters(clusterRes.value);
+        } else {
+          setClusters({ class_id: classId, total_clusters: 0, clusters: [] });
+        }
+        if (warningRes.status === 'fulfilled' && warningRes.value) {
+          setWarnings(warningRes.value);
+        } else {
+          setWarnings({ class_id: classId, days_threshold: warningDays, warnings: [] });
+        }
+        if (suggRes.status === 'fulfilled' && suggRes.value) {
+          setSuggestions(suggRes.value);
+        } else {
+          setSuggestions({ class_id: classId, suggestions: [] });
+        }
+        if (asgnRes.status === 'fulfilled' && asgnRes.value) {
+          setAssignments(asgnRes.value);
+        } else {
+          setAssignments([]);
+        }
+        if (progRes.status === 'fulfilled' && progRes.value) {
+          setProgress(progRes.value);
+        } else {
+          setProgress(null);
+        }
+      } else {
+        if (token.startsWith('mock_token_') || classId.startsWith('cls-mock-')) {
+          setClassDetail(getMockClassDetail(classId));
           setHeatmap(getMockHeatmap(classId));
           setClusters(getMockGapClusters(classId));
           setWarnings(getMockEarlyWarnings(classId, warningDays));
@@ -139,16 +174,11 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
           setAssignments(getMockAssignments(classId));
           setProgress(getMockProgressSummary(classId));
         } else {
-          setClassDetail(detail);
-          if (heatmapRes.status === 'fulfilled') setHeatmap(heatmapRes.value);
-          if (clusterRes.status === 'fulfilled') setClusters(clusterRes.value);
-          if (warningRes.status === 'fulfilled') setWarnings(warningRes.value);
-          if (suggRes.status === 'fulfilled') setSuggestions(suggRes.value);
-          if (asgnRes.status === 'fulfilled') setAssignments(asgnRes.value);
-          if (progRes.status === 'fulfilled') setProgress(progRes.value);
+          setErrorMessage('Class details could not be loaded from server.');
         }
-      } else {
-        // Graceful fallback to mock data rather than crashing
+      }
+    } catch {
+      if (token.startsWith('mock_token_') || classId.startsWith('cls-mock-')) {
         setClassDetail(getMockClassDetail(classId));
         setHeatmap(getMockHeatmap(classId));
         setClusters(getMockGapClusters(classId));
@@ -156,16 +186,9 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
         setSuggestions(getMockSuggestions(classId));
         setAssignments(getMockAssignments(classId));
         setProgress(getMockProgressSummary(classId));
+      } else {
+        setErrorMessage('Failed to connect to classroom service.');
       }
-    } catch {
-      // Graceful fallback
-      setClassDetail(getMockClassDetail(classId));
-      setHeatmap(getMockHeatmap(classId));
-      setClusters(getMockGapClusters(classId));
-      setWarnings(getMockEarlyWarnings(classId, warningDays));
-      setSuggestions(getMockSuggestions(classId));
-      setAssignments(getMockAssignments(classId));
-      setProgress(getMockProgressSummary(classId));
     } finally {
       setIsLoading(false);
     }
@@ -616,10 +639,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
 
         {/* Tab: Curriculum & Content Hub */}
         <TabsContent value="curriculum">
-          <CurriculumContentHub
-            activeClass={classObj}
-            onRefreshData={loadClassData}
-          />
+          <CurriculumContentHub activeClass={classObj} onRefreshData={loadClassData} />
         </TabsContent>
 
         {/* Tab 2: Group Gap Clusters View */}

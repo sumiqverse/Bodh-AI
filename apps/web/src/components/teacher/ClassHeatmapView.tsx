@@ -217,7 +217,9 @@ export function ClassHeatmapView({
                       colSpan={filteredSkills.length + 1}
                       className="text-center py-12 text-muted-foreground"
                     >
-                      No students found matching your filter criteria.
+                      {heatmap.students.length === 0
+                        ? 'No students enrolled in this class yet. Enrolled students will appear here.'
+                        : 'No students found matching your filter criteria.'}
                     </td>
                   </tr>
                 ) : (
