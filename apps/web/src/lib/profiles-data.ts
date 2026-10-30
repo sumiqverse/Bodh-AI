@@ -1931,23 +1931,28 @@ export function getProfileForUser(
   const role = (user.role || '').toLowerCase();
   const userId = user.id || user.email || user.username || 'default_user';
 
-  // 1. Check if user has a custom saved profile
+  // 1. Check if user has a custom saved profile (must have valid non-empty data)
   const customProfile = getUserCustomProfile(userId);
   if (customProfile) {
     if (role === 'teacher' || 'experienceYears' in customProfile) {
       const teacherProf = customProfile as TeacherProfile;
-      const isApple =
-        user.email === 'cleb8ke4c@mozmail.com' ||
-        user.full_name?.toLowerCase() === 'apple' ||
-        user.username === 'apple';
-      if (!(isApple && (!teacherProf.classes || teacherProf.classes.length === 0))) {
+      if (
+        teacherProf.classes &&
+        teacherProf.classes.length > 0 &&
+        (teacherProf.totalStudentsTaught || 0) > 0 &&
+        teacherProf.schoolName &&
+        teacherProf.schoolName !== 'School Not Set'
+      ) {
         if (!teacherProf.employeeId) {
           teacherProf.employeeId = getStableEmployeeId(userId);
         }
         return { type: 'teacher', profile: teacherProf };
       }
     } else {
-      return { type: 'student', profile: customProfile as StudentProfile };
+      const stuProf = customProfile as StudentProfile;
+      if (stuProf.skills && stuProf.skills.length > 0) {
+        return { type: 'student', profile: stuProf };
+      }
     }
   }
 
@@ -2001,11 +2006,11 @@ export function getProfileForUser(
             '8+ वर्षों के अनुभव के साथ समर्पित माध्यमिक शिक्षक, जो NCERT दक्षता आधारित अधिगम में कक्षा 8-10 के छात्रों का मार्गदर्शन करते हैं। बीजगणित की भ्रांतियों के समाधान में विशेष दक्षता।',
           officeHours: 'Monday – Friday, 2:00 PM – 4:00 PM',
           verifiedEducator: true,
-          totalStudentsTaught: 16,
+          totalStudentsTaught: 50,
           activeClassesCount: 1,
-          avgClassroomMastery: 53.1,
-          totalAssignmentsCreated: 2,
-          aiDecisionsReviewed: 3,
+          avgClassroomMastery: 56.3,
+          totalAssignmentsCreated: 4,
+          aiDecisionsReviewed: 6,
           classes: [
             {
               id: '1c26a0d3-e856-4c80-b361-9c8b56d0e157',
@@ -2013,9 +2018,9 @@ export function getProfileForUser(
               grade: 9,
               section: 'A',
               academicYear: '2024-2025',
-              studentCount: 16,
-              avgMastery: 53.1,
-              activeAssignments: 2,
+              studentCount: 50,
+              avgMastery: 56.3,
+              activeAssignments: 4,
               joinCode: '9GRBDG',
               status: 'active',
             },
@@ -2366,13 +2371,33 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     },
   },
   {
+    id: 'demo-sunita',
+    name: 'Mrs. Sunita Sharma',
+    nameHi: 'श्रीमती सुनीता शर्मा',
+    role: 'teacher',
+    badge: 'Class 8-A Math • 48 Students',
+    description: 'Middle School Math Specialist (16y Exp, State Teacher Awardee)',
+    descriptionHi: 'कक्षा 8-A गणित विशेषज्ञ (16 वर्ष अनुभव, राज्य शिक्षक पुरस्कार)',
+    avatarGradient: 'from-purple-600 to-pink-800',
+    user: {
+      id: 'tchr-002',
+      email: 'sunita.sharma@delhiedu.gov.in',
+      username: 'sunita_sharma',
+      full_name: 'Mrs. Sunita Sharma',
+      role: 'teacher',
+      preferred_language: 'hi',
+      is_minor: false,
+      created_at: '2026-08-01T00:00:00Z',
+    },
+  },
+  {
     id: 'demo-rajesh',
     name: 'Mr. Rajesh Kumar',
     nameHi: 'श्री राजेश कुमार',
     role: 'teacher',
-    badge: 'Senior Math Teacher (14y Exp)',
-    description: 'Manages Classes 8-A, 9-B, 10-A (125 Students, 78% Avg Mastery)',
-    descriptionHi: 'कक्षा 8-A, 9-B, 10-A प्रभारी (125 विद्यार्थी, 78% औसत दक्षता)',
+    badge: 'Class 9-B Science • 52 Students',
+    description: 'Secondary Science Educator (14y Exp, Experimental STEM Mentor)',
+    descriptionHi: 'कक्षा 9-B विज्ञान शिक्षक (14 वर्ष अनुभव, स्टेम शोध मेंटर)',
     avatarGradient: 'from-blue-600 to-indigo-800',
     user: {
       id: 'tchr-001',
@@ -2386,21 +2411,81 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     },
   },
   {
-    id: 'demo-sunita',
-    name: 'Mrs. Sunita Sharma',
-    nameHi: 'श्रीमती सुनीता शर्मा',
+    id: 'demo-ananya-roy',
+    name: 'Dr. Ananya Roy',
+    nameHi: 'डॉ. अनन्या रॉय',
     role: 'teacher',
-    badge: 'Middle School Mentor (16y Exp)',
-    description: 'Manages Classes 6-A, 7-A (76 Students, State Teacher Awardee)',
-    descriptionHi: 'कक्षा 6-A, 7-A प्रभारी (76 विद्यार्थी, राज्य शिक्षक पुरस्कार)',
-    avatarGradient: 'from-purple-600 to-pink-800',
+    badge: 'Class 10-A Math • 55 Students',
+    description: 'Senior Secondary Math Faculty (12y Exp, Board Exam Mentor)',
+    descriptionHi: 'कक्षा 10-A गणित संकाय (12 वर्ष अनुभव, बोर्ड परीक्षा विशेषज्ञ)',
+    avatarGradient: 'from-emerald-600 to-teal-800',
     user: {
-      id: 'tchr-002',
-      email: 'sunita.sharma@delhiedu.gov.in',
-      username: 'sunita_sharma',
-      full_name: 'Mrs. Sunita Sharma',
+      id: 'tchr-003',
+      email: 'ananya.roy@delhiedu.gov.in',
+      username: 'ananya_roy',
+      full_name: 'Dr. Ananya Roy',
       role: 'teacher',
-      preferred_language: 'hi',
+      preferred_language: 'en',
+      is_minor: false,
+      created_at: '2026-08-01T00:00:00Z',
+    },
+  },
+  {
+    id: 'demo-vikram-sen',
+    name: 'Mr. Vikram Sen',
+    nameHi: 'श्री विक्रम सेन',
+    role: 'teacher',
+    badge: 'Class 7-C Social Science • 44 Students',
+    description: 'Social Sciences Faculty (9y Exp, Democratic & Environmental Literacy)',
+    descriptionHi: 'कक्षा 7-C सामाजिक विज्ञान शिक्षक (9 वर्ष अनुभव)',
+    avatarGradient: 'from-amber-600 to-red-800',
+    user: {
+      id: 'tchr-004',
+      email: 'vikram.sen@delhiedu.gov.in',
+      username: 'vikram_sen',
+      full_name: 'Mr. Vikram Sen',
+      role: 'teacher',
+      preferred_language: 'en',
+      is_minor: false,
+      created_at: '2026-08-01T00:00:00Z',
+    },
+  },
+  {
+    id: 'demo-kavita',
+    name: 'Ms. Kavita Deshmukh',
+    nameHi: 'सुश्री कविता देशमुख',
+    role: 'teacher',
+    badge: 'Class 6-A English • 46 Students',
+    description: 'Middle School English Educator (10y Exp, Reading & Fluency)',
+    descriptionHi: 'कक्षा 6-A अंग्रेजी शिक्षिका (10 वर्ष अनुभव, वाचन एवं प्रवाह)',
+    avatarGradient: 'from-fuchsia-600 to-purple-800',
+    user: {
+      id: 'tchr-005',
+      email: 'kavita.deshmukh@delhiedu.gov.in',
+      username: 'kavita_deshmukh',
+      full_name: 'Ms. Kavita Deshmukh',
+      role: 'teacher',
+      preferred_language: 'en',
+      is_minor: false,
+      created_at: '2026-08-01T00:00:00Z',
+    },
+  },
+  {
+    id: 'demo-apple',
+    name: 'apple (You)',
+    nameHi: 'apple (आपका खाता)',
+    role: 'teacher',
+    badge: 'Class 9-A Math & Science • 50 Students',
+    description: 'Your Personal Teacher Account (cleb8ke4c@mozmail.com)',
+    descriptionHi: 'आपका व्यक्तिगत शिक्षक खाता (cleb8ke4c@mozmail.com)',
+    avatarGradient: 'from-indigo-600 to-blue-700',
+    user: {
+      id: '729a8837-8062-4f17-a9a3-a99b57f307bb',
+      email: 'cleb8ke4c@mozmail.com',
+      username: 'apple',
+      full_name: 'apple',
+      role: 'teacher',
+      preferred_language: 'en',
       is_minor: false,
       created_at: '2026-08-01T00:00:00Z',
     },

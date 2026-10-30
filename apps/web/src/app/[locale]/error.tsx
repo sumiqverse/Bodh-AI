@@ -17,7 +17,7 @@ export default function ErrorBoundaryPage({
 
   React.useEffect(() => {
     // Error logged for monitoring
-    // console.error(error);
+    console.error('ErrorBoundary caught:', error);
   }, [error]);
 
   return (

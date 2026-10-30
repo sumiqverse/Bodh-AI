@@ -57,6 +57,11 @@ export function TeacherProfileDetail({
   const locale = useLocale();
 
   const [profileData, setProfileData] = React.useState<TeacherProfile>(profile);
+
+  // Sync internal state if live database profile updates asynchronously
+  React.useEffect(() => {
+    setProfileData(profile);
+  }, [profile]);
   const [activeTab, setActiveTab] = React.useState<
     'classes' | 'decisions' | 'schedule' | 'specializations'
   >('classes');

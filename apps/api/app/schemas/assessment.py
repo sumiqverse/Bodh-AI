@@ -112,6 +112,9 @@ class MasteryResponse(BaseModel):
     last_attempted_at: datetime | None = None
     state: str = Field(default="not_learned", description="not_learned, partial, mastered")
     rationale: str = Field(default="", description="Pedagogical explanation of current state")
+    skill_name: str | None = Field(default=None, description="Human-readable skill name")
+    topic_name: str | None = Field(default=None, description="Topic or unit name")
+    skill_code: str | None = Field(default=None, description="Official NCERT skill code")
 
 
 class DiagnosticStartRequest(BaseModel):

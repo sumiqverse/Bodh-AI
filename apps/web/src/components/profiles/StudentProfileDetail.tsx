@@ -57,6 +57,11 @@ export function StudentProfileDetail({
   const locale = useLocale();
 
   const [profileData, setProfileData] = React.useState<StudentProfile>(profile);
+
+  // Sync internal state if live database profile updates asynchronously
+  React.useEffect(() => {
+    setProfileData(profile);
+  }, [profile]);
   const [activeTab, setActiveTab] = React.useState<
     'mastery' | 'errors' | 'hints' | 'trend' | 'activity' | 'badges' | 'plan'
   >('mastery');

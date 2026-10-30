@@ -100,30 +100,34 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
         if (localDiag) {
           const parsed = JSON.parse(localDiag);
           if (Array.isArray(parsed.skill_states)) {
-            const existingIds = new Set(combinedMastery.map((m) => String(m.skill_id).toLowerCase()));
-            parsed.skill_states.forEach((sk: {
-              skill_id?: string;
-              code?: string;
-              name?: string;
-              p_mastery?: number;
-              state?: string;
-              attempts_count?: number;
-            }) => {
-              const sid = String(sk.skill_id || sk.code || '').toLowerCase();
-              if (sid && !existingIds.has(sid)) {
-                existingIds.add(sid);
-                combinedMastery.push({
-                  skill_id: sk.skill_id || sk.code,
-                  p_mastery: sk.p_mastery ?? 0.85,
-                  confidence: 0.8,
-                  attempts_count: sk.attempts_count || 1,
-                  correct_count: sk.state === 'mastered' ? 1 : 0,
-                  state: sk.state || 'mastered',
-                  last_attempted_at: new Date().toISOString(),
-                  rationale: 'Calibrated from diagnostic assessment.',
-                } as unknown as MasteryResponse);
-              }
-            });
+            const existingIds = new Set(
+              combinedMastery.map((m) => String(m.skill_id).toLowerCase()),
+            );
+            parsed.skill_states.forEach(
+              (sk: {
+                skill_id?: string;
+                code?: string;
+                name?: string;
+                p_mastery?: number;
+                state?: string;
+                attempts_count?: number;
+              }) => {
+                const sid = String(sk.skill_id || sk.code || '').toLowerCase();
+                if (sid && !existingIds.has(sid)) {
+                  existingIds.add(sid);
+                  combinedMastery.push({
+                    skill_id: sk.skill_id || sk.code,
+                    p_mastery: sk.p_mastery ?? 0.85,
+                    confidence: 0.8,
+                    attempts_count: sk.attempts_count || 1,
+                    correct_count: sk.state === 'mastered' ? 1 : 0,
+                    state: sk.state || 'mastered',
+                    last_attempted_at: new Date().toISOString(),
+                    rationale: 'Calibrated from diagnostic assessment.',
+                  } as unknown as MasteryResponse);
+                }
+              },
+            );
           }
         }
       } catch {
@@ -145,7 +149,11 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
       if (m.state === 'mastered' || (m.p_mastery ?? 0) >= 0.85) {
         state = 'mastered';
         mastered++;
-      } else if (m.state === 'partial' || (m.p_mastery ?? 0) >= 0.35 || (m.attempts_count ?? 0) > 0) {
+      } else if (
+        m.state === 'partial' ||
+        (m.p_mastery ?? 0) >= 0.35 ||
+        (m.attempts_count ?? 0) > 0
+      ) {
         state = 'partial';
         partial++;
       } else {
@@ -160,15 +168,15 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
 
       return {
         skillId: String(m.skill_id),
-        skillName: meta?.name ?? 'Curriculum Competency',
-        topicName: meta?.topicName ?? 'Mathematics',
+        skillName: m.skill_name || meta?.name || 'Curriculum Competency',
+        topicName: m.topic_name || meta?.topicName || 'NCERT Curriculum',
         pMastery: m.p_mastery ?? 0.5,
         confidence: m.confidence ?? 0.7,
         attemptsCount: attempts,
         correctCount: correct,
         accuracyPercentage: accuracy,
         state,
-        lastAttemptedAt: m.last_attempted_at ?? new Date().toISOString(),
+        lastAttemptedAt: m.last_attempted_at ?? null,
         rationale: m.rationale || 'Demonstrated consistent problem solving.',
       };
     });

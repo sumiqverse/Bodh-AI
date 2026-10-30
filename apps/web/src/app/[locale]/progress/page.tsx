@@ -19,9 +19,16 @@ export default function ProgressPage(): React.JSX.Element {
   const t = useTranslations('progress');
   const tCommon = useTranslations('common');
 
-  const { historyItems, stats, isLoading, error, refetch } = useProgressHistory('NCERT-MATH-C8');
+  const [mounted, setMounted] = React.useState<boolean>(false);
+  const [selectedCurriculum, setSelectedCurriculum] = React.useState<string>('NCERT-MATH-C8');
 
-  if (isLoading) {
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { historyItems, stats, isLoading, error, refetch } = useProgressHistory(selectedCurriculum);
+
+  if (!mounted || isLoading) {
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
         <Skeleton className="h-10 w-64" />
@@ -84,6 +91,30 @@ export default function ProgressPage(): React.JSX.Element {
             {t('startPracticing')}
           </Button>
         </Link>
+      </div>
+
+      {/* Curriculum / Subject Quick Selector */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
+        {[
+          { code: 'NCERT-MATH-C8', label: 'Class 8 Mathematics' },
+          { code: 'NCERT-SCIE-C9', label: 'Class 9 Science' },
+          { code: 'NCERT-MATH-C10', label: 'Class 10 Mathematics' },
+          { code: 'NCERT-SOCI-C7', label: 'Class 7 Social Science' },
+          { code: 'NCERT-ENGL-C6', label: 'Class 6 English' },
+        ].map((c) => (
+          <button
+            key={c.code}
+            type="button"
+            onClick={() => setSelectedCurriculum(c.code)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              selectedCurriculum === c.code
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
       </div>
 
       {/* Stats Cards */}

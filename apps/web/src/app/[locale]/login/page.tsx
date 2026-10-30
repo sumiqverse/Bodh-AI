@@ -31,7 +31,7 @@ import {
   getUserDashboardPath,
   syncSessionCookies,
 } from '@/lib/api-client';
-import { DEMO_ACCOUNTS, loginAsDemoUser, getStableEmployeeId } from '@/lib/profiles-data';
+import { DEMO_ACCOUNTS, loginAsDemoUser } from '@/lib/profiles-data';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
 
@@ -173,54 +173,19 @@ export default function LoginPage(): React.JSX.Element {
       const res = await apiClient.teacherLogin({ email, password });
       setAuthSession(res.access_token, res.user);
 
-      // Link any custom profile information captured during signup
+      // Sync authentic live profile directly from PostgreSQL database
       if (typeof window !== 'undefined') {
         try {
-          const pendingKey = `bodhai_pending_profile_${email.trim().toLowerCase()}`;
-          const pendingRaw = localStorage.getItem(pendingKey);
-          if (pendingRaw) {
-            const pending = JSON.parse(pendingRaw);
-            const userProfileKey = `bodhai_profile_${res.user.id}`;
-            const existingRaw = localStorage.getItem(userProfileKey);
-            const existing = existingRaw ? JSON.parse(existingRaw) : {};
-            const updated = {
-              ...existing,
-              id: res.user.id,
-              slug: `tchr-${(pending.fullName || res.user.full_name || 'educator').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-              fullName: pending.fullName || existing.fullName || res.user.full_name || 'Educator',
-              fullNameHi: pending.fullName || existing.fullNameHi || res.user.full_name || 'शिक्षक',
-              title: pending.title || existing.title || 'Mathematics & Science Educator',
-              titleHi: pending.title || existing.titleHi || 'गणित एवं विज्ञान शिक्षक',
-              schoolName: pending.schoolName || existing.schoolName || '',
-              experienceYears:
-                pending.experienceYears !== undefined
-                  ? Number(pending.experienceYears)
-                  : (existing.experienceYears ?? 0),
-              email: res.user.email || email,
-              employeeId: existing.employeeId || getStableEmployeeId(res.user.id || email),
-              department: existing.department || 'Secondary Department',
-              qualifications: existing.qualifications || '',
-              bio: existing.bio || '',
-              bioHi: existing.bioHi || '',
-              avatarGradient:
-                existing.avatarGradient || 'from-blue-600 via-indigo-600 to-purple-600',
-              officeHours: existing.officeHours || 'Monday – Friday, 2:00 PM – 4:00 PM',
-              verifiedEducator: true,
-              totalStudentsTaught: existing.totalStudentsTaught ?? 0,
-              activeClassesCount: existing.activeClassesCount ?? 0,
-              avgClassroomMastery: existing.avgClassroomMastery ?? 0,
-              totalAssignmentsCreated: existing.totalAssignmentsCreated ?? 0,
-              aiDecisionsReviewed: existing.aiDecisionsReviewed ?? 0,
-              classes: existing.classes || [],
-              pedagogicalDecisions: existing.pedagogicalDecisions || [],
-              schedule: existing.schedule || [],
-              specializations: existing.specializations || ['CBSE/NCERT Curriculum'],
-            };
-            localStorage.setItem(userProfileKey, JSON.stringify(updated));
-            localStorage.removeItem(pendingKey);
+          const profileRes = await apiClient.getMyProfile(res.access_token);
+          if (profileRes?.profile) {
+            localStorage.setItem(
+              `bodhai_profile_${res.user.id}`,
+              JSON.stringify(profileRes.profile),
+            );
           }
+          localStorage.removeItem(`bodhai_pending_profile_${email.trim().toLowerCase()}`);
         } catch {
-          // ignore parsing error
+          // ignore profile sync error
         }
       }
 
@@ -267,6 +232,15 @@ export default function LoginPage(): React.JSX.Element {
     setIsLoading(true);
     setErrorMessage(null);
     try {
+      if (demoId === 'demo-sunita') {
+        const res = await apiClient.teacherLogin({
+          email: 'sunita.sharma@delhiedu.gov.in',
+          password: 'Password@123',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/classes');
+        return;
+      }
       if (demoId === 'demo-rajesh') {
         const res = await apiClient.teacherLogin({
           email: 'rajesh.kumar@delhiedu.gov.in',
@@ -276,9 +250,36 @@ export default function LoginPage(): React.JSX.Element {
         router.push('/classes');
         return;
       }
-      if (demoId === 'demo-sunita') {
+      if (demoId === 'demo-ananya-roy') {
         const res = await apiClient.teacherLogin({
-          email: 'sunita.sharma@delhiedu.gov.in',
+          email: 'ananya.roy@delhiedu.gov.in',
+          password: 'Password@123',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/classes');
+        return;
+      }
+      if (demoId === 'demo-vikram-sen') {
+        const res = await apiClient.teacherLogin({
+          email: 'vikram.sen@delhiedu.gov.in',
+          password: 'Password@123',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/classes');
+        return;
+      }
+      if (demoId === 'demo-kavita') {
+        const res = await apiClient.teacherLogin({
+          email: 'kavita.deshmukh@delhiedu.gov.in',
+          password: 'Password@123',
+        });
+        setAuthSession(res.access_token, res.user);
+        router.push('/classes');
+        return;
+      }
+      if (demoId === 'demo-apple') {
+        const res = await apiClient.teacherLogin({
+          email: 'cleb8ke4c@mozmail.com',
           password: 'Password@123',
         });
         setAuthSession(res.access_token, res.user);
@@ -377,7 +378,7 @@ export default function LoginPage(): React.JSX.Element {
               >
                 <div>{errorMessage}</div>
                 {email && password && password.length >= 8 && (
-                  <div className="pt-2 border-t border-destructive/20">
+                  <div className="pt-2 border-t border-destructive/20 space-y-2">
                     <button
                       type="button"
                       onClick={handleDirectResetWithEnteredPassword}
@@ -387,6 +388,30 @@ export default function LoginPage(): React.JSX.Element {
                       {resetLoading
                         ? 'Saving password & signing in...'
                         : '👉 Set entered password as your BodhAI password & Sign In'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setPassword('Password@123');
+                        setIsLoading(true);
+                        setErrorMessage(null);
+                        try {
+                          const res = await apiClient.teacherLogin({
+                            email: email.trim(),
+                            password: 'Password@123',
+                          });
+                          setAuthSession(res.access_token, res.user);
+                          router.push('/classes');
+                        } catch (e: unknown) {
+                          setErrorMessage(e instanceof Error ? e.message : 'Login failed');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      disabled={resetLoading || isLoading}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all cursor-pointer"
+                    >
+                      🔑 Try standard password: Password@123
                     </button>
                   </div>
                 )}

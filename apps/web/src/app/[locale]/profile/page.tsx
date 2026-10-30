@@ -72,7 +72,43 @@ export default function MyProfilePage(): React.JSX.Element {
     };
   }, [fetchLiveProfile]);
 
-  const handleSelectDemoPersona = (demoAccount: DemoAccount) => {
+  const handleSelectDemoPersona = async (demoAccount: DemoAccount) => {
+    try {
+      setLoadingLive(true);
+      if (demoAccount.user.role === 'teacher') {
+        const teacherEmail = demoAccount.user.email;
+        if (teacherEmail) {
+          const res = await apiClient.teacherLogin({
+            email: teacherEmail,
+            password: 'Password@123',
+          });
+          const { setAuthSession } = await import('@/lib/api-client');
+          setAuthSession(res.access_token, res.user);
+          setCurrentUser(res.user);
+          await fetchLiveProfile();
+          return;
+        }
+      } else if (demoAccount.user.role === 'student') {
+        const studentUsername = demoAccount.user.username;
+        if (studentUsername) {
+          const res = await apiClient.studentLogin({
+            join_code: 'MATH8A',
+            username: studentUsername,
+            pin: '1234',
+          });
+          const { setAuthSession } = await import('@/lib/api-client');
+          setAuthSession(res.access_token, res.user);
+          setCurrentUser(res.user);
+          await fetchLiveProfile();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Demo quick login error:', err);
+    } finally {
+      setLoadingLive(false);
+    }
+
     loginAsDemoUser(demoAccount.id);
     const u = getCurrentUser();
     setCurrentUser(u);

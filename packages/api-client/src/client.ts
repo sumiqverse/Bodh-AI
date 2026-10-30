@@ -181,6 +181,9 @@ export interface MasteryResponse {
   last_attempted_at?: string | null;
   state?: 'not_learned' | 'partial' | 'mastered' | string;
   rationale?: string;
+  skill_name?: string | null;
+  topic_name?: string | null;
+  skill_code?: string | null;
 }
 export type ConsentCreateRequest = components['schemas']['GuardianConsentCreateRequest'];
 export type ConsentResponse = components['schemas']['ConsentDetailResponse'];
