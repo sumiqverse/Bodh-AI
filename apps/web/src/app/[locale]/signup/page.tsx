@@ -106,9 +106,25 @@ export default function SignupPage(): React.JSX.Element {
             {errorMessage && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium"
+                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium space-y-2"
               >
-                {errorMessage}
+                <div>{errorMessage}</div>
+                {(errorMessage.includes('already exists') || errorMessage.includes('409')) && (
+                  <div className="flex flex-wrap items-center gap-3 pt-1.5 border-t border-destructive/20 mt-1">
+                    <Link
+                      href={`/login?email=${encodeURIComponent(email.trim())}`}
+                      className="text-xs font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
+                    >
+                      Sign in with this account →
+                    </Link>
+                    <Link
+                      href={`/login?email=${encodeURIComponent(email.trim())}&reset=true`}
+                      className="text-xs font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
+                    >
+                      Forgot / Reset Password →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

@@ -745,6 +745,17 @@ export class BodhaiApiClient {
     });
   }
 
+  public async resetPassword(payload: {
+    email: string;
+    new_password: string;
+  }): Promise<TokenResponse> {
+    return this.request<TokenResponse>('/api/v1/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+
   public async studentLogin(payload: StudentLoginRequest): Promise<TokenResponse> {
     return this.request<TokenResponse>('/api/v1/auth/student/login', {
       method: 'POST',

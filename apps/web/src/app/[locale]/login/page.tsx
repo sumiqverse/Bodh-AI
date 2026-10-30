@@ -16,6 +16,12 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@bodhai/ui';
 import {
   getWebApiClient,
@@ -44,6 +50,14 @@ export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = React.useState<string>('');
   const [password, setPassword] = React.useState<string>('');
 
+  // Password reset fields
+  const [isResetOpen, setIsResetOpen] = React.useState<boolean>(false);
+  const [resetEmail, setResetEmail] = React.useState<string>('');
+  const [resetNewPassword, setResetNewPassword] = React.useState<string>('');
+  const [resetConfirmPassword, setResetConfirmPassword] = React.useState<string>('');
+  const [resetLoading, setResetLoading] = React.useState<boolean>(false);
+  const [resetError, setResetError] = React.useState<string | null>(null);
+
   // Student fields
   const [joinCode, setJoinCode] = React.useState<string>('');
   const [studentUsername, setStudentUsername] = React.useState<string>('');
@@ -68,9 +82,53 @@ export default function LoginPage(): React.JSX.Element {
       const prefillEmail = params.get('email');
       if (prefillEmail) {
         setEmail(prefillEmail);
+        setResetEmail(prefillEmail);
+      }
+      if (params.get('reset') === 'true') {
+        setIsResetOpen(true);
       }
     }
   }, [t, router]);
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    setResetError(null);
+
+    if (resetNewPassword.length < 8) {
+      setResetError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const res = await apiClient.resetPassword({
+        email: resetEmail.trim(),
+        new_password: resetNewPassword,
+      });
+      setAuthSession(res.access_token, res.user);
+      setSuccessMessage('Password reset successfully! Redirecting to your dashboard...');
+      setIsResetOpen(false);
+      setTimeout(() => {
+        if (res.user.role === 'admin') {
+          router.push('/admin/stats');
+        } else {
+          router.push('/classes');
+        }
+      }, 500);
+    } catch (err: unknown) {
+      let msg = err instanceof Error ? err.message : 'Failed to reset password.';
+      if (msg.includes('API Error')) {
+        msg = msg.replace(/^API Error \[\d+\]:\s*/, '');
+      }
+      setResetError(msg);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleTeacherSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -101,14 +159,18 @@ export default function LoginPage(): React.JSX.Element {
               title: pending.title || existing.title || 'Mathematics & Science Educator',
               titleHi: pending.title || existing.titleHi || 'गणित एवं विज्ञान शिक्षक',
               schoolName: pending.schoolName || existing.schoolName || '',
-              experienceYears: pending.experienceYears !== undefined ? Number(pending.experienceYears) : (existing.experienceYears ?? 0),
+              experienceYears:
+                pending.experienceYears !== undefined
+                  ? Number(pending.experienceYears)
+                  : (existing.experienceYears ?? 0),
               email: res.user.email || email,
               employeeId: existing.employeeId || getStableEmployeeId(res.user.id || email),
               department: existing.department || 'Secondary Department',
               qualifications: existing.qualifications || '',
               bio: existing.bio || '',
               bioHi: existing.bioHi || '',
-              avatarGradient: existing.avatarGradient || 'from-blue-600 via-indigo-600 to-purple-600',
+              avatarGradient:
+                existing.avatarGradient || 'from-blue-600 via-indigo-600 to-purple-600',
               officeHours: existing.officeHours || 'Monday – Friday, 2:00 PM – 4:00 PM',
               verifiedEducator: true,
               totalStudentsTaught: existing.totalStudentsTaught ?? 0,
@@ -137,7 +199,7 @@ export default function LoginPage(): React.JSX.Element {
     } catch (err: unknown) {
       let msg = err instanceof Error ? err.message : t('authFailed');
       if (msg.includes('Invalid email or password') || msg.includes('401')) {
-        msg = 'Invalid email or password. If you don\'t have an account yet, please sign up below.';
+        msg = "Invalid email or password. If you don't have an account yet, please sign up below.";
       } else if (msg.includes('API Error')) {
         msg = msg.replace(/^API Error \[\d+\]:\s*/, '');
       }
@@ -278,9 +340,24 @@ export default function LoginPage(): React.JSX.Element {
             {errorMessage && (
               <div
                 role="alert"
-                className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium"
+                className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium space-y-2"
               >
-                {errorMessage}
+                <div>{errorMessage}</div>
+                {email && (
+                  <div className="pt-1 border-t border-destructive/20 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(email);
+                        setResetError(null);
+                        setIsResetOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-semibold underline underline-offset-2 hover:opacity-80 cursor-pointer text-primary dark:text-primary-foreground"
+                    >
+                      Forgot password? Reset password for {email} →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -304,12 +381,25 @@ export default function LoginPage(): React.JSX.Element {
                 </div>
 
                 <div className="space-y-2">
-                  <label
-                    htmlFor="teacher-password"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                  >
-                    {t('password')}
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="teacher-password"
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
+                      {t('password')}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(email);
+                        setResetError(null);
+                        setIsResetOpen(true);
+                      }}
+                      className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <Input
                     id="teacher-password"
                     type="password"
@@ -513,6 +603,104 @@ export default function LoginPage(): React.JSX.Element {
           ))}
         </div>
       </div>
+
+      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl font-bold">
+              Reset BodhAI Password
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Enter your registered email address and choose a new password (min. 8 characters).
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleResetPasswordSubmit} className="space-y-4 pt-2">
+            {resetError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive font-medium"
+              >
+                {resetError}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="reset-email"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Account Email
+              </label>
+              <Input
+                id="reset-email"
+                type="email"
+                required
+                placeholder="teacher@school.edu.in"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="reset-new-password"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                New Password (min 8 characters)
+              </label>
+              <Input
+                id="reset-new-password"
+                type="password"
+                required
+                minLength={8}
+                placeholder="••••••••"
+                value={resetNewPassword}
+                onChange={(e) => setResetNewPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="reset-confirm-password"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Confirm New Password
+              </label>
+              <Input
+                id="reset-confirm-password"
+                type="password"
+                required
+                minLength={8}
+                placeholder="••••••••"
+                value={resetConfirmPassword}
+                onChange={(e) => setResetConfirmPassword(e.target.value)}
+              />
+            </div>
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsResetOpen(false)}
+                disabled={resetLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={resetLoading}
+                className="cursor-pointer font-semibold"
+              >
+                {resetLoading ? 'Updating...' : 'Update & Sign In'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

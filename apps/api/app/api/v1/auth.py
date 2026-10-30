@@ -28,6 +28,7 @@ from app.repositories.class_repo import ClassRepository
 from app.repositories.user_repo import UserRepository
 from app.schemas.auth import (
     RefreshTokenRequest,
+    ResetPasswordRequest,
     StudentJoinRequest,
     StudentLoginRequest,
     SupabaseAuthRequest,
@@ -210,6 +211,62 @@ async def teacher_login(
         action="login_success",
         resource_type="user",
         resource_id=str(user.id),
+        user_id=user.id,
+        ip_address=client_ip,
+    )
+
+    role_name = user.role.name if user.role else "teacher"
+    access_token = create_access_token({"sub": str(user.id), "role": role_name})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+    csrf_token = generate_csrf_token()
+
+    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        csrf_token=csrf_token,
+        user=_build_user_response(user),
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=TokenResponse,
+    summary="Reset password for an existing educator or student account",
+    status_code=status.HTTP_200_OK,
+)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    response: Response,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> TokenResponse:
+    """Reset password securely and authenticate user."""
+    user_repo = UserRepository(session)
+    user = await user_repo.get_by_email(payload.email.lower().strip())
+    if not user:
+        raise NotFoundError(
+            f"No BodhAI account registered with email '{payload.email}'. "
+            "Please verify your address or create an account.",
+            resource_type="User",
+            resource_id=payload.email,
+        )
+
+    user.hashed_password = hash_secret(payload.new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    session.add(user)
+    await session.flush()
+    await session.refresh(user, ["role"])
+
+    audit_repo = AuditRepository(session)
+    client_ip = request.client.host if request.client else None
+    await audit_repo.log_action(
+        action="reset_password",
+        resource_type="user",
+        resource_id=str(user.id),
+        changes={"email": user.email},
         user_id=user.id,
         ip_address=client_ip,
     )

@@ -74,3 +74,14 @@ class RefreshTokenRequest(BaseModel):
     """Payload for rotating access tokens."""
 
     refresh_token: str | None = Field(default=None, description="JWT refresh token")
+
+
+class ResetPasswordRequest(BaseModel):
+    """Payload for updating or recovering user password."""
+
+    email: EmailStr
+    new_password: str = Field(
+        min_length=8,
+        max_length=128,
+        description="Minimum 8 characters password",
+    )
