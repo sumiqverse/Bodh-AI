@@ -108,6 +108,22 @@ export interface StudentProfile {
   attendanceRate: number; // 0 - 100
   assignedTeacherName: string;
   assignedTeacherSlug: string;
+  className?: string;
+  curriculumCode?: string;
+  classId?: string;
+  classes?: Array<{
+    classId: string;
+    name: string;
+    grade: number;
+    section: string;
+    academicYear: string;
+    curriculumCode: string;
+    status: string;
+    rollNumber?: string;
+    teacherName?: string;
+    teacherSlug?: string;
+    joinCode?: string;
+  }>;
 
   // Deep Telemetry Sections (Unique Per Student)
   skills: SkillMasteryItem[];

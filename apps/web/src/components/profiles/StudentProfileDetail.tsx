@@ -325,6 +325,23 @@ export function StudentProfileDetail({
                   )}
                 </p>
 
+                {profileData.classes && profileData.classes.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-xs font-semibold text-muted-foreground mr-1">
+                      {locale === 'hi' ? 'नामांकित कक्षाएं:' : 'Enrolled Classes:'}
+                    </span>
+                    {profileData.classes.map((cls) => (
+                      <Badge
+                        key={cls.classId}
+                        variant="secondary"
+                        className="text-xs py-0.5 px-2 bg-secondary/80 text-secondary-foreground font-medium"
+                      >
+                        {cls.name} • {cls.teacherName}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
                 <p className="text-xs sm:text-sm text-foreground/90 max-w-2xl pt-1">
                   {locale === 'hi'
                     ? profileData.bioHi || profileData.bio || 'कोई परिचय नहीं जोड़ा गया।'

@@ -13,7 +13,7 @@ import {
   Button,
   Input,
 } from '@bodhai/ui';
-import { getWebApiClient } from '@/lib/api-client';
+import { getWebApiClient, setAuthSession } from '@/lib/api-client';
 
 export default function StudentJoinPage(): React.JSX.Element {
   const t = useTranslations('auth');
@@ -45,21 +45,27 @@ export default function StudentJoinPage(): React.JSX.Element {
         preferred_language: 'en',
       });
 
-      if (typeof window !== 'undefined' && joinRes?.access_token) {
-        try {
-          const pRes = await apiClient.getMyProfile(joinRes.access_token);
-          if (pRes?.profile?.curriculumCode) {
-            localStorage.setItem('bodhai_student_curriculum', pRes.profile.curriculumCode);
+      if (joinRes?.access_token && joinRes?.user) {
+        setAuthSession(joinRes.access_token, joinRes.user);
+        if (typeof window !== 'undefined') {
+          try {
+            const pRes = await apiClient.getMyProfile(joinRes.access_token);
+            if (pRes?.profile?.curriculumCode) {
+              localStorage.setItem('bodhai_student_curriculum', pRes.profile.curriculumCode);
+            }
+            if (pRes?.profile?.classId) {
+              localStorage.setItem('bodhai_selected_class_id', pRes.profile.classId);
+            }
+          } catch {
+            // ignore
           }
-        } catch {
-          // ignore
         }
       }
 
       setSuccessMessage(t('joinSuccess'));
       setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+        router.push('/student');
+      }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('authFailed');
       setErrorMessage(msg);

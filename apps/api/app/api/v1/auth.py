@@ -396,48 +396,72 @@ async def student_join(
     client_ip = request.client.host if request.client else None
 
     # 1. Validate join code
-    school_class = await class_repo.get_by_join_code(payload.join_code)
+    clean_code = payload.join_code.strip().upper()
+    school_class = await class_repo.get_by_join_code(clean_code)
     if school_class is None:
-        raise NotFoundError("Class with join code", payload.join_code)
+        raise NotFoundError("Class with join code", clean_code)
 
-    # 2. Check username availability
-    existing = await user_repo.get_by_username(payload.username)
+    # 2. Check if student already exists
+    existing = await user_repo.get_by_username(payload.username.strip())
     if existing is not None:
-        raise ConflictError(
-            f"Username '{payload.username}' is already taken. Please choose another."
+        # Verify PIN against existing student credentials
+        if not existing.pin_hash or not verify_secret(existing.pin_hash, payload.pin.strip()):
+            raise ConflictError(
+                f"Username '{payload.username}' is already in use with a different PIN."
+            )
+        student = existing
+        # Check enrollment in target class
+        existing_enr = await class_repo.get_enrollment(school_class.id, student.id)
+        if existing_enr is None:
+            await class_repo.add_enrollment(
+                class_id=school_class.id,
+                student_id=student.id,
+                status="pending",
+            )
+            await audit_repo.log_action(
+                action="student_joined_class",
+                resource_type="enrollment",
+                resource_id=f"{school_class.id}:{student.id}",
+                changes={"class_id": str(school_class.id), "username": student.username},
+                user_id=student.id,
+                ip_address=client_ip,
+            )
+        elif existing_enr.status == "removed":
+            existing_enr.status = "pending"
+            session.add(existing_enr)
+            await session.flush()
+    else:
+        # 3. Create student user account
+        student_role = await user_repo.get_or_create_default_role("student")
+        student = User(
+            username=payload.username.strip(),
+            full_name=payload.full_name.strip(),
+            pin_hash=hash_secret(payload.pin.strip()),
+            is_minor=True,
+            is_active=True,
+            is_verified=True,
+            preferred_language=payload.preferred_language,
+            role_id=student_role.id,
+        )
+        session.add(student)
+        await session.flush()
+        await session.refresh(student, ["role"])
+
+        # 4. Create pending enrollment for teacher approval
+        await class_repo.add_enrollment(
+            class_id=school_class.id,
+            student_id=student.id,
+            status="pending",
         )
 
-    # 3. Create student user account
-    student_role = await user_repo.get_or_create_default_role("student")
-    student = User(
-        username=payload.username.strip(),
-        full_name=payload.full_name.strip(),
-        pin_hash=hash_secret(payload.pin),
-        is_minor=True,
-        is_active=True,
-        is_verified=True,
-        preferred_language=payload.preferred_language,
-        role_id=student_role.id,
-    )
-    session.add(student)
-    await session.flush()
-    await session.refresh(student, ["role"])
-
-    # 4. Create pending enrollment for teacher approval
-    await class_repo.add_enrollment(
-        class_id=school_class.id,
-        student_id=student.id,
-        status="pending",
-    )
-
-    await audit_repo.log_action(
-        action="student_joined_class",
-        resource_type="enrollment",
-        resource_id=f"{school_class.id}:{student.id}",
-        changes={"class_id": str(school_class.id), "username": student.username},
-        user_id=student.id,
-        ip_address=client_ip,
-    )
+        await audit_repo.log_action(
+            action="student_joined_class",
+            resource_type="enrollment",
+            resource_id=f"{school_class.id}:{student.id}",
+            changes={"class_id": str(school_class.id), "username": student.username},
+            user_id=student.id,
+            ip_address=client_ip,
+        )
 
     access_token = create_access_token({"sub": str(student.id), "role": "student"})
     refresh_token = create_refresh_token({"sub": str(student.id)})

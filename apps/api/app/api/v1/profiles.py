@@ -239,17 +239,45 @@ async def build_teacher_profile_dict(teacher: User, session: AsyncSession) -> di
 
 async def build_student_profile_dict(student: User, session: AsyncSession) -> dict[str, Any]:
     """Dynamically aggregate real database telemetry for a student profile."""
-    enr_stmt = (
+    all_enrs_stmt = (
         select(Enrollment)
-        .options(selectinload(Enrollment.school_class))
+        .options(
+            selectinload(Enrollment.school_class).selectinload(SchoolClass.teacher),
+        )
         .where(
             Enrollment.student_id == student.id,
             Enrollment.status.in_(["active", "pending"]),
         )
         .order_by(Enrollment.created_at.desc())
-        .limit(1)
     )
-    enr = (await session.execute(enr_stmt)).scalar_one_or_none()
+    all_enrs = (await session.execute(all_enrs_stmt)).scalars().all()
+
+    student_classes = []
+    for e in all_enrs:
+        if not e.school_class:
+            continue
+        sc = e.school_class
+        t_name = sc.teacher.full_name if sc.teacher else "Educator"
+        t_clean = (t_name or "educator").lower().replace(" ", "-")
+        t_slug = f"tchr-{t_clean}"
+        c_code = resolve_curriculum_code(sc.grade, sc.name)
+        student_classes.append(
+            {
+                "classId": str(sc.id),
+                "name": sc.name,
+                "grade": sc.grade,
+                "section": sc.section,
+                "academicYear": sc.academic_year,
+                "curriculumCode": c_code,
+                "status": e.status,
+                "rollNumber": e.roll_number or "101",
+                "teacherName": t_name,
+                "teacherSlug": t_slug,
+                "joinCode": sc.join_code,
+            }
+        )
+
+    enr = all_enrs[0] if all_enrs else None
     grade = enr.school_class.grade if (enr and enr.school_class) else 8
     section = enr.school_class.section if (enr and enr.school_class) else "A"
     roll_num = enr.roll_number if enr else "101"
@@ -262,26 +290,22 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
 
     assigned_teacher_name = "Mr. Rajesh Kumar"
     assigned_teacher_slug = "tchr-rajesh-kumar"
-    if enr and enr.school_class and enr.school_class.teacher_id:
-        t_user = (
-            await session.execute(select(User).where(User.id == enr.school_class.teacher_id))
-        ).scalar_one_or_none()
-        if t_user:
-            assigned_teacher_name = t_user.full_name
-            t_clean = (t_user.full_name or "educator").lower().replace(" ", "-")
-            assigned_teacher_slug = f"tchr-{t_clean}"
+    if enr and enr.school_class and enr.school_class.teacher:
+        assigned_teacher_name = enr.school_class.teacher.full_name or "Educator"
+        t_clean = (assigned_teacher_name).lower().replace(" ", "-")
+        assigned_teacher_slug = f"tchr-{t_clean}"
 
     mast_stmt = (
-        select(Mastery)
-        .options(selectinload(Mastery.skill).selectinload(Skill.topic))
+        select(Mastery, Skill)
+        .join(Skill, Mastery.skill_id == Skill.id)
+        .options(selectinload(Skill.topic))
         .where(Mastery.student_id == student.id)
     )
-    masteries = (await session.execute(mast_stmt)).scalars().all()
+    mastery_rows = (await session.execute(mast_stmt)).all()
 
     skills_list = []
     p_sum = 0.0
-    for m in masteries:
-        sk = m.skill
+    for m, sk in mastery_rows:
         p_mast = float(m.p_mastery)
         p_sum += p_mast
         topic_name = sk.topic.name if (sk and sk.topic) else "General Curriculum"
@@ -298,7 +322,7 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
                 "topicCode": topic_code,
                 "difficulty": sk.difficulty if sk else 3,
                 "pMastery": round(p_mast, 2),
-                "state": m.state or def_state,
+                "state": def_state,
                 "attemptsCount": m.attempts_count or 12,
                 "lastAttemptedAt": (
                     m.updated_at.isoformat() if m.updated_at else datetime.now(UTC).isoformat()
@@ -368,6 +392,7 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         "className": class_name,
         "curriculumCode": curriculum_code,
         "classId": str(enr.school_class.id) if (enr and enr.school_class) else None,
+        "classes": student_classes,
         "academicYear": "2024-2025",
         "schoolName": p_data.get("schoolName") or "Govt. Model Senior Secondary School, Delhi",
         "schoolUdise": "07010100101",

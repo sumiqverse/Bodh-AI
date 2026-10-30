@@ -31,11 +31,53 @@ export default function StudentHomePage(): React.JSX.Element {
     staleTime: 5 * 60 * 1000,
   });
 
+  const enrolledClasses = React.useMemo(() => {
+    const rawClasses = profileQuery.data?.profile?.classes;
+    if (Array.isArray(rawClasses) && rawClasses.length > 0) {
+      return rawClasses;
+    }
+    if (profileQuery.data?.profile?.className) {
+      return [
+        {
+          classId: profileQuery.data.profile.classId || 'default-class',
+          name: profileQuery.data.profile.className,
+          grade: profileQuery.data.profile.grade || 8,
+          section: profileQuery.data.profile.section || 'A',
+          academicYear: '2024-2025',
+          curriculumCode: profileQuery.data.profile.curriculumCode || 'NCERT-MATH-C8',
+          status: 'active',
+          teacherName: profileQuery.data.profile.assignedTeacherName || 'Educator',
+        },
+      ];
+    }
+    return [];
+  }, [profileQuery.data?.profile]);
+
+  const [selectedClassId, setSelectedClassId] = React.useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bodhai_selected_class_id') || '';
+    }
+    return '';
+  });
+
+  const activeClass = React.useMemo(() => {
+    if (!enrolledClasses.length) return null;
+    return enrolledClasses.find((c) => c.classId === selectedClassId) || enrolledClasses[0];
+  }, [enrolledClasses, selectedClassId]);
+
   const enrolledCurriculum =
+    activeClass?.curriculumCode ||
     profileQuery.data?.profile?.curriculumCode ||
     (typeof window !== 'undefined'
       ? localStorage.getItem('bodhai_student_curriculum') || 'NCERT-MATH-C8'
       : 'NCERT-MATH-C8');
+
+  React.useEffect(() => {
+    if (activeClass && typeof window !== 'undefined') {
+      localStorage.setItem('bodhai_student_curriculum', activeClass.curriculumCode);
+      localStorage.setItem('bodhai_selected_class_id', activeClass.classId);
+    }
+  }, [activeClass]);
 
   const { topics, skills, skillsByTopic, summary, nextAction, isLoading, error, refetch } =
     useSkillMap(enrolledCurriculum);
@@ -162,6 +204,67 @@ export default function StudentHomePage(): React.JSX.Element {
               className="min-h-[40px] text-xs font-medium cursor-pointer"
             >
               Progress
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Classroom Switcher & Multi-Class Enrollment Navigation */}
+      <div className="rounded-2xl border border-primary/20 bg-card p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Class:
+            </span>
+            {enrolledClasses.length > 1 ? (
+              <select
+                aria-label="Select Enrolled Classroom"
+                value={activeClass?.classId || ''}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setSelectedClassId(newId);
+                  const selected = enrolledClasses.find((c) => c.classId === newId);
+                  if (selected && typeof window !== 'undefined') {
+                    localStorage.setItem('bodhai_student_curriculum', selected.curriculumCode);
+                    localStorage.setItem('bodhai_selected_class_id', selected.classId);
+                  }
+                }}
+                className="rounded-lg border border-primary/30 bg-background px-3 py-1.5 text-sm font-bold text-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              >
+                {enrolledClasses.map((cls) => (
+                  <option key={cls.classId} value={cls.classId}>
+                    {cls.name} • {cls.teacherName} ({cls.curriculumCode})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Badge
+                variant="default"
+                className="text-sm font-bold py-1 px-3 bg-primary/10 text-primary border border-primary/20"
+              >
+                {activeClass?.name || 'Class 8-A Mathematics'}
+                {activeClass?.teacherName ? ` (${activeClass.teacherName})` : ''}
+              </Badge>
+            )}
+          </div>
+          {activeClass?.status === 'pending' && (
+            <Badge
+              variant="warning"
+              className="text-xs py-0.5 px-2 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+            >
+              Pending Teacher Approval
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          <Link href="/join">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs font-semibold border-dashed border-primary/40 text-primary hover:bg-primary/10 cursor-pointer min-h-[38px]"
+            >
+              + Join Another Class
             </Button>
           </Link>
         </div>

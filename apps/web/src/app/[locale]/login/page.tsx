@@ -59,7 +59,6 @@ export default function LoginPage(): React.JSX.Element {
   const [resetError, setResetError] = React.useState<string | null>(null);
 
   // Student fields
-  const [joinCode, setJoinCode] = React.useState<string>('');
   const [studentUsername, setStudentUsername] = React.useState<string>('');
   const [studentPin, setStudentPin] = React.useState<string>('');
 
@@ -86,10 +85,6 @@ export default function LoginPage(): React.JSX.Element {
       }
       if (params.get('reset') === 'true') {
         setIsResetOpen(true);
-      }
-      const savedCode = localStorage.getItem('bodhai_last_join_code');
-      if (savedCode) {
-        setJoinCode(savedCode);
       }
     }
   }, [t, router]);
@@ -217,17 +212,12 @@ export default function LoginPage(): React.JSX.Element {
     setIsLoading(true);
 
     try {
-      const code = joinCode.trim() ? joinCode.trim().toUpperCase() : undefined;
       const res = await apiClient.studentLogin({
-        join_code: code,
         username: studentUsername.trim(),
         pin: studentPin.trim(),
       });
       setAuthSession(res.access_token, res.user);
       if (typeof window !== 'undefined') {
-        if (code) {
-          localStorage.setItem('bodhai_last_join_code', code);
-        }
         try {
           const pRes = await apiClient.getMyProfile(res.access_token);
           if (pRes?.profile?.curriculumCode) {
@@ -590,29 +580,6 @@ export default function LoginPage(): React.JSX.Element {
                     onChange={(e) => setStudentPin(e.target.value)}
                     className="text-center tracking-widest"
                   />
-                </div>
-
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="student-join-code"
-                      className="text-xs font-medium text-muted-foreground"
-                    >
-                      {t('studentJoinCodeOptional')}
-                    </label>
-                  </div>
-                  <Input
-                    id="student-join-code"
-                    type="text"
-                    maxLength={6}
-                    placeholder={t('studentJoinCodePlaceholder')}
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    className="font-mono uppercase tracking-widest text-center"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t('studentJoinCodeOptionalHelp')}
-                  </p>
                 </div>
 
                 <Button

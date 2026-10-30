@@ -381,3 +381,95 @@ async def test_class_join_code_rotation_and_approval_api(
     )
     assert rem_res.status_code == 200
     assert rem_res.json()["status"] == "removed"
+
+
+@pytest.mark.asyncio
+async def test_student_multi_class_join_and_login_without_code(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    teacher_auth: tuple[User, str, dict[str, str]],
+) -> None:
+    """Test student multi-class onboarding and sign-in without requiring a join code."""
+    _, _, teacher_h = teacher_auth
+
+    school_repo = BaseRepository[School](School, db_session)
+    school = await school_repo.create(SchoolFactory.build())
+    await db_session.flush()
+
+    # Create Class 1
+    c1_res = await client.post(
+        "/api/v1/classes",
+        json={
+            "name": "Class 8-A Mathematics",
+            "grade": 8,
+            "section": "A",
+            "academic_year": "2024-2025",
+            "school_id": str(school.id),
+        },
+        headers=teacher_h,
+    )
+    assert c1_res.status_code == 201
+    code1 = c1_res.json()["join_code"]
+
+    # Create Class 2
+    c2_res = await client.post(
+        "/api/v1/classes",
+        json={
+            "name": "Class 8-B English",
+            "grade": 8,
+            "section": "B",
+            "academic_year": "2024-2025",
+            "school_id": str(school.id),
+        },
+        headers=teacher_h,
+    )
+    assert c2_res.status_code == 201
+    code2 = c2_res.json()["join_code"]
+
+    # Student joins Class 1 (new registration)
+    stu_user = f"multistudent_{uuid.uuid4().hex[:6]}"
+    pin = "1234"
+    join1_res = await client.post(
+        "/api/v1/auth/student/join",
+        json={
+            "join_code": code1,
+            "username": stu_user,
+            "pin": pin,
+            "full_name": "Multi Class Student",
+        },
+    )
+    assert join1_res.status_code == 201
+    tok1 = join1_res.json()["access_token"]
+
+    # Student joins Class 2 with same username and pin (multi-class enrollment)
+    join2_res = await client.post(
+        "/api/v1/auth/student/join",
+        json={
+            "join_code": code2,
+            "username": stu_user,
+            "pin": pin,
+            "full_name": "Multi Class Student",
+        },
+    )
+    assert join2_res.status_code == 201
+
+    # Student logs in with ONLY username and PIN (no join code required)
+    login_res = await client.post(
+        "/api/v1/auth/student/login",
+        json={
+            "username": stu_user,
+            "pin": pin,
+        },
+    )
+    assert login_res.status_code == 200
+    assert "access_token" in login_res.json()
+
+    # Verify student profile returns all enrolled classes
+    prof_res = await client.get(
+        "/api/v1/profiles/me",
+        headers={"Authorization": f"Bearer {tok1}"},
+    )
+    assert prof_res.status_code == 200
+    p_data = prof_res.json()["profile"]
+    assert "classes" in p_data
+    assert len(p_data["classes"]) >= 2
