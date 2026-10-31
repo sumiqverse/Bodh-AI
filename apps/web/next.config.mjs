@@ -14,10 +14,10 @@ const isStandalone = process.env.OUTPUT_STANDALONE === 'true' || process.platfor
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingRoot: path.resolve(__dirname, '../../'),
   ...(isStandalone
     ? {
         output: 'standalone',
-        outputFileTracingRoot: path.resolve(__dirname, '../../'),
       }
     : {}),
   transpilePackages: ['@bodhai/ui', '@bodhai/engine-ts', '@bodhai/api-client'],
