@@ -505,7 +505,7 @@ export default function StudentHomePage(): React.JSX.Element {
   // Classroom skill map loading state
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
+      <div className="container mx-auto max-w-4xl px-4 py-6 sm:py-10 space-y-8">
         <div className="flex items-center gap-3">
           <Skeleton className="h-9 w-32 rounded-lg" />
           <Skeleton className="h-9 w-48 rounded-lg" />
