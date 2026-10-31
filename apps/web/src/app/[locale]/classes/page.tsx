@@ -162,7 +162,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
         if (warningRes.status === 'fulfilled' && warningRes.value) {
           setWarnings(warningRes.value);
         } else {
-          setWarnings({ class_id: classId, days_threshold: warningDays, warnings: [] });
+          setWarnings({ class_id: classId, threshold_days: warningDays, warnings: [] });
         }
 
         if (suggRes.status === 'fulfilled' && suggRes.value) {
@@ -193,7 +193,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           summary: { mastered: 0, partial: 0, not_learned: 0 },
         });
         setClusters({ class_id: classId, total_clusters: 0, clusters: [] });
-        setWarnings({ class_id: classId, days_threshold: warningDays, warnings: [] });
+        setWarnings({ class_id: classId, threshold_days: warningDays, warnings: [] });
         setSuggestions({ class_id: classId, suggestions: [] });
         setAssignments([]);
         setProgress(null);

@@ -232,8 +232,9 @@ export function TeacherProfileDetail({
           token,
         );
         if (res && res.profile) {
-          setProfileData(res.profile);
-          onProfileUpdated?.(res.profile);
+          const typedProfile = res.profile as unknown as TeacherProfile;
+          setProfileData(typedProfile);
+          onProfileUpdated?.(typedProfile);
         }
       }
     } catch (err) {
@@ -263,8 +264,9 @@ export function TeacherProfileDetail({
         token || undefined,
       );
       if (res && res.profile) {
-        setProfileData(res.profile);
-        onProfileUpdated?.(res.profile);
+        const typedCohortProfile = res.profile as unknown as TeacherProfile;
+        setProfileData(typedCohortProfile);
+        onProfileUpdated?.(typedCohortProfile);
         setSavedSuccessNotice(
           locale === 'hi'
             ? '16 छात्रों और अभ्यासों के साथ कक्षा सफलतापूर्वक डेटाबेस में जोड़ दी गई है!'

@@ -11,6 +11,7 @@ import {
   Card,
   CardHeader,
   CardTitle,
+  CardDescription,
   CardContent,
   CardFooter,
   Button,
@@ -241,15 +242,6 @@ function SolveContent(): React.JSX.Element {
                 </p>
               )}
             </div>
-
-            {error && (
-              <div
-                role="alert"
-                className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive"
-              >
-                {error.message}
-              </div>
-            )}
 
             {!hasSubmitted && (
               <Button

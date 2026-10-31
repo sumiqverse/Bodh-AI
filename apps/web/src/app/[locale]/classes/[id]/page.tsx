@@ -147,7 +147,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
         if (warningRes.status === 'fulfilled' && warningRes.value) {
           setWarnings(warningRes.value);
         } else {
-          setWarnings({ class_id: classId, days_threshold: warningDays, warnings: [] });
+          setWarnings({ class_id: classId, threshold_days: warningDays, warnings: [] });
         }
         if (suggRes.status === 'fulfilled' && suggRes.value) {
           setSuggestions(suggRes.value);

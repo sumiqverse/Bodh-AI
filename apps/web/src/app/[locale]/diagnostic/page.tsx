@@ -20,7 +20,7 @@ import { getAuthToken, getWebApiClient } from '@/lib/api-client';
 import { useDiagnostic } from '@/hooks/useDiagnostic';
 import { KatexRenderer } from '@/components/katex-renderer';
 
-export default function DiagnosticPage(): React.JSX.Element {
+function DiagnosticContent(): React.JSX.Element {
   const t = useTranslations('diagnostic');
   const router = useRouter();
   const apiClient = getWebApiClient();
@@ -636,5 +636,19 @@ export default function DiagnosticPage(): React.JSX.Element {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function DiagnosticPage(): React.JSX.Element {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-xl flex-col items-center justify-center px-4 py-8">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+      }
+    >
+      <DiagnosticContent />
+    </React.Suspense>
   );
 }

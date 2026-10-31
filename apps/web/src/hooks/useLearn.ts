@@ -94,7 +94,7 @@ export function useLearn(options: UseLearnOptions): UseLearnReturn {
     const isHindi = language === 'hi';
     const firstQ = questionsQuery.data?.[0];
     const hints = Array.isArray(firstQ?.hints) ? firstQ.hints : [];
-    const explanation = firstQ?.explanation || '';
+    const explanation = (firstQ as { explanation?: string })?.explanation || '';
 
     // Dynamic Overview
     const overview = isHindi

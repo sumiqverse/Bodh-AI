@@ -94,7 +94,6 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
             question_id: currentItem.question_id,
             selected_answer: payload.selectedOption,
             time_spent_ms: payload.timeSpentMs,
-            language: locale,
           },
           token,
         );

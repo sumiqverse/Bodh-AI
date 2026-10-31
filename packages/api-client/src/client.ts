@@ -994,7 +994,7 @@ export class BodhaiApiClient {
 
   public async getSkill(skillId: string, token?: string): Promise<SkillResponse> {
     return this.request<SkillResponse>(`/api/v1/skills/${encodeURIComponent(skillId)}`, {
-      token,
+      headers: this.authHeaders(token),
     });
   }
 
@@ -1004,24 +1004,44 @@ export class BodhaiApiClient {
     );
   }
 
-  public async listQuestions(params: {
-    skillId: string;
+  public async listQuestions(params?: {
+    skillId?: string;
     language?: string;
     skip?: number;
     limit?: number;
   }): Promise<QuestionResponse[]> {
     const query = new URLSearchParams();
-    query.set('skill_id', params.skillId);
+    if (params?.skillId) query.set('skill_id', params.skillId);
     const effectiveLang =
-      params.language ??
+      params?.language ??
       (this.getLocale ? this.getLocale() : undefined) ??
       (typeof document !== 'undefined' && document.documentElement.lang === 'hi'
         ? 'hi'
         : undefined);
     if (effectiveLang) query.set('language', effectiveLang);
-    if (params.skip !== undefined) query.set('skip', params.skip.toString());
-    if (params.limit !== undefined) query.set('limit', params.limit.toString());
+    if (params?.skip !== undefined) query.set('skip', params.skip.toString());
+    if (params?.limit !== undefined) query.set('limit', params.limit.toString());
     return this.request<QuestionResponse[]>(`/api/v1/questions?${query.toString()}`);
+  }
+
+  public async getQuestion(
+    questionId: string,
+    token?: string,
+    locale?: string,
+  ): Promise<QuestionResponse | null> {
+    const query = new URLSearchParams();
+    if (locale) query.set('locale', locale);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    try {
+      return await this.request<QuestionResponse>(
+        `/api/v1/questions/${encodeURIComponent(questionId)}${qs}`,
+        {
+          headers: this.authHeaders(token),
+        },
+      );
+    } catch {
+      return null;
+    }
   }
 
   public async submitAttempt(

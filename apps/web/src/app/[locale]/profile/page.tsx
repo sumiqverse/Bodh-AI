@@ -37,7 +37,11 @@ export default function MyProfilePage(): React.JSX.Element {
       setLoadingLive(true);
       const res = await apiClient.getMyProfile(token);
       if (res && res.profile) {
-        setLiveProfileResult(res);
+        setLiveProfileResult(
+          res as unknown as
+            | { type: 'teacher'; profile: TeacherProfile }
+            | { type: 'student'; profile: StudentProfile },
+        );
       }
     } catch (err) {
       // Fallback cleanly to local profile

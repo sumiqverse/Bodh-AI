@@ -20,6 +20,7 @@ import {
   getAuthToken,
   getUserDashboardPath,
   syncSessionCookies,
+  setAuthSession,
 } from '@/lib/api-client';
 
 export default function SignupPage(): React.JSX.Element {

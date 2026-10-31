@@ -80,7 +80,7 @@ export default function ProgressPage(): React.JSX.Element {
       const saved = localStorage.getItem('bodhai_student_curriculum');
       if (saved) {
         setSelectedCurriculum(saved);
-      } else if (availableTabs.length > 0) {
+      } else if (availableTabs.length > 0 && availableTabs[0]) {
         setSelectedCurriculum(availableTabs[0].code);
       }
     }
