@@ -75,6 +75,28 @@ function SolveContent(): React.JSX.Element {
     resetForNextQuestion();
   };
 
+  if (error) {
+    return (
+      <div className="container mx-auto max-w-md px-4 py-16 text-center">
+        <Card className="p-6 border-destructive/30">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">{t('emptyState')}</CardTitle>
+            <CardDescription className="text-sm text-destructive mt-1">
+              {error.message}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/student">
+              <Button variant="primary" className="w-full min-h-[44px]">
+                {tCommon('backToHome')}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!question) {
     return (
       <div className="container mx-auto max-w-xl px-4 py-8 space-y-6">

@@ -27,6 +27,7 @@ export interface UseTestOptions {
 
 export interface UseTestReturn {
   questions: TestQuestion[];
+  isLoading: boolean;
   currentIndex: number;
   currentQuestion: TestQuestion | null;
   totalQuestions: number;
@@ -39,52 +40,13 @@ export interface UseTestReturn {
   error: string | null;
 }
 
-// Curated 3-item hint-free mastery check test
-const DEFAULT_TEST_QUESTIONS: TestQuestion[] = [
-  {
-    id: 'test-q-001',
-    code: 'NCERT-MATH-C8-TEST-01',
-    skillId: '10000000-0000-0000-0000-000000000001',
-    prompt: 'Solve for $y$ in the equation:\n$$4y - 12 = 20$$',
-    options: [
-      { id: 'A', text: '$y = 2$' },
-      { id: 'B', text: '$y = 6$' },
-      { id: 'C', text: '$y = 8$' },
-      { id: 'D', text: '$y = 32$' },
-    ],
-  },
-  {
-    id: 'test-q-002',
-    code: 'NCERT-MATH-C8-TEST-02',
-    skillId: '10000000-0000-0000-0000-000000000001',
-    prompt: 'If $3(x - 2) = 15$, find the value of $x$:\n$$3(x - 2) = 15$$',
-    options: [
-      { id: 'A', text: '$x = 5$' },
-      { id: 'B', text: '$x = 7$' },
-      { id: 'C', text: '$x = 9$' },
-      { id: 'D', text: '$x = 3$' },
-    ],
-  },
-  {
-    id: 'test-q-003',
-    code: 'NCERT-MATH-C8-TEST-03',
-    skillId: '10000000-0000-0000-0000-000000000001',
-    prompt: 'Solve the equation with variables on both sides:\n$$7x - 5 = 3x + 11$$',
-    options: [
-      { id: 'A', text: '$x = 4$' },
-      { id: 'B', text: '$x = 2$' },
-      { id: 'C', text: '$x = 6$' },
-      { id: 'D', text: '$x = -4$' },
-    ],
-  },
-];
-
 export function useTest(options?: UseTestOptions): UseTestReturn {
   const queryClient = useQueryClient();
   const apiClient = getWebApiClient();
   const locale = useLocale();
 
-  const [questions, setQuestions] = React.useState<TestQuestion[]>(DEFAULT_TEST_QUESTIONS);
+  const [questions, setQuestions] = React.useState<TestQuestion[]>([]);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [currentIndex, setCurrentIndex] = React.useState<number>(0);
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [evaluations, setEvaluations] = React.useState<AttemptResponse[]>([]);
@@ -92,26 +54,40 @@ export function useTest(options?: UseTestOptions): UseTestReturn {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (options?.skillId) {
-      void apiClient
-        .listQuestions({ skillId: options.skillId, language: locale, limit: 3 })
-        .then((items) => {
-          if (items && items.length > 0) {
-            setQuestions(
-              items.map((q) => ({
-                id: q.id,
-                code: q.code || 'NCERT-TEST-Q',
-                skillId: q.skill_id,
-                prompt: q.prompt,
-                options: (q.options as Array<{ id: string; text: string }>) || [],
-              })),
-            );
-          }
-        })
-        .catch(() => {
-          // fallback
-        });
-    }
+    let isCancelled = false;
+    setIsLoading(true);
+    setErrorMessage(null);
+    void apiClient
+      .listQuestions({ skillId: options?.skillId, language: locale, limit: 3 })
+      .then((items) => {
+        if (isCancelled) return;
+        if (items && items.length > 0) {
+          setQuestions(
+            items.map((q) => ({
+              id: q.id,
+              code: q.code || 'NCERT-TEST-Q',
+              skillId: q.skill_id,
+              prompt: q.prompt,
+              options: (q.options as Array<{ id: string; text: string }>) || [],
+            })),
+          );
+        } else {
+          setQuestions([]);
+        }
+      })
+      .catch((err) => {
+        if (!isCancelled) {
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to load test questions.');
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
   }, [options?.skillId, locale, apiClient]);
 
   const currentQuestion = questions[currentIndex] ?? null;
@@ -188,6 +164,7 @@ export function useTest(options?: UseTestOptions): UseTestReturn {
 
   return {
     questions,
+    isLoading,
     currentIndex,
     currentQuestion,
     totalQuestions: questions.length,

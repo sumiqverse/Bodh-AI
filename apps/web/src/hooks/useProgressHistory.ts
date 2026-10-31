@@ -80,6 +80,7 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
 
     if (graph?.nodes && Array.isArray(graph.nodes)) {
       graph.nodes.forEach((node) => {
+        if ((node as unknown as { type?: string }).type === 'topic') return;
         totalCurriculumSkills++;
         const meta = {
           name: node.name,

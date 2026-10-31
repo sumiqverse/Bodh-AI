@@ -992,8 +992,10 @@ export class BodhaiApiClient {
     });
   }
 
-  public async getSkill(skillId: string): Promise<SkillResponse> {
-    return this.request<SkillResponse>(`/api/v1/skills/${encodeURIComponent(skillId)}`);
+  public async getSkill(skillId: string, token?: string): Promise<SkillResponse> {
+    return this.request<SkillResponse>(`/api/v1/skills/${encodeURIComponent(skillId)}`, {
+      token,
+    });
   }
 
   public async getSkillPrerequisites(skillId: string): Promise<PrerequisiteResponse[]> {

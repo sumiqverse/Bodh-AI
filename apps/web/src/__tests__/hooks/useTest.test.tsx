@@ -6,11 +6,51 @@ import * as apiClientModule from '../../lib/api-client';
 
 describe('useTest hook', () => {
   const mockSubmitAttempt = vi.fn();
+  const mockListQuestions = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListQuestions.mockResolvedValue([
+      {
+        id: 'test-q-001',
+        code: 'NCERT-MATH-C8-TEST-01',
+        skill_id: '10000000-0000-0000-0000-000000000001',
+        prompt: 'Solve for y in the equation: 4y - 12 = 20',
+        options: [
+          { id: 'A', text: 'y = 2' },
+          { id: 'B', text: 'y = 6' },
+          { id: 'C', text: 'y = 8' },
+          { id: 'D', text: 'y = 32' },
+        ],
+      },
+      {
+        id: 'test-q-002',
+        code: 'NCERT-MATH-C8-TEST-02',
+        skill_id: '10000000-0000-0000-0000-000000000001',
+        prompt: 'If 3(x - 2) = 15, find the value of x',
+        options: [
+          { id: 'A', text: 'x = 5' },
+          { id: 'B', text: 'x = 7' },
+          { id: 'C', text: 'x = 9' },
+          { id: 'D', text: 'x = 3' },
+        ],
+      },
+      {
+        id: 'test-q-003',
+        code: 'NCERT-MATH-C8-TEST-03',
+        skill_id: '10000000-0000-0000-0000-000000000001',
+        prompt: 'Solve: 7x - 5 = 3x + 11',
+        options: [
+          { id: 'A', text: 'x = 4' },
+          { id: 'B', text: 'x = 2' },
+          { id: 'C', text: 'x = 6' },
+          { id: 'D', text: 'x = -4' },
+        ],
+      },
+    ]);
     vi.spyOn(apiClientModule, 'getWebApiClient').mockReturnValue({
       submitAttempt: mockSubmitAttempt,
+      listQuestions: mockListQuestions,
     } as unknown as ReturnType<typeof apiClientModule.getWebApiClient>);
   });
 
@@ -37,7 +77,9 @@ describe('useTest hook', () => {
 
     const { result } = renderHookWithProviders(() => useTest());
 
-    expect(result.current.totalQuestions).toBe(3);
+    await waitFor(() => {
+      expect(result.current.totalQuestions).toBe(3);
+    });
     expect(result.current.currentIndex).toBe(0);
     expect(result.current.isCompleted).toBe(false);
 

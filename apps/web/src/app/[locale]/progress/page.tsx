@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/i18n/routing';
 import {
   Card,
@@ -13,18 +14,77 @@ import {
   Badge,
   Skeleton,
 } from '@bodhai/ui';
+import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import { useProgressHistory, type ProgressHistoryItem } from '@/hooks/useProgressHistory';
 
 export default function ProgressPage(): React.JSX.Element {
   const t = useTranslations('progress');
   const tCommon = useTranslations('common');
+  const apiClient = getWebApiClient();
 
   const [mounted, setMounted] = React.useState<boolean>(false);
   const [selectedCurriculum, setSelectedCurriculum] = React.useState<string>('NCERT-MATH-C8');
 
+  const token = typeof window !== 'undefined' ? getAuthToken() : null;
+  const profileQuery = useQuery({
+    queryKey: ['student-profile-me'],
+    queryFn: () => apiClient.getMyProfile(token || undefined),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const enrolledClasses = React.useMemo(() => {
+    const raw = profileQuery.data?.profile as Record<string, unknown> | undefined;
+    if (!raw) return [];
+    const rawClasses = raw.classes as
+      Array<{ classId: string; name: string; curriculumCode: string }> | undefined;
+    if (Array.isArray(rawClasses) && rawClasses.length > 0) {
+      return rawClasses;
+    }
+    if (raw.className && raw.curriculumCode) {
+      return [
+        {
+          classId: String(raw.classId || 'default-class'),
+          name: String(raw.className),
+          curriculumCode: String(raw.curriculumCode),
+        },
+      ];
+    }
+    return [];
+  }, [profileQuery.data?.profile]);
+
+  const availableTabs = React.useMemo(() => {
+    if (enrolledClasses.length > 0) {
+      return enrolledClasses.map((c) => ({
+        code: c.curriculumCode,
+        label: c.name,
+      }));
+    }
+    return [
+      { code: 'NCERT-MATH-C8', label: 'Class 8 Mathematics' },
+      { code: 'NCERT-SCIE-C8', label: 'Class 8 Science' },
+      { code: 'NCERT-ENGL-C8', label: 'Class 8 English' },
+      { code: 'NCERT-HIND-C8', label: 'Class 8 Hindi' },
+      { code: 'NCERT-SOCI-C8', label: 'Class 8 Social Science' },
+      { code: 'NCERT-ENGL-C7', label: 'Class 7 English' },
+      { code: 'NCERT-MATH-C7', label: 'Class 7 Mathematics' },
+      { code: 'NCERT-MATH-C9', label: 'Class 9 Mathematics' },
+      { code: 'NCERT-SCIE-C9', label: 'Class 9 Science' },
+      { code: 'NCERT-MATH-C10', label: 'Class 10 Mathematics' },
+    ];
+  }, [enrolledClasses]);
+
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bodhai_student_curriculum');
+      if (saved) {
+        setSelectedCurriculum(saved);
+      } else if (availableTabs.length > 0) {
+        setSelectedCurriculum(availableTabs[0].code);
+      }
+    }
+  }, [availableTabs]);
 
   const { historyItems, stats, isLoading, error, refetch } = useProgressHistory(selectedCurriculum);
 
@@ -49,7 +109,7 @@ export default function ProgressPage(): React.JSX.Element {
       <div className="container mx-auto max-w-md px-4 py-16 text-center">
         <Card className="p-6 border-destructive/30">
           <CardHeader>
-            <CardTitle className="text-xl font-bold">Error Loading History</CardTitle>
+            <CardTitle className="text-xl font-bold">{t('errorTitle')}</CardTitle>
             <CardDescription className="text-sm text-destructive mt-1">
               {error.message}
             </CardDescription>
@@ -61,7 +121,7 @@ export default function ProgressPage(): React.JSX.Element {
               onClick={refetch}
               className="w-full min-h-[44px] cursor-pointer"
             >
-              Try Again
+              {t('tryAgain')}
             </Button>
           </CardContent>
         </Card>
@@ -95,13 +155,7 @@ export default function ProgressPage(): React.JSX.Element {
 
       {/* Curriculum / Subject Quick Selector */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
-        {[
-          { code: 'NCERT-MATH-C8', label: 'Class 8 Mathematics' },
-          { code: 'NCERT-SCIE-C9', label: 'Class 9 Science' },
-          { code: 'NCERT-MATH-C10', label: 'Class 10 Mathematics' },
-          { code: 'NCERT-SOCI-C7', label: 'Class 7 Social Science' },
-          { code: 'NCERT-ENGL-C6', label: 'Class 6 English' },
-        ].map((c) => (
+        {availableTabs.map((c) => (
           <button
             key={c.code}
             type="button"
@@ -204,15 +258,19 @@ export default function ProgressPage(): React.JSX.Element {
                       className="text-xs"
                     >
                       {item.state === 'mastered'
-                        ? 'Mastered'
+                        ? t('stateMastered')
                         : item.state === 'partial'
-                          ? 'In Progress'
-                          : 'Not Started'}
+                          ? t('stateInProgress')
+                          : t('stateNotStarted')}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {item.topicName} • Accuracy: {item.accuracyPercentage}% ({item.correctCount}/
-                    {item.attemptsCount} attempts)
+                    {item.topicName} •{' '}
+                    {t('accuracyDetails', {
+                      accuracy: item.accuracyPercentage,
+                      correct: item.correctCount,
+                      attempts: item.attemptsCount,
+                    })}
                   </p>
                   {item.rationale && (
                     <p className="text-xs text-muted-foreground italic pt-0.5">{item.rationale}</p>
@@ -226,7 +284,7 @@ export default function ProgressPage(): React.JSX.Element {
                       size="sm"
                       className="min-h-[38px] text-xs font-semibold cursor-pointer"
                     >
-                      Practice
+                      {t('practiceAction')}
                     </Button>
                   </Link>
                   <Link href={`/test?skillId=${item.skillId}`}>
@@ -235,7 +293,7 @@ export default function ProgressPage(): React.JSX.Element {
                       size="sm"
                       className="min-h-[38px] text-xs font-semibold cursor-pointer"
                     >
-                      Test
+                      {t('testAction')}
                     </Button>
                   </Link>
                 </div>

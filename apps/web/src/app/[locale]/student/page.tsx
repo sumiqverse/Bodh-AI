@@ -312,17 +312,16 @@ export default function StudentHomePage(): React.JSX.Element {
               <BookOpen className="h-8 w-8" />
             </div>
             <h2 className="font-serif text-2xl font-bold text-foreground">
-              You Have Not Joined Any Class Yet
+              {t('noClassesJoinedTitle')}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Ask your teacher for a 6-character Class Join Code to enroll in your class and start
-              your learning journey.
+              {t('noClassesJoinedDesc')}
             </p>
             <div className="mt-6">
               <Link href="/join">
                 <Button variant="primary" size="lg" className="min-h-[48px] px-8 font-bold">
                   <Plus className="mr-2 h-4 w-4" />
-                  Join Class with Code
+                  {t('joinClassWithCode')}
                 </Button>
               </Link>
             </div>
@@ -349,7 +348,7 @@ export default function StudentHomePage(): React.JSX.Element {
                           size="sm"
                           className="font-medium text-xs py-0.5 px-2 bg-background/80"
                         >
-                          Grade {cls.grade} • Sec {cls.section}
+                          {t('gradeSecShort', { grade: cls.grade, section: cls.section })}
                         </Badge>
                         <span className="text-xs font-mono text-muted-foreground">
                           {cls.curriculumCode}
@@ -462,7 +461,7 @@ export default function StudentHomePage(): React.JSX.Element {
               variant="warning"
               className="mx-auto mb-2 text-xs py-1 px-3 bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/40"
             >
-              Approval Required
+              {t('awaitingApprovalBadge')}
             </Badge>
             <CardTitle className="font-serif text-2xl font-bold text-foreground">
               {t('accessLockedTitle')}

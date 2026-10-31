@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import {
@@ -32,8 +33,11 @@ export default function DiagnosticPage(): React.JSX.Element {
     staleTime: 5 * 60 * 1000,
   });
 
+  const searchParams = useSearchParams();
+  const paramCurriculum = searchParams.get('curriculum') ?? undefined;
   const rawProfile = profileQuery.data?.profile as Record<string, unknown> | undefined;
   const enrolledCurriculum =
+    paramCurriculum ||
     (typeof rawProfile?.curriculumCode === 'string' ? rawProfile.curriculumCode : undefined) ||
     (typeof window !== 'undefined'
       ? localStorage.getItem('bodhai_student_curriculum') || undefined

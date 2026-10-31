@@ -18,6 +18,7 @@ from app.repositories.user_repo import UserRepository
 __all__ = [
     "get_current_user",
     "get_db",
+    "get_optional_current_user",
     "get_request_language",
     "require_role",
     "set_rls_context",
@@ -123,6 +124,23 @@ async def get_current_user(
     # Set PostgreSQL RLS context to active user
     await set_rls_context(session, user.id, user.role.name)
     return user
+
+
+async def get_optional_current_user(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> User | None:
+    """Resolve current user if authentication credentials provided, otherwise None."""
+    auth_header = request.headers.get("Authorization")
+    has_cookie = "access_token" in request.cookies
+    if not auth_header and not has_cookie:
+        await set_rls_context(session, None, "anonymous")
+        return None
+    try:
+        return await get_current_user(request, session)
+    except Exception:
+        await set_rls_context(session, None, "anonymous")
+        return None
 
 
 def require_role(*allowed_roles: Any) -> Callable[..., User]:

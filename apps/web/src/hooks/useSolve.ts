@@ -45,28 +45,6 @@ export interface UseSolveReturn {
   resetForNextQuestion: () => void;
 }
 
-// Default practice questions with 3-level progressive hint ladders
-const DEFAULT_PRACTICE_QUESTIONS: Record<string, SolveQuestionData> = {
-  default: {
-    id: 'practice-q-001',
-    code: 'NCERT-MATH-C8-CH02-P01',
-    skillId: '10000000-0000-0000-0000-000000000001',
-    difficulty: 2,
-    prompt: 'Solve the equation for $x$:\n$$5x - 8 = 2x + 7$$',
-    options: [
-      { id: 'A', text: '$x = 3$' },
-      { id: 'B', text: '$x = 5$' },
-      { id: 'C', text: '$x = -5$' },
-      { id: 'D', text: '$x = 15$' },
-    ],
-    hints: [
-      'Level 1 (Concept): Group terms containing the variable $x$ on one side and constant numbers on the other side.',
-      'Level 2 (Step Guidance): Subtract $2x$ from both sides to get $3x - 8 = 7$, then add $8$ to both sides.',
-      'Level 3 (Worked Scaffold): $5x - 2x = 7 + 8 \\implies 3x = 15$. Finally divide by 3: $x = \\frac{15}{3} = 5$.',
-    ],
-  },
-};
-
 export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const queryClient = useQueryClient();
   const apiClient = getWebApiClient();
@@ -77,69 +55,76 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const [hasSubmitted, setHasSubmitted] = React.useState<boolean>(false);
   const [startTime] = React.useState<number>(() => Date.now());
 
-  // Fetch question if questionId or skillId provided
+  // Fetch authentic practice question by questionId or skillId
   const questionQuery = useQuery({
-    queryKey: ['solve-question', options?.questionId ?? options?.skillId ?? 'default', locale],
+    queryKey: ['solve-question', options?.questionId ?? options?.skillId ?? 'none', locale],
     queryFn: async (): Promise<SolveQuestionData> => {
-      if (options?.skillId) {
+      const isHindi = locale === 'hi';
+      const defaultHints = isHindi
+        ? [
+            'स्तर 1 (संकल्पना): प्रश्न के संदर्भ, मुख्य विषय और दी गई जानकारी को ध्यानपूर्वक समझें।',
+            'स्तर 2 (चरणबद्ध विधि): मुख्य नियमों और विश्लेषणात्मक उपागम का प्रयोग करें।',
+            'स्तर 3 (समाधान सत्यापन): विकल्पों का तार्किक मूल्यांकन करके सही उत्तर का चयन करें।',
+          ]
+        : [
+            'Level 1 (Concept): Analyze the given context, key terminology, and required principles.',
+            'Level 2 (Step Guidance): Apply systematic analytical steps and standard pedagogical rules.',
+            'Level 3 (Worked Scaffold): Evaluate each option logically to confirm the accurate choice.',
+          ];
+
+      if (options?.questionId) {
         try {
-          const list = await apiClient.listQuestions({
-            skillId: options.skillId,
-            language: locale,
-            limit: 1,
-          });
-          if (list && list.length > 0 && list[0]) {
-            const q: QuestionResponse = list[0];
+          const token = getAuthToken() ?? undefined;
+          const q = await apiClient.getQuestion(options.questionId, token, locale);
+          if (q) {
             return {
               id: q.id,
-              code: q.code ?? 'NCERT-MATH-PRACTICE',
+              code: q.code ?? 'NCERT-PRACTICE',
               skillId: q.skill_id,
               difficulty: q.difficulty,
               prompt: q.prompt,
-              options: (q.options as Array<{ id: string; text: string }>) ?? [
-                { id: 'A', text: 'Option A' },
-                { id: 'B', text: 'Option B' },
-              ],
-              hints:
-                q.hints && q.hints.length >= 3
-                  ? q.hints
-                  : [
-                      'Level 1: Identify the unknown variable and note what operations are applied to it.',
-                      'Level 2: Use inverse operations to collect variable terms on one side.',
-                      'Level 3: Perform the arithmetic step-by-step to isolate the variable completely.',
-                    ],
+              options: (q.options as Array<{ id: string; text: string }>) ?? [],
+              hints: q.hints && q.hints.length >= 3 ? q.hints : defaultHints,
             };
           }
         } catch {
-          // Fall back to curated practice question
+          // continue to skillId search
         }
       }
-      return (
-        DEFAULT_PRACTICE_QUESTIONS.default ?? {
-          id: 'practice-q-001',
-          code: 'NCERT-MATH-C8-CH02-P01',
-          skillId: '10000000-0000-0000-0000-000000000001',
-          difficulty: 2,
-          prompt: 'Solve the equation for $x$:\n$$5x - 8 = 2x + 7$$',
-          options: [
-            { id: 'A', text: '$x = 3$' },
-            { id: 'B', text: '$x = 5$' },
-            { id: 'C', text: '$x = -5$' },
-            { id: 'D', text: '$x = 15$' },
+
+      const targetSkillId =
+        options?.skillId && options.skillId !== 'default' ? options.skillId : undefined;
+      const list = await apiClient.listQuestions({
+        skillId: targetSkillId,
+        language: locale,
+        limit: 1,
+      });
+      if (list && list.length > 0 && list[0]) {
+        const q: QuestionResponse = list[0];
+        return {
+          id: q.id,
+          code: q.code ?? 'NCERT-PRACTICE',
+          skillId: q.skill_id,
+          difficulty: q.difficulty,
+          prompt: q.prompt,
+          options: (q.options as Array<{ id: string; text: string }>) ?? [
+            { id: 'A', text: isHindi ? 'विकल्प A' : 'Option A' },
+            { id: 'B', text: isHindi ? 'विकल्प B' : 'Option B' },
           ],
-          hints: [
-            'Level 1: Group terms containing the variable on one side.',
-            'Level 2: Subtract 2x and add 8.',
-            'Level 3: 3x = 15 implies x = 5.',
-          ],
-        }
+          hints: q.hints && q.hints.length >= 3 ? q.hints : defaultHints,
+        };
+      }
+
+      throw new Error(
+        isHindi
+          ? 'इस विषय के लिए अभ्यास प्रश्न उपलब्ध नहीं हैं।'
+          : 'No practice questions currently available for this topic.',
       );
     },
     staleTime: 60 * 1000,
   });
 
-  const question: SolveQuestionData =
-    questionQuery.data ?? (DEFAULT_PRACTICE_QUESTIONS.default as SolveQuestionData);
+  const question: SolveQuestionData = questionQuery.data as SolveQuestionData;
 
   const submitMutation = useMutation({
     mutationFn: async (selectedOption: string): Promise<AttemptResponse> => {

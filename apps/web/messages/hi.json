@@ -537,7 +537,11 @@
     "topicsUnit": "विषय",
     "testButton": "जांच",
     "tryAgain": "पुनः प्रयास करें",
-    "gradeSectionLabel": "कक्षा {grade} वर्ग {section}"
+    "gradeSectionLabel": "कक्षा {grade} वर्ग {section}",
+    "noClassesJoinedTitle": "आप अभी तक किसी भी कक्षा में शामिल नहीं हुए हैं",
+    "noClassesJoinedDesc": "अपनी कक्षा में शामिल होने और सीखने की यात्रा शुरू करने के लिए अपने शिक्षक से 6-वर्णों का कक्षा कोड मांगें।",
+    "joinClassWithCode": "कोड से कक्षा में शामिल हों",
+    "gradeSecShort": "कक्षा {grade} • वर्ग {section}"
   },
   "learn": {
     "title": "अवधारणा शिक्षण",
@@ -603,7 +607,15 @@
     "lastAttemptedColumn": "अंतिम गतिविधि",
     "emptyTitle": "अभी कोई अभ्यास इतिहास नहीं है",
     "emptyDesc": "अपना इतिहास देखने के लिए निदानात्मक मूल्यांकन दें या किसी कौशल का अभ्यास करें।",
-    "startPracticing": "शिक्षण मानचित्र पर जाएं"
+    "startPracticing": "शिक्षण मानचित्र पर जाएं",
+    "stateMastered": "महारत प्राप्त",
+    "stateInProgress": "प्रगति में",
+    "stateNotStarted": "शुरू नहीं हुआ",
+    "practiceAction": "अभ्यास",
+    "testAction": "परीक्षा",
+    "errorTitle": "इतिहास लोड करने में त्रुटि",
+    "tryAgain": "पुनः प्रयास करें",
+    "accuracyDetails": "{accuracy}% ({correct}/{attempts} प्रयास)"
   },
   "teacherDashboard": {
     "title": "शिक्षक डैशबोर्ड",

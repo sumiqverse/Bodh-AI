@@ -41,6 +41,7 @@ function TestContent(): React.JSX.Element {
   const skillId = searchParams.get('skillId') ?? undefined;
 
   const {
+    isLoading,
     currentIndex,
     currentQuestion,
     totalQuestions,
@@ -138,10 +139,21 @@ function TestContent(): React.JSX.Element {
     );
   }
 
+  if (isLoading) {
+    return <TestSkeleton />;
+  }
+
   if (!currentQuestion) {
     return (
-      <div className="container mx-auto max-w-md px-4 py-16 text-center">
-        <p className="text-muted-foreground">{t('emptyState')}</p>
+      <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-md flex-col items-center justify-center px-4 py-8">
+        <Card className="w-full p-6 text-center shadow-floating border-border/80">
+          <p className="text-muted-foreground">{error || t('emptyState')}</p>
+          <div className="mt-6 flex justify-center">
+            <Button variant="outline" onClick={() => router.push('/student')}>
+              {tCommon('backToHome')}
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }

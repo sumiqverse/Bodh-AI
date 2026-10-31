@@ -10,6 +10,26 @@ describe('useSolve hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListQuestions.mockResolvedValue([
+      {
+        id: 'q-solve-001',
+        code: 'NCERT-MATH-C8-SOLVE-01',
+        skill_id: '10000000-0000-0000-0000-000000000001',
+        difficulty: 1,
+        prompt: 'Solve for x: 5x - 8 = 2x + 7',
+        options: [
+          { id: 'A', text: 'x = 3' },
+          { id: 'B', text: 'x = 5' },
+          { id: 'C', text: 'x = 7' },
+          { id: 'D', text: 'x = 15' },
+        ],
+        hints: [
+          'Group variables on the left side: subtract 2x from both sides.',
+          'Simplify: 3x - 8 = 7, then add 8 to both sides.',
+          'Isolate x: 3x = 15, then divide both sides by 3.',
+        ],
+      },
+    ]);
     vi.spyOn(apiClientModule, 'getWebApiClient').mockReturnValue({
       submitAttempt: mockSubmitAttempt,
       listQuestions: mockListQuestions,

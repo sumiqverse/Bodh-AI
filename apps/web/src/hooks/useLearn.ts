@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getWebApiClient } from '@/lib/api-client';
+import { getWebApiClient, getAuthToken } from '@/lib/api-client';
+import type { QuestionResponse, SkillResponse } from '@bodhai/api-client';
 
 export type ExplanationDepth = 'standard' | 'deep';
 
@@ -45,110 +46,20 @@ export interface UseLearnReturn {
   error: Error | null;
 }
 
-// Fallback curated NCERT lessons in both languages for rich learning experiences
-export const FALLBACK_LESSON: LearnLesson = {
-  skillId: 'default',
-  skillCode: 'NCERT-MATH-C8-SK01',
-  skillName: 'Linear Equations in One Variable',
-  topicName: 'Algebraic Expressions & Equations',
-  overview:
-    'A linear equation in one variable is an equality involving only one variable with maximum power 1. For example, in $2x + 5 = 15$, $x$ is the unknown variable, and the equation balances two algebraic sides.',
-  deepDive: [
-    'Inverse Operations: Whatever operation is applied to one side must be performed symmetrically to the opposite side to preserve mathematical balance.',
-    'Transposition Method: Moving a term across the equals sign changes its sign (+ becomes -, × becomes ÷).',
-    'Verification: Always substitute the calculated solution back into the original equation to ensure LHS = RHS.',
-  ],
-  keyFormulas: [
-    'General Standard Form: $ax + b = 0 \\quad (a \\neq 0)$',
-    'Direct Solution: $x = -\\frac{b}{a}$',
-    'Balanced Property: If $A = B$, then $A + c = B + c$ and $A \\cdot c = B \\cdot c$',
-  ],
-  workedExample: {
-    title: 'Solving a Balanced Linear Equation',
-    problem: 'Solve the equation: $3x - 7 = 14$',
-    steps: [
-      {
-        stepNumber: 1,
-        explanation: 'Isolate the variable term by adding 7 to both sides of the equation.',
-        math: '3x - 7 + 7 = 14 + 7 \\implies 3x = 21',
-      },
-      {
-        stepNumber: 2,
-        explanation: 'Divide both sides by 3 to isolate $x$.',
-        math: '\\frac{3x}{3} = \\frac{21}{3} \\implies x = 7',
-      },
-      {
-        stepNumber: 3,
-        explanation: 'Check the result by plugging $x = 7$ back into the original equation.',
-        math: '3(7) - 7 = 21 - 7 = 14 \\quad (\\text{LHS} = \\text{RHS} \\,\\checkmark)',
-      },
-    ],
-    solution: 'The unique root of the equation is $x = 7$.',
-    keyTakeaway: 'Always keep equations balanced by performing inverse operations symmetrically.',
-  },
-};
-
-const LESSON_DATABASE: Record<'en' | 'hi', Record<string, LearnLesson>> = {
-  en: {
-    default: FALLBACK_LESSON,
-  },
-  hi: {
-    default: {
-      skillId: 'default',
-      skillCode: 'NCERT-MATH-C8-SK01',
-      skillName: 'एक चर वाले रैखिक समीकरण',
-      topicName: 'बीजीय व्यंजक एवं समीकरण',
-      overview:
-        'एक चर वाला रैखिक समीकरण ऐसा समीकरण होता है जिसमें केवल एक चर होता है और चर की अधिकतम घात 1 होती है। उदाहरण के लिए, $2x + 5 = 15$ में $x$ अज्ञात चर है, और यह समीकरण दोनों पक्षों के बीच संतुलन दर्शाता है।',
-      deepDive: [
-        'विपरीत संक्रियाएं: समीकरण के एक पक्ष पर जो भी संक्रिया की जाए, वही दूसरे पक्ष पर भी की जानी चाहिए ताकि संतुलन बना रहे।',
-        'पक्षांतरण विधि: किसी पद को बराबर के दूसरी ओर ले जाने पर उसका चिन्ह बदल जाता है (+ का -, × का ÷)।',
-        'सत्यापन: प्राप्त मान को मूल समीकरण में रखकर हमेशा जांचें कि बायाँ पक्ष = दायाँ पक्ष है या नहीं।',
-      ],
-      keyFormulas: [
-        'मानक रूप: $ax + b = 0 \\quad (a \\neq 0)$',
-        'सीधा हल: $x = -\\frac{b}{a}$',
-        'समीकरण नियम: यदि $A = B$, तो $A + c = B + c$ एवं $A \\cdot c = B \\cdot c$',
-      ],
-      workedExample: {
-        title: 'रैखिक समीकरण का चरणबद्ध हल',
-        problem: 'समीकरण हल कीजिए: $3x - 7 = 14$',
-        steps: [
-          {
-            stepNumber: 1,
-            explanation: 'चर वाले पद को अलग करने के लिए दोनों पक्षों में 7 जोड़ें।',
-            math: '3x - 7 + 7 = 14 + 7 \\implies 3x = 21',
-          },
-          {
-            stepNumber: 2,
-            explanation: '$x$ का मान ज्ञात करने के लिए दोनों पक्षों को 3 से विभाजित करें।',
-            math: '\\frac{3x}{3} = \\frac{21}{3} \\implies x = 7',
-          },
-          {
-            stepNumber: 3,
-            explanation: 'मूल समीकरण में $x = 7$ रखकर परिणाम की पुष्टि करें।',
-            math: '3(7) - 7 = 21 - 7 = 14 \\quad (\\text{बायाँ पक्ष} = \\text{दायाँ पक्ष} \\,\\checkmark)',
-          },
-        ],
-        solution: 'समीकरण का हल $x = 7$ है।',
-        keyTakeaway: 'समीकरण हल करते समय दोनों पक्षों पर समान संक्रियाएं करके संतुलन बनाए रखें।',
-      },
-    },
-  },
-};
-
 export function useLearn(options: UseLearnOptions): UseLearnReturn {
   const [depth, setDepth] = React.useState<ExplanationDepth>(options.initialDepth ?? 'standard');
   const [language, setLanguage] = React.useState<'en' | 'hi'>(options.initialLanguage ?? 'en');
 
   const apiClient = getWebApiClient();
 
-  const skillQuery = useQuery({
+  // 1. Fetch skill metadata (authentic name, code, description, blooms_level)
+  const skillQuery = useQuery<SkillResponse | null>({
     queryKey: ['skill-detail', options.skillId],
     queryFn: async () => {
       if (!options.skillId || options.skillId === 'default') return null;
       try {
-        return await apiClient.getSkill(options.skillId);
+        const token = getAuthToken() ?? undefined;
+        return await apiClient.getSkill(options.skillId, token);
       } catch {
         return null;
       }
@@ -156,18 +67,179 @@ export function useLearn(options: UseLearnOptions): UseLearnReturn {
     staleTime: 5 * 60 * 1000,
   });
 
-  const lesson = React.useMemo<LearnLesson>(() => {
-    const base: LearnLesson = LESSON_DATABASE[language]?.default ?? FALLBACK_LESSON;
-    if (skillQuery.data) {
-      return {
-        ...base,
-        skillId: skillQuery.data.id,
-        skillCode: skillQuery.data.code,
-        skillName: skillQuery.data.name,
-      };
+  // 2. Fetch authentic calibrated questions for this skill to power the worked example and deep-dive
+  const questionsQuery = useQuery<QuestionResponse[]>({
+    queryKey: ['skill-learn-questions', options.skillId, language],
+    queryFn: async () => {
+      if (!options.skillId || options.skillId === 'default') return [];
+      try {
+        return await apiClient.listQuestions({
+          skillId: options.skillId,
+          language,
+          limit: 2,
+        });
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const lesson = React.useMemo<LearnLesson | null>(() => {
+    const skill = skillQuery.data;
+    if (!skill) {
+      return null;
     }
-    return base;
-  }, [language, skillQuery.data]);
+
+    const isHindi = language === 'hi';
+    const firstQ = questionsQuery.data?.[0];
+    const hints = Array.isArray(firstQ?.hints) ? firstQ.hints : [];
+    const explanation = firstQ?.explanation || '';
+
+    // Dynamic Overview
+    const overview = isHindi
+      ? `यह पाठ **${skill.name}** की आवश्यक अवधारणाओं और समझ पर केंद्रित है। ${
+          skill.description ||
+          'एनसीईआरटी पाठ्यक्रम मानकों के अनुसार इस दक्षता के प्रमुख सिद्धांतों एवं व्यावहारिक अनुप्रयोगों को समझें।'
+        }`
+      : `This lesson focuses on **${skill.name}**. ${
+          skill.description ||
+          'Explore core pedagogical concepts, problem-solving methods, and contextual applications aligned with NCERT standards.'
+        }`;
+
+    // Dynamic Progressive Deep-Dive Steps
+    const deepDive = isHindi
+      ? [
+          `मूलभूत संकल्पना: ${
+            hints[0] || 'विषय की बुनियादी परिभाषाओं, संदर्भ और आवश्यक नियमों को ध्यानपूर्वक समझें।'
+          }`,
+          `विश्लेषण एवं विधि: ${
+            hints[1] ||
+            'समस्या समाधान के लिए चरणबद्ध तार्किक उपागम और उपयुक्त प्रक्रिया का पालन करें।'
+          }`,
+          `सत्यापन एवं सारांश: ${
+            explanation ||
+            hints[2] ||
+            'परिणाम की शुद्धता जांचें और सीखे गए मुख्य बिंदुओं को सुदृढ़ करें।'
+          }`,
+        ]
+      : [
+          `Foundational Principles: ${
+            hints[0] ||
+            'Understand the fundamental concepts, terminology, and contextual frameworks.'
+          }`,
+          `Analytical Approach: ${
+            hints[1] ||
+            'Apply structured reasoning, standard procedures, and systematic problem-solving methods.'
+          }`,
+          `Evaluation & Verification: ${
+            explanation ||
+            hints[2] ||
+            'Verify accuracy against core rules and summarize the key takeaways.'
+          }`,
+        ];
+
+    // Core Competency Highlights
+    const keyFormulas = isHindi
+      ? [
+          `दक्षता कोड: ${skill.code}`,
+          `ज्ञानात्मक स्तर (Bloom's Taxonomy): ${
+            skill.blooms_level ? skill.blooms_level.toUpperCase() : 'UNDERSTAND & APPLY'
+          }`,
+          `कठिनाई स्तर: ${Math.round((skill.difficulty ?? 0.5) * 100)}% (कैलिब्रेटेड एनसीईआरटी अधिगम स्तर)`,
+        ]
+      : [
+          `Competency Code: ${skill.code}`,
+          `Cognitive Domain (Bloom's): ${
+            skill.blooms_level ? skill.blooms_level.toUpperCase() : 'UNDERSTAND & APPLY'
+          }`,
+          `Curriculum Benchmark: ${Math.round((skill.difficulty ?? 0.5) * 100)}% calibrated difficulty`,
+        ];
+
+    // Dynamic Worked Example from real question bank
+    const workedExample: WorkedExample = firstQ
+      ? {
+          title: isHindi ? 'एनसीईआरटी व्यावहारिक अनुप्रयोग' : 'NCERT Application Example',
+          problem: firstQ.prompt,
+          steps: [
+            {
+              stepNumber: 1,
+              explanation:
+                hints[0] ||
+                (isHindi
+                  ? 'प्रश्न में दी गई जानकारी और मुख्य संकल्पना को पहचानें।'
+                  : 'Identify the given context and primary concept required.'),
+              math: '',
+            },
+            {
+              stepNumber: 2,
+              explanation:
+                hints[1] ||
+                (isHindi
+                  ? 'उचित नियम या विश्लेषणात्मक विधि लागू करें।'
+                  : 'Apply the relevant rule or analytical method.'),
+              math: '',
+            },
+            {
+              stepNumber: 3,
+              explanation:
+                explanation ||
+                hints[2] ||
+                (isHindi
+                  ? 'सही समाधान पर पहुंचें और निष्कर्ष निकालें।'
+                  : 'Reach the valid conclusion through systematic deduction.'),
+              math: '',
+            },
+          ],
+          solution:
+            explanation ||
+            (isHindi
+              ? 'उपरोक्त तार्किक विश्लेषण के आधार पर सही उत्तर निर्धारित होता है।'
+              : 'The solution is verified through the conceptual deduction above.'),
+          keyTakeaway: isHindi
+            ? 'अवधारणात्मक स्पष्टता और चरणबद्ध विश्लेषण से दक्षता में निपुणता प्राप्त होती है।'
+            : 'Structured analysis and conceptual understanding guarantee subject mastery.',
+        }
+      : {
+          title: isHindi ? 'अधिगम संक्षेप' : 'Concept Summary',
+          problem: isHindi
+            ? `${skill.name} के प्रमुख अनुप्रयोगों का अभ्यास करें।`
+            : `Review and practice core applications of ${skill.name}.`,
+          steps: [
+            {
+              stepNumber: 1,
+              explanation: isHindi
+                ? 'सिद्धांतों को ध्यानपूर्वक पढ़ें।'
+                : 'Review the foundational principles thoroughly.',
+              math: '',
+            },
+            {
+              stepNumber: 2,
+              explanation: isHindi
+                ? 'अभ्यास प्रश्नों में इन नियमों को लागू करें।'
+                : 'Apply these concepts across practice questions.',
+              math: '',
+            },
+          ],
+          solution: isHindi
+            ? 'नियमित अभ्यास से आत्मविश्वास बढ़ता है।'
+            : 'Regular practice builds mastery.',
+          keyTakeaway: isHindi
+            ? 'दक्षता सुदृढ़ीकरण के लिए अगले चरण पर अभ्यास प्रश्न हल करें।'
+            : 'Proceed to practice problems to reinforce this competency.',
+        };
+
+    return {
+      skillId: skill.id,
+      skillCode: skill.code,
+      skillName: skill.name,
+      topicName: skill.name,
+      overview,
+      deepDive,
+      keyFormulas,
+      workedExample,
+    };
+  }, [skillQuery.data, questionsQuery.data, language]);
 
   return {
     lesson,
@@ -175,7 +247,7 @@ export function useLearn(options: UseLearnOptions): UseLearnReturn {
     language,
     setDepth,
     setLanguage,
-    isLoading: skillQuery.isLoading,
+    isLoading: skillQuery.isLoading || (options.skillId !== 'default' && !lesson),
     error: (skillQuery.error as Error) || null,
   };
 }

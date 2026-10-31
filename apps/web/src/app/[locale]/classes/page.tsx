@@ -1282,11 +1282,11 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student Name</TableHead>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Roll No.</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
+                      <TableHead>{t('studentName')}</TableHead>
+                      <TableHead>{t('studentUsername')}</TableHead>
+                      <TableHead>{t('rollNumber')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead className="text-right">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1299,7 +1299,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                         <TableCell>{st.roll_number || '—'}</TableCell>
                         <TableCell>
                           <Badge variant="warning" className="text-xs">
-                            Pending Approval
+                            {t('pending')}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -1311,7 +1311,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                               onClick={() => handleApprove(st.student_id)}
                               className="text-xs font-semibold cursor-pointer"
                             >
-                              {actionInProgressId === st.student_id ? 'Accepting...' : '✓ Accept'}
+                              {actionInProgressId === st.student_id
+                                ? t('approving')
+                                : `✓ ${t('approve')}`}
                             </Button>
                             <Button
                               size="sm"
@@ -1320,7 +1322,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                               onClick={() => handleRemove(st.student_id)}
                               className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
                             >
-                              ✕ Decline
+                              ✕ {t('reject')}
                             </Button>
                           </div>
                         </TableCell>
@@ -1366,11 +1368,11 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student Name</TableHead>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Roll No.</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t('studentName')}</TableHead>
+                      <TableHead>{t('studentUsername')}</TableHead>
+                      <TableHead>{t('rollNumber')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead className="text-right">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1389,7 +1391,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                         <TableCell>{st.roll_number ? `#${st.roll_number}` : '—'}</TableCell>
                         <TableCell>
                           <Badge variant="success" className="text-xs">
-                            Active
+                            {t('active')}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -1400,7 +1402,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                               className="cursor-pointer text-xs"
                               onClick={() => setSelectedStudentId(st.student_id)}
                             >
-                              View Profile →
+                              {t('viewRoster')} →
                             </Button>
                             <Button
                               size="sm"
@@ -1409,7 +1411,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                               onClick={() => handleRemove(st.student_id)}
                               className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
                             >
-                              Remove
+                              {actionInProgressId === st.student_id ? t('removing') : t('remove')}
                             </Button>
                           </div>
                         </TableCell>

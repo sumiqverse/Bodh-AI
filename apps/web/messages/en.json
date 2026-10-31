@@ -537,7 +537,11 @@
     "topicsUnit": "Topics",
     "testButton": "Test",
     "tryAgain": "Try Again",
-    "gradeSectionLabel": "Grade {grade} Section {section}"
+    "gradeSectionLabel": "Grade {grade} Section {section}",
+    "noClassesJoinedTitle": "You Have Not Joined Any Class Yet",
+    "noClassesJoinedDesc": "Ask your teacher for a 6-character Class Join Code to enroll in your class and start your learning journey.",
+    "joinClassWithCode": "Join Class with Code",
+    "gradeSecShort": "Grade {grade} • Sec {section}"
   },
   "learn": {
     "title": "Conceptual Learning",
@@ -603,7 +607,15 @@
     "lastAttemptedColumn": "Last Activity",
     "emptyTitle": "No Practice History Yet",
     "emptyDesc": "Complete your diagnostic or solve practice questions to see your history timeline.",
-    "startPracticing": "Go to Skill Map"
+    "startPracticing": "Go to Skill Map",
+    "stateMastered": "Mastered",
+    "stateInProgress": "In Progress",
+    "stateNotStarted": "Not Started",
+    "practiceAction": "Practice",
+    "testAction": "Test",
+    "errorTitle": "Error Loading History",
+    "tryAgain": "Try Again",
+    "accuracyDetails": "{accuracy}% ({correct}/{attempts} attempts)"
   },
   "teacherDashboard": {
     "title": "Teacher Dashboard",
