@@ -50,11 +50,12 @@ export default function StudentJoinPage(): React.JSX.Element {
         if (typeof window !== 'undefined') {
           try {
             const pRes = await apiClient.getMyProfile(joinRes.access_token);
-            if (pRes?.profile?.curriculumCode) {
-              localStorage.setItem('bodhai_student_curriculum', pRes.profile.curriculumCode);
+            const prof = pRes?.profile as Record<string, unknown> | undefined;
+            if (prof?.curriculumCode) {
+              localStorage.setItem('bodhai_student_curriculum', String(prof.curriculumCode));
             }
-            if (pRes?.profile?.classId) {
-              localStorage.setItem('bodhai_selected_class_id', pRes.profile.classId);
+            if (prof?.classId) {
+              localStorage.setItem('bodhai_selected_class_id', String(prof.classId));
             }
           } catch {
             // ignore

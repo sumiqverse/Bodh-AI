@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.curriculum import resolve_curriculum_code
-from app.core.errors import ConsentRequiredError, NotFoundError
+from app.core.errors import AuthorizationError, ConsentRequiredError, NotFoundError
 from app.engine.diagnostic import (
     CATDiagnosticEngine,
     DiagnosticQuestionItem,
@@ -205,6 +205,40 @@ class AdaptiveService:
         curriculum_code: str = "NCERT-MATH-C8",
     ) -> NextItemResponse:
         """Select next optimal practice item using RecommendationRanker."""
+        # Check student enrollment approval status
+        enr_stmt = (
+            select(Enrollment)
+            .options(selectinload(Enrollment.school_class))
+            .where(Enrollment.student_id == student_id)
+            .order_by(Enrollment.created_at.desc())
+        )
+        enr_res = await self.session.execute(enr_stmt)
+        all_enrs = enr_res.scalars().all()
+        if all_enrs:
+            matching_enr = None
+            for e in all_enrs:
+                if e.school_class:
+                    c_code = resolve_curriculum_code(e.school_class.grade, e.school_class.name)
+                    if curriculum_code and c_code == curriculum_code:
+                        matching_enr = e
+                        break
+            if matching_enr:
+                if matching_enr.status == "pending":
+                    sc = matching_enr.school_class
+                    class_name = sc.name if sc else "this class"
+                    raise AuthorizationError(
+                        f"Your enrollment in '{class_name}' is pending educator approval. "
+                        "Classroom content and practice unlock once approved by your teacher."
+                    )
+            elif all(e.status == "pending" for e in all_enrs):
+                first_pending = all_enrs[0]
+                sc = first_pending.school_class
+                class_name = sc.name if sc else "your class"
+                raise AuthorizationError(
+                    f"Your enrollment in '{class_name}' is pending educator approval. "
+                    "Classroom content and practice unlock once approved by your teacher."
+                )
+
         _ = curriculum_code
         # 1. Fetch student's attempt history to avoid repetition
         attempt_stmt = select(Attempt.question_id, Attempt.skill_id).where(
@@ -344,19 +378,49 @@ class AdaptiveService:
             .options(selectinload(Enrollment.school_class))
             .where(
                 Enrollment.student_id == student_id,
-                Enrollment.status.in_(["active", "pending"]),
             )
             .order_by(Enrollment.created_at.desc())
-            .limit(1)
         )
-        enr = (await self.session.execute(enr_stmt)).scalar_one_or_none()
-        if enr and enr.school_class:
-            class_curriculum = resolve_curriculum_code(
-                enr.school_class.grade, enr.school_class.name
-            )
-            # Prioritize class curriculum if client sent default or empty
-            if not request.curriculum_code or request.curriculum_code == "NCERT-MATH-C8":
-                target_curriculum_code = class_curriculum
+        enr_res = await self.session.execute(enr_stmt)
+        all_enrs = enr_res.scalars().all()
+
+        if all_enrs:
+            matching_enr = None
+            for e in all_enrs:
+                if e.school_class:
+                    c_code = resolve_curriculum_code(e.school_class.grade, e.school_class.name)
+                    if request.curriculum_code and c_code == request.curriculum_code:
+                        matching_enr = e
+                        break
+
+            if matching_enr:
+                if matching_enr.status == "pending":
+                    sc = matching_enr.school_class
+                    class_name = sc.name if sc else "this class"
+                    raise AuthorizationError(
+                        f"Your enrollment in '{class_name}' is pending educator approval. "
+                        "Classroom content and diagnostic tests unlock once approved."
+                    )
+                target_curriculum_code = resolve_curriculum_code(
+                    matching_enr.school_class.grade, matching_enr.school_class.name
+                )
+            else:
+                active_enrs = [e for e in all_enrs if e.status == "active"]
+                if active_enrs:
+                    if not request.curriculum_code or request.curriculum_code == "NCERT-MATH-C8":
+                        first_active = active_enrs[0]
+                        if first_active.school_class:
+                            target_curriculum_code = resolve_curriculum_code(
+                                first_active.school_class.grade, first_active.school_class.name
+                            )
+                else:
+                    first_pending = all_enrs[0]
+                    sc = first_pending.school_class
+                    class_name = sc.name if sc else "your class"
+                    raise AuthorizationError(
+                        f"Your enrollment in '{class_name}' is pending educator approval. "
+                        "Classroom content and diagnostic tests unlock once approved."
+                    )
 
         # 2. Scope skills, topics, and questions to target curriculum
         curric_stmt = select(Curriculum).where(Curriculum.code == target_curriculum_code)

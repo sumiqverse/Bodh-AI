@@ -220,8 +220,9 @@ export default function LoginPage(): React.JSX.Element {
       if (typeof window !== 'undefined') {
         try {
           const pRes = await apiClient.getMyProfile(res.access_token);
-          if (pRes?.profile?.curriculumCode) {
-            localStorage.setItem('bodhai_student_curriculum', pRes.profile.curriculumCode);
+          const prof = pRes?.profile as Record<string, unknown> | undefined;
+          if (prof?.curriculumCode) {
+            localStorage.setItem('bodhai_student_curriculum', String(prof.curriculumCode));
           }
         } catch {
           // ignore

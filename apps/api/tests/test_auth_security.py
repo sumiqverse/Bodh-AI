@@ -473,3 +473,80 @@ async def test_student_multi_class_join_and_login_without_code(
     p_data = prof_res.json()["profile"]
     assert "classes" in p_data
     assert len(p_data["classes"]) >= 2
+
+
+@pytest.mark.asyncio
+async def test_student_pending_enrollment_blocks_diagnostic_until_approved(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    teacher_auth: tuple[User, str, dict[str, str]],
+) -> None:
+    """Test that a pending student cannot start diagnostic/practice until educator approves."""
+    _, _, teacher_h = teacher_auth
+
+    school_repo = BaseRepository[School](School, db_session)
+    school = await school_repo.create(SchoolFactory.build())
+    await db_session.flush()
+
+    # Create Class
+    c_res = await client.post(
+        "/api/v1/classes",
+        json={
+            "name": "Class 8-A Mathematics",
+            "grade": 8,
+            "section": "C",
+            "academic_year": "2024-2025",
+            "school_id": str(school.id),
+        },
+        headers=teacher_h,
+    )
+    assert c_res.status_code == 201
+    class_id = c_res.json()["id"]
+    code = c_res.json()["join_code"]
+
+    # Student joins
+    stu_user = f"pending_stu_{uuid.uuid4().hex[:6]}"
+    pin = "1234"
+    join_res = await client.post(
+        "/api/v1/auth/student/join",
+        json={
+            "join_code": code,
+            "username": stu_user,
+            "pin": pin,
+            "full_name": "Pending Student",
+        },
+    )
+    assert join_res.status_code == 201
+    tok = join_res.json()["access_token"]
+    student_h = {"Authorization": f"Bearer {tok}"}
+
+    # Attempt to start diagnostic before approval -> Should return 403 Forbidden
+    diag_blocked = await client.post(
+        "/api/v1/diagnostics",
+        json={"curriculum_code": "NCERT-MATH-C8"},
+        headers=student_h,
+    )
+    assert diag_blocked.status_code == 403
+    assert "pending educator approval" in diag_blocked.json()["detail"].lower()
+
+    # Get student user id from profile
+    prof_res = await client.get("/api/v1/profiles/me", headers=student_h)
+    assert prof_res.status_code == 200
+    student_id = prof_res.json()["profile"]["id"]
+
+    # Teacher approves student
+    app_res = await client.post(
+        f"/api/v1/classes/{class_id}/approve/{student_id}",
+        headers=teacher_h,
+    )
+    assert app_res.status_code == 200
+    assert app_res.json()["status"] == "active"
+
+    # Now student can start diagnostic!
+    diag_ok = await client.post(
+        "/api/v1/diagnostics",
+        json={"curriculum_code": "NCERT-MATH-C8"},
+        headers=student_h,
+    )
+    assert diag_ok.status_code == 200
+    assert "session_id" in diag_ok.json()

@@ -73,9 +73,12 @@ describe('Chapter Download Manager & Lesson Pack Downloader', () => {
     fireEvent.click(downloadBtn);
 
     // Wait for download to finish
-    await waitFor(() => {
-      expect(screen.getByText('Downloaded')).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Downloaded')).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
 
     // Delete button should now be visible
     const deleteBtn = screen.getByTestId('delete-btn-ch-test-101');

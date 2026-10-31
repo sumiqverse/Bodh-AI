@@ -32,8 +32,9 @@ export default function DiagnosticPage(): React.JSX.Element {
     staleTime: 5 * 60 * 1000,
   });
 
+  const rawProfile = profileQuery.data?.profile as Record<string, unknown> | undefined;
   const enrolledCurriculum =
-    profileQuery.data?.profile?.curriculumCode ||
+    (typeof rawProfile?.curriculumCode === 'string' ? rawProfile.curriculumCode : undefined) ||
     (typeof window !== 'undefined'
       ? localStorage.getItem('bodhai_student_curriculum') || undefined
       : undefined);
@@ -179,30 +180,61 @@ export default function DiagnosticPage(): React.JSX.Element {
     );
   }
 
-  // Error state with retry for slow or dropped connections
+  // Error state with retry or access pending guard
   if (errorMessage && !currentItem) {
+    const isPendingApproval =
+      errorMessage.toLowerCase().includes('pending') ||
+      errorMessage.toLowerCase().includes('approval');
+
     return (
       <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-md flex-col items-center justify-center px-4 py-8">
-        <Card className="w-full text-center p-6 border-destructive/30">
+        <Card
+          className={`w-full text-center p-6 ${
+            isPendingApproval ? 'border-amber-500/40 bg-amber-500/5' : 'border-destructive/30'
+          }`}
+        >
           <CardHeader>
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-              ⚠️
+            <div
+              className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${
+                isPendingApproval
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'bg-destructive/10 text-destructive'
+              }`}
+            >
+              {isPendingApproval ? '🔒' : '⚠️'}
             </div>
-            <CardTitle className="text-xl font-bold">{t('emptyState')}</CardTitle>
-            <CardDescription className="text-sm text-destructive font-medium mt-2">
+            <CardTitle className="text-xl font-bold">
+              {isPendingApproval ? 'Teacher Approval Required' : t('emptyState')}
+            </CardTitle>
+            <CardDescription
+              className={`text-sm font-medium mt-2 ${
+                isPendingApproval ? 'text-amber-800 dark:text-amber-200' : 'text-destructive'
+              }`}
+            >
               {errorMessage}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <Button
               type="button"
               variant="primary"
               size="md"
-              onClick={retry}
+              onClick={() => router.push('/student')}
               className="w-full min-h-[44px] cursor-pointer"
             >
-              {t('retryButton')}
+              ← Back to My Classes
             </Button>
+            {!isPendingApproval && (
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={retry}
+                className="w-full min-h-[44px] cursor-pointer"
+              >
+                {t('retryButton')}
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
