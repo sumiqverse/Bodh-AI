@@ -375,7 +375,7 @@ export default function StudentHomePage(): React.JSX.Element {
                       {cls.name}
                     </CardTitle>
 
-                    <CardDescription className="text-sm text-muted-foreground mt-1 space-y-1">
+                    <div className="text-sm text-muted-foreground mt-1 space-y-1">
                       <div className="flex items-center gap-1.5 font-medium text-foreground/80">
                         <UserCheck className="h-4 w-4 text-primary" />
                         Educator: {cls.teacherName || 'Assigned Teacher'}
@@ -388,7 +388,7 @@ export default function StudentHomePage(): React.JSX.Element {
                           </span>
                         </div>
                       )}
-                    </CardDescription>
+                    </div>
                   </CardHeader>
 
                   <CardContent className="px-6 py-2">
