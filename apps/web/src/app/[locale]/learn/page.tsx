@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import {
@@ -32,15 +32,22 @@ function LearnSkeleton(): React.JSX.Element {
 
 function LearnContent(): React.JSX.Element {
   const t = useTranslations('learn');
+  const locale = useLocale();
+  const currentLang = (locale === 'hi' ? 'hi' : 'en') as 'en' | 'hi';
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const skillId = searchParams.get('skillId') ?? 'default';
 
-  const { lesson, depth, language, setDepth, setLanguage, isLoading, error } = useLearn({
+  const { lesson, depth, setDepth, setLanguage, isLoading, error } = useLearn({
     skillId,
     initialDepth: 'standard',
+    initialLanguage: currentLang,
   });
+
+  React.useEffect(() => {
+    setLanguage(currentLang);
+  }, [currentLang, setLanguage]);
 
   if (isLoading || !lesson) {
     return <LearnSkeleton />;
@@ -87,57 +94,31 @@ function LearnContent(): React.JSX.Element {
           </p>
         </div>
 
-        {/* Bilingual Language Switcher */}
-        <div
-          className="flex items-center gap-2 self-start sm:self-auto"
-          role="group"
-          aria-label={t('languageLabel')}
-        >
-          <Button
+        {/* Explanation Depth Selector */}
+        <div className="flex items-center gap-2 p-1 rounded-xl bg-muted/60 border border-border max-w-sm self-start sm:self-auto">
+          <button
             type="button"
-            variant={language === 'en' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setLanguage('en')}
-            className="min-h-[40px] px-3 text-xs font-semibold cursor-pointer"
+            onClick={() => setDepth('standard')}
+            className={`flex-1 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer min-h-[40px] ${
+              depth === 'standard'
+                ? 'bg-background text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            English
-          </Button>
-          <Button
+            {t('depthStandard')}
+          </button>
+          <button
             type="button"
-            variant={language === 'hi' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setLanguage('hi')}
-            className="min-h-[40px] px-3 text-xs font-semibold cursor-pointer"
+            onClick={() => setDepth('deep')}
+            className={`flex-1 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer min-h-[40px] ${
+              depth === 'deep'
+                ? 'bg-background text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            हिन्दी
-          </Button>
+            {t('depthDeep')}
+          </button>
         </div>
-      </div>
-
-      {/* Explanation Depth Selector */}
-      <div className="flex items-center gap-2 p-1 rounded-xl bg-muted/60 border border-border max-w-sm">
-        <button
-          type="button"
-          onClick={() => setDepth('standard')}
-          className={`flex-1 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer min-h-[40px] ${
-            depth === 'standard'
-              ? 'bg-background text-foreground shadow-xs'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          {t('depthStandard')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setDepth('deep')}
-          className={`flex-1 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer min-h-[40px] ${
-            depth === 'deep'
-              ? 'bg-background text-foreground shadow-xs'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          {t('depthDeep')}
-        </button>
       </div>
 
       {/* Core Conceptual Explanation Card */}
