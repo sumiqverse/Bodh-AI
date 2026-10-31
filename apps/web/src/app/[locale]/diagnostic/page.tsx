@@ -255,8 +255,8 @@ function DiagnosticContent(): React.JSX.Element {
     const recommendedSkills = (summary?.recommended_starting_skills as string[]) ?? [];
 
     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-xl flex-col items-center justify-center px-4 py-8">
-        <Card className="w-full shadow-floating text-center border-border/80">
+      <div className="container mx-auto max-w-2xl px-4 py-8 sm:py-12 flex flex-col items-center">
+        <Card className="w-full shadow-floating text-center border-border/80 overflow-hidden">
           <CardHeader className="pb-4">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
               ✓
@@ -300,7 +300,7 @@ function DiagnosticContent(): React.JSX.Element {
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                   ✓ Strong Foundational Skills
                 </span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
                   {masteredSkills.map((sk, idx) => (
                     <Badge
                       key={typeof sk === 'string' ? sk : idx}
@@ -324,7 +324,7 @@ function DiagnosticContent(): React.JSX.Element {
                 <p className="text-xs text-muted-foreground">
                   Our diagnostic engine has calibrated specific learning pathways for you in:
                 </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-1.5 pt-1 max-h-48 overflow-y-auto pr-1">
                   {(recommendedSkills.length > 0 ? recommendedSkills : focusGaps).map((sk, idx) => (
                     <Badge
                       key={typeof sk === 'string' ? sk : idx}
@@ -343,7 +343,7 @@ function DiagnosticContent(): React.JSX.Element {
               {t('hintFreeNotice')}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <Button
                 type="button"
                 variant="outline"
@@ -643,7 +643,7 @@ export default function DiagnosticPage(): React.JSX.Element {
   return (
     <React.Suspense
       fallback={
-        <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-xl flex-col items-center justify-center px-4 py-8">
+        <div className="container mx-auto max-w-2xl px-4 py-8 sm:py-12 flex flex-col items-center">
           <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       }
