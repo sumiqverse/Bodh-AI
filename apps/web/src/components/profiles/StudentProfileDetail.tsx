@@ -28,7 +28,6 @@ import {
   CheckCircle2,
   Clock,
   Edit3,
-  FileText,
   Flame,
   HelpCircle,
   Lightbulb,
@@ -69,8 +68,6 @@ export function StudentProfileDetail({
     'all' | 'mastered' | 'partial' | 'not_learned'
   >('all');
   const [copiedLink, setCopiedLink] = React.useState<boolean>(false);
-  const [isExporting, setIsExporting] = React.useState<boolean>(false);
-  const [exportNotice, setExportNotice] = React.useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState<boolean>(false);
   const [savedSuccessNotice, setSavedSuccessNotice] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -168,27 +165,6 @@ export function StudentProfileDetail({
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     }
-  };
-
-  const handleExportData = () => {
-    setIsExporting(true);
-    setExportNotice(null);
-    setTimeout(() => {
-      const exportBlob = new Blob([JSON.stringify(profileData, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(exportBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bodhai-student-${profileData.rollNumber}-${profileData.slug}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setIsExporting(false);
-      setExportNotice('Telemetry exported successfully (JSON format).');
-      setTimeout(() => setExportNotice(null), 3500);
-    }, 600);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -371,16 +347,6 @@ export function StudentProfileDetail({
                 <Share2 className="w-3.5 h-3.5" />
                 {copiedLink ? t('copied') : t('shareProfile')}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportData}
-                disabled={isExporting}
-                className="text-xs font-semibold gap-1.5 cursor-pointer"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                {isExporting ? 'Exporting...' : t('exportReport')}
-              </Button>
               <Link href="/diagnostic" className="w-full">
                 <Button
                   variant="outline"
@@ -393,12 +359,6 @@ export function StudentProfileDetail({
               </Link>
             </div>
           </div>
-
-          {exportNotice && (
-            <div className="mt-4 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium text-center">
-              {exportNotice}
-            </div>
-          )}
         </div>
 
         {/* 4. Top Telemetry Metrics Ribbon */}
