@@ -6,7 +6,13 @@ import { usePathname, useRouter, Link } from '@/i18n/routing';
 import { Navbar, Button } from '@bodhai/ui';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
-import { getCurrentUser, clearAuthSession, getUserDashboardPath, syncSessionCookies, getAuthToken } from '@/lib/api-client';
+import {
+  getCurrentUser,
+  clearAuthSession,
+  getUserDashboardPath,
+  syncSessionCookies,
+  getAuthToken,
+} from '@/lib/api-client';
 import type { UserResponse } from '@bodhai/api-client';
 import { Settings } from 'lucide-react';
 
@@ -72,7 +78,7 @@ export function SiteHeader(): React.JSX.Element {
       if (currentUser.role === 'student') {
         return [
           {
-            label: currentLocale === 'hi' ? 'दक्षता मानचित्र (होम)' : 'Skill Map (Home)',
+            label: currentLocale === 'hi' ? 'मेरी कक्षाएं (होम)' : 'My Classrooms (Home)',
             href: '/student',
             isActive: pathname === '/student',
           },
@@ -204,7 +210,7 @@ export function SiteHeader(): React.JSX.Element {
         <div className="flex items-center gap-1.5 sm:gap-2">
           {mounted && currentUser ? (
             <>
-              {/* Student Skill Map shortcut */}
+              {/* Student Classrooms Dashboard shortcut */}
               {currentUser.role === 'student' && (
                 <Link href="/student">
                   <Button
@@ -216,7 +222,7 @@ export function SiteHeader(): React.JSX.Element {
                         : 'border-primary/40 text-primary hover:bg-primary/10'
                     }`}
                   >
-                    {currentLocale === 'hi' ? 'दक्षता मानचित्र' : 'Skill Map'}
+                    {currentLocale === 'hi' ? 'मेरी कक्षाएं' : 'My Classrooms'}
                   </Button>
                 </Link>
               )}
@@ -232,7 +238,11 @@ export function SiteHeader(): React.JSX.Element {
                         : 'border-primary/40 text-primary hover:bg-primary/10'
                     }`}
                   >
-                    {tNav.has('classes') ? tNav('classes') : (currentLocale === 'hi' ? 'मेरी कक्षाएँ' : 'My Classes')}
+                    {tNav.has('classes')
+                      ? tNav('classes')
+                      : currentLocale === 'hi'
+                        ? 'मेरी कक्षाएँ'
+                        : 'My Classes'}
                   </Button>
                 </Link>
               )}
@@ -268,7 +278,11 @@ export function SiteHeader(): React.JSX.Element {
                       className="w-4 h-4 rounded-full object-cover shrink-0 ring-1 ring-primary/40"
                     />
                   )}
-                  {tNav.has('myProfile') ? tNav('myProfile') : (currentLocale === 'hi' ? 'मेरी प्रोफ़ाइल' : 'My Profile')}
+                  {tNav.has('myProfile')
+                    ? tNav('myProfile')
+                    : currentLocale === 'hi'
+                      ? 'मेरी प्रोफ़ाइल'
+                      : 'My Profile'}
                 </Button>
               </Link>
               <Button

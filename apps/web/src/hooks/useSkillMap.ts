@@ -49,21 +49,25 @@ export interface UseSkillMapReturn {
   refetch: () => void;
 }
 
-export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn {
+export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
   const apiClient = getWebApiClient();
   const locale = useLocale();
+
+  const isEnabled = Boolean(curriculumCode);
 
   // Query 1: Full curriculum competency graph (nodes = topics + atomic skills)
   const graphQuery = useQuery({
     queryKey: ['curriculum-graph', curriculumCode],
-    queryFn: async () => apiClient.getCurriculumGraph(curriculumCode),
+    queryFn: async () => apiClient.getCurriculumGraph(curriculumCode!),
+    enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
   });
 
   // Query 1b: Optional ordered topics list
   const topicsQuery = useQuery({
     queryKey: ['curriculum-topics', curriculumCode],
-    queryFn: async () => apiClient.getCurriculumTopics(curriculumCode),
+    queryFn: async () => apiClient.getCurriculumTopics(curriculumCode!),
+    enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -99,11 +103,12 @@ export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
       try {
-        return await apiClient.getNextItem(curriculumCode, token, locale);
+        return await apiClient.getNextItem(curriculumCode!, token, locale);
       } catch {
         return null;
       }
     },
+    enabled: isEnabled,
     staleTime: 30 * 1000,
   });
 
@@ -338,13 +343,17 @@ export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn
     skillsByTopic,
     summary,
     nextAction,
-    isLoading: (graphQuery.isLoading && topicsQuery.isLoading) || masteryQuery.isLoading,
-    error: (graphQuery.error as Error) || (topicsQuery.error as Error) || null,
+    isLoading: isEnabled
+      ? (graphQuery.isLoading && topicsQuery.isLoading) || masteryQuery.isLoading
+      : false,
+    error: isEnabled ? (graphQuery.error as Error) || (topicsQuery.error as Error) || null : null,
     refetch: () => {
-      void graphQuery.refetch();
-      void topicsQuery.refetch();
-      void masteryQuery.refetch();
-      void nextItemQuery.refetch();
+      if (isEnabled) {
+        void graphQuery.refetch();
+        void topicsQuery.refetch();
+        void masteryQuery.refetch();
+        void nextItemQuery.refetch();
+      }
     },
   };
 }

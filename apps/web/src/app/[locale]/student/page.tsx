@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
@@ -44,10 +45,28 @@ export interface EnrolledClassroom {
   joinCode?: string;
 }
 
-export default function StudentHomePage(): React.JSX.Element {
+function StudentDashboardSkeleton(): React.JSX.Element {
+  return (
+    <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-10 space-y-8">
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-72" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
+    </div>
+  );
+}
+
+function StudentHomeContent(): React.JSX.Element {
   const t = useTranslations('skillMap');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const apiClient = getWebApiClient();
+
+  const classIdParam = searchParams.get('classId');
 
   const token = typeof window !== 'undefined' ? getAuthToken() : null;
   const profileQuery = useQuery({
@@ -81,43 +100,26 @@ export default function StudentHomePage(): React.JSX.Element {
     return [];
   }, [profileQuery.data?.profile]);
 
-  // Track client hydration mounting to prevent SSR hydration mismatch
   const [isMounted, setIsMounted] = React.useState(false);
-
-  // Primary view state: 'classes' (all enrolled classes hub) vs 'classroom' (exploring single class)
-  const [viewMode, setViewMode] = React.useState<'classes' | 'classroom'>('classes');
-
-  const [selectedClassId, setSelectedClassId] = React.useState<string>('');
 
   React.useEffect(() => {
     setIsMounted(true);
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bodhai_selected_class_id');
-      if (saved) {
-        setSelectedClassId(saved);
-      }
-    }
   }, []);
 
+  const activeClasses = enrolledClasses.filter((c) => c.status === 'active');
+  const pendingClasses = enrolledClasses.filter((c) => c.status === 'pending');
+
+  // If a classId query parameter is present, find that specific class
   const activeClass = React.useMemo(() => {
-    if (!enrolledClasses.length) return null;
-    return (
-      enrolledClasses.find((c) => c.classId === selectedClassId) ||
-      enrolledClasses.find((c) => c.status === 'active') ||
-      enrolledClasses[0]
-    );
-  }, [enrolledClasses, selectedClassId]);
+    if (!classIdParam || !enrolledClasses.length) return null;
+    return enrolledClasses.find((c) => c.classId === classIdParam) || null;
+  }, [classIdParam, enrolledClasses]);
 
   const rawProfile = profileQuery.data?.profile as Record<string, unknown> | undefined;
+  const studentName = String(rawProfile?.name || rawProfile?.username || 'Student');
+  const rollNumber = rawProfile?.rollNumber ? String(rawProfile.rollNumber) : undefined;
 
-  const enrolledCurriculum =
-    activeClass?.curriculumCode ||
-    (typeof rawProfile?.curriculumCode === 'string' ? rawProfile.curriculumCode : undefined) ||
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('bodhai_student_curriculum') || 'NCERT-MATH-C8'
-      : 'NCERT-MATH-C8');
-
-  // Keep localStorage in sync when active classroom changes
+  // Sync active classroom's curriculum to localStorage when entered
   React.useEffect(() => {
     if (activeClass && typeof window !== 'undefined') {
       localStorage.setItem('bodhai_student_curriculum', activeClass.curriculumCode);
@@ -125,24 +127,22 @@ export default function StudentHomePage(): React.JSX.Element {
     }
   }, [activeClass]);
 
-  // Handle student clicking "Enter Classroom"
   const handleEnterClass = (cls: EnrolledClassroom) => {
-    setSelectedClassId(cls.classId);
     if (typeof window !== 'undefined') {
       localStorage.setItem('bodhai_selected_class_id', cls.classId);
       localStorage.setItem('bodhai_student_curriculum', cls.curriculumCode);
     }
-    setViewMode('classroom');
+    router.push(`/student?classId=${cls.classId}`);
   };
 
   const handleBackToClasses = () => {
-    setViewMode('classes');
+    router.push('/student');
   };
 
-  // Only query curriculum skills if the active class is approved
+  // Only query curriculum skills if currently exploring an approved active class
   const isClassActive = activeClass?.status === 'active';
   const { topics, skills, skillsByTopic, summary, nextAction, isLoading, error, refetch } =
-    useSkillMap(isClassActive ? enrolledCurriculum : undefined);
+    useSkillMap(isClassActive ? activeClass.curriculumCode : undefined);
 
   const [selectedTopic, setSelectedTopic] = React.useState<string>('all');
 
@@ -150,13 +150,6 @@ export default function StudentHomePage(): React.JSX.Element {
     if (selectedTopic === 'all') return skills;
     return skillsByTopic[selectedTopic] ?? [];
   }, [selectedTopic, skills, skillsByTopic]);
-
-  const activeClasses = enrolledClasses.filter((c) => c.status === 'active');
-  const pendingClasses = enrolledClasses.filter((c) => c.status === 'pending');
-
-  const studentName = String(rawProfile?.name || rawProfile?.username || 'Student');
-
-  const rollNumber = rawProfile?.rollNumber ? String(rawProfile.rollNumber) : undefined;
 
   const getMasteryBadge = (state: MasteryState) => {
     switch (state) {
@@ -194,27 +187,16 @@ export default function StudentHomePage(): React.JSX.Element {
     }
   };
 
-  // Profile or classroom data loading skeleton (rendered during SSR and client data calibration)
+  // Loading skeleton during SSR or profile calibration
   if (!isMounted || profileQuery.isLoading) {
-    return (
-      <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-10 space-y-8">
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-72" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
-        </div>
-      </div>
-    );
+    return <StudentDashboardSkeleton />;
   }
 
   // =========================================================================
-  // VIEW MODE 1: "MY ENROLLED CLASSES" HUB
-  // Mention all classes first so student can see enrolled status & enter approved ones
+  // VIEW MODE 1: "MY ENROLLED CLASSES" HUB (Default student landing dashboard)
+  // Displayed whenever ?classId= is absent from URL
   // =========================================================================
-  if (viewMode === 'classes') {
+  if (!classIdParam) {
     return (
       <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-10 space-y-8">
         {/* Hub Header */}
@@ -444,11 +426,40 @@ export default function StudentHomePage(): React.JSX.Element {
   }
 
   // =========================================================================
-  // VIEW MODE 2: CLASSROOM VIEW (Single Active Class Explorer)
-  // Guarded strictly by teacher approval: if pending, show locked access gate!
+  // VIEW MODE 2: CLASSROOM VIEW (Single Selected Class Explorer)
+  // Displayed whenever ?classId= is present in URL
   // =========================================================================
 
-  // If the active class is pending, render the access locked gate
+  // If classIdParam is given but classroom is not found
+  if (!activeClass) {
+    return (
+      <div className="container mx-auto max-w-md px-4 py-16 text-center space-y-4">
+        <Card className="p-8 border-border">
+          <CardHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-xl font-bold">{t('emptyState')}</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground mt-1">
+              Classroom not found or enrollment record has been updated.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleBackToClasses}
+              className="w-full min-h-[44px] cursor-pointer"
+            >
+              ← {t('backToClasses')}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Guarded strictly by teacher approval: if pending, show locked access gate
   if (!isClassActive) {
     return (
       <div className="container mx-auto max-w-xl px-4 py-16 text-center space-y-6">
@@ -468,8 +479,8 @@ export default function StudentHomePage(): React.JSX.Element {
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground mt-2 leading-relaxed">
               {t('accessLockedDesc', {
-                teacher: activeClass?.teacherName || 'Teacher',
-                classroom: activeClass?.name || '',
+                teacher: activeClass.teacherName || 'Teacher',
+                classroom: activeClass.name,
               })}
             </CardDescription>
           </CardHeader>
@@ -577,7 +588,7 @@ export default function StudentHomePage(): React.JSX.Element {
           {activeClasses.length > 1 ? (
             <select
               aria-label="Select Enrolled Classroom"
-              value={activeClass?.classId || ''}
+              value={activeClass.classId}
               onChange={(e) => {
                 const target = enrolledClasses.find((c) => c.classId === e.target.value);
                 if (target) handleEnterClass(target);
@@ -591,12 +602,12 @@ export default function StudentHomePage(): React.JSX.Element {
               ))}
             </select>
           ) : (
-            <div className="font-serif text-lg font-bold text-foreground">{activeClass?.name}</div>
+            <div className="font-serif text-lg font-bold text-foreground">{activeClass.name}</div>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/diagnostic">
+          <Link href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}>
             <Button
               variant="outline"
               size="sm"
@@ -638,21 +649,21 @@ export default function StudentHomePage(): React.JSX.Element {
               {t('activeClassroom')}
             </Badge>
             <span className="text-xs font-mono text-muted-foreground">
-              {activeClass?.curriculumCode}
+              {activeClass.curriculumCode}
             </span>
           </div>
-          <h2 className="font-serif text-2xl font-bold text-foreground">{activeClass?.name}</h2>
+          <h2 className="font-serif text-2xl font-bold text-foreground">{activeClass.name}</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            {t('educatorLabel', { name: activeClass?.teacherName || 'Teacher' })} •{' '}
+            {t('educatorLabel', { name: activeClass.teacherName || 'Teacher' })} •{' '}
             {t('gradeSectionLabel', {
-              grade: activeClass?.grade || 8,
-              section: activeClass?.section || 'A',
+              grade: activeClass.grade,
+              section: activeClass.section,
             })}
           </p>
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-          <Link href="/diagnostic">
+          <Link href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}>
             <Button
               variant="primary"
               size="sm"
@@ -1006,5 +1017,13 @@ export default function StudentHomePage(): React.JSX.Element {
         )}
       </section>
     </div>
+  );
+}
+
+export default function StudentHomePage(): React.JSX.Element {
+  return (
+    <React.Suspense fallback={<StudentDashboardSkeleton />}>
+      <StudentHomeContent />
+    </React.Suspense>
   );
 }
