@@ -111,8 +111,10 @@ export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn
     const rawMastery = masteryQuery.data ?? [];
     const nextItem: NextItemResponse | null = nextItemQuery.data ?? null;
 
-    const topicNodes = graphData?.nodes?.filter((n) => (n as unknown as { type?: string }).type === 'topic') ?? [];
-    const skillNodes = graphData?.nodes?.filter((n) => (n as unknown as { type?: string }).type !== 'topic') ?? [];
+    const topicNodes =
+      graphData?.nodes?.filter((n) => (n as unknown as { type?: string }).type === 'topic') ?? [];
+    const skillNodes =
+      graphData?.nodes?.filter((n) => (n as unknown as { type?: string }).type !== 'topic') ?? [];
 
     const computedTopics: TopicResponse[] =
       rawTopics.length > 0
@@ -277,19 +279,22 @@ export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn
     const totalCount = allSkills.length;
     const masteryPercentage = totalCount > 0 ? Math.round((mastered / totalCount) * 100) : 0;
 
-    // Determine the single clear 'Next' action
+    // Determine the single clear 'Next' action strictly scoped to the active curriculum
     let next: NextActionData | null = null;
-    if (nextItem) {
-      const matchedSkill = allSkills.find((s) => s.id === String(nextItem.skill_id));
+    const matchedSkill = nextItem
+      ? allSkills.find((s) => s.id === String(nextItem.skill_id))
+      : null;
+
+    if (nextItem && matchedSkill) {
       const actionType = nextItem.is_test_gate
         ? 'test'
         : nextItem.hint_ladder > 1
           ? 'learn'
           : 'solve';
       next = {
-        skillId: String(nextItem.skill_id),
-        skillCode: nextItem.skill_code,
-        skillName: matchedSkill?.name ?? nextItem.skill_code,
+        skillId: matchedSkill.id,
+        skillCode: matchedSkill.code,
+        skillName: matchedSkill.name,
         actionType,
         rationale: nextItem.rationale || 'Next recommended concept based on your current mastery.',
         questionId: String(nextItem.question_id),

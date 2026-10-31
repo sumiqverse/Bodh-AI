@@ -205,7 +205,8 @@ class AdaptiveService:
         curriculum_code: str = "NCERT-MATH-C8",
     ) -> NextItemResponse:
         """Select next optimal practice item using RecommendationRanker."""
-        # Check student enrollment approval status
+        # Check student enrollment approval status and resolve target curriculum
+        target_curriculum_code = curriculum_code
         enr_stmt = (
             select(Enrollment)
             .options(selectinload(Enrollment.school_class))
@@ -230,16 +231,27 @@ class AdaptiveService:
                         f"Your enrollment in '{class_name}' is pending educator approval. "
                         "Classroom content and practice unlock once approved by your teacher."
                     )
-            elif all(e.status == "pending" for e in all_enrs):
-                first_pending = all_enrs[0]
-                sc = first_pending.school_class
-                class_name = sc.name if sc else "your class"
-                raise AuthorizationError(
-                    f"Your enrollment in '{class_name}' is pending educator approval. "
-                    "Classroom content and practice unlock once approved by your teacher."
+                target_curriculum_code = resolve_curriculum_code(
+                    matching_enr.school_class.grade, matching_enr.school_class.name
                 )
+            else:
+                active_enrs = [e for e in all_enrs if e.status == "active"]
+                if active_enrs:
+                    if not curriculum_code or curriculum_code == "NCERT-MATH-C8":
+                        first_active = active_enrs[0]
+                        if first_active.school_class:
+                            target_curriculum_code = resolve_curriculum_code(
+                                first_active.school_class.grade, first_active.school_class.name
+                            )
+                else:
+                    first_pending = all_enrs[0]
+                    sc = first_pending.school_class
+                    class_name = sc.name if sc else "your class"
+                    raise AuthorizationError(
+                        f"Your enrollment in '{class_name}' is pending educator approval. "
+                        "Classroom content and practice unlock once approved by your teacher."
+                    )
 
-        _ = curriculum_code
         # 1. Fetch student's attempt history to avoid repetition
         attempt_stmt = select(Attempt.question_id, Attempt.skill_id).where(
             Attempt.student_id == student_id
@@ -263,17 +275,60 @@ class AdaptiveService:
                 last_attempt_at=m.last_attempted_at,
             )
 
-        # 3. Load active questions from DB
-        q_stmt = (
-            select(Question)
-            .where(
-                Question.is_active == True,  # noqa: E712
-                Question.is_deleted == False,  # noqa: E712
+        # 3. Load active questions from DB scoped to target curriculum
+        curric_stmt = select(Curriculum).where(Curriculum.code == target_curriculum_code)
+        curric = (await self.session.execute(curric_stmt)).scalar_one_or_none()
+
+        questions: list[Question] = []
+        skills_by_id: dict[str, Skill] = {}
+
+        if curric:
+            t_stmt = select(Topic.id).where(
+                Topic.curriculum_id == curric.id,
+                Topic.is_deleted == False,  # noqa: E712
             )
-            .options(selectinload(Question.translations))
-        )
-        q_res = await self.session.execute(q_stmt)
-        questions = q_res.scalars().all()
+            t_res = await self.session.execute(t_stmt)
+            topic_ids = [t[0] for t in t_res.all()]
+
+            if topic_ids:
+                s_stmt = select(Skill).where(
+                    Skill.topic_id.in_(topic_ids),
+                    Skill.is_deleted == False,  # noqa: E712
+                )
+                s_res = await self.session.execute(s_stmt)
+                curric_skills = s_res.scalars().all()
+                skills_by_id = {str(s.id): s for s in curric_skills}
+                skill_ids = [s.id for s in curric_skills]
+
+                if skill_ids:
+                    q_stmt = (
+                        select(Question)
+                        .where(
+                            Question.is_active == True,  # noqa: E712
+                            Question.is_deleted == False,  # noqa: E712
+                            Question.skill_id.in_(skill_ids),
+                        )
+                        .options(selectinload(Question.translations))
+                    )
+                    q_res = await self.session.execute(q_stmt)
+                    questions = q_res.scalars().all()
+
+        if not questions:
+            # Fallback if specific curriculum row not found or has no questions
+            q_stmt = (
+                select(Question)
+                .where(
+                    Question.is_active == True,  # noqa: E712
+                    Question.is_deleted == False,  # noqa: E712
+                )
+                .options(selectinload(Question.translations))
+            )
+            q_res = await self.session.execute(q_stmt)
+            questions = q_res.scalars().all()
+
+            s_stmt = select(Skill).where(Skill.is_deleted == False)  # noqa: E712
+            s_res = await self.session.execute(s_stmt)
+            skills_by_id = {str(s.id): s for s in s_res.scalars().all()}
 
         if not questions:
             raise NotFoundError("Questions", "No active questions found in curriculum bank.")
@@ -283,12 +338,15 @@ class AdaptiveService:
         for q in questions:
             qid_str = str(q.id)
             q_by_id[qid_str] = q
+            sid_str = str(q.skill_id)
+            skill_obj = skills_by_id.get(sid_str)
+            skill_code = skill_obj.code if skill_obj else (q.code or sid_str)
             candidates.append(
                 CandidateItem(
                     question_id=qid_str,
                     code=q.code or qid_str,
-                    skill_id=str(q.skill_id),
-                    skill_code=q.code or str(q.skill_id),
+                    skill_id=sid_str,
+                    skill_code=skill_code,
                     difficulty=q.difficulty,
                     question_type=q.question_type,
                 )

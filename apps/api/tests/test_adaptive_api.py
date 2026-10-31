@@ -252,3 +252,23 @@ async def test_cat_diagnostics_session_flow(
     progress_body = progress_res.json()
     assert progress_body["questions_answered"] == 1
     assert "rationale" in progress_body
+
+
+@pytest.mark.asyncio
+async def test_adaptive_next_item_curriculum_scoping(
+    client: AsyncClient,
+    setup_adaptive_data: dict[str, Any],
+) -> None:
+    """Test that next-item recommendations are strictly scoped to the requested curriculum."""
+    data = setup_adaptive_data
+    headers = data["headers"]
+    curriculum = data["curriculum"]
+    valid_skill_ids = [str(data["skill1"].id), str(data["skill2"].id)]
+
+    res = await client.get(
+        f"/api/v1/next-item?curriculum_code={curriculum.code}",
+        headers=headers,
+    )
+    assert res.status_code == 200
+    item = res.json()
+    assert item["skill_id"] in valid_skill_ids
