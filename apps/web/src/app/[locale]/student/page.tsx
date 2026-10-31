@@ -81,15 +81,23 @@ export default function StudentHomePage(): React.JSX.Element {
     return [];
   }, [profileQuery.data?.profile]);
 
+  // Track client hydration mounting to prevent SSR hydration mismatch
+  const [isMounted, setIsMounted] = React.useState(false);
+
   // Primary view state: 'classes' (all enrolled classes hub) vs 'classroom' (exploring single class)
   const [viewMode, setViewMode] = React.useState<'classes' | 'classroom'>('classes');
 
-  const [selectedClassId, setSelectedClassId] = React.useState<string>(() => {
+  const [selectedClassId, setSelectedClassId] = React.useState<string>('');
+
+  React.useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('bodhai_selected_class_id') || '';
+      const saved = localStorage.getItem('bodhai_selected_class_id');
+      if (saved) {
+        setSelectedClassId(saved);
+      }
     }
-    return '';
-  });
+  }, []);
 
   const activeClass = React.useMemo(() => {
     if (!enrolledClasses.length) return null;
@@ -186,10 +194,10 @@ export default function StudentHomePage(): React.JSX.Element {
     }
   };
 
-  // Profile or classroom data loading skeleton
-  if (profileQuery.isLoading) {
+  // Profile or classroom data loading skeleton (rendered during SSR and client data calibration)
+  if (!isMounted || profileQuery.isLoading) {
     return (
-      <div className="container mx-auto max-w-5xl px-4 py-8 space-y-8">
+      <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-10 space-y-8">
         <div className="space-y-3">
           <Skeleton className="h-10 w-72" />
           <Skeleton className="h-4 w-96" />
