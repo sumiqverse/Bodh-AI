@@ -485,7 +485,7 @@ export default function DiagnosticPage(): React.JSX.Element {
                           size="sm"
                           className="bg-emerald-600 text-white text-[10px] uppercase font-bold py-0.5 px-2"
                         >
-                          Correct Answer
+                          {t('correctAnswerBadge')}
                         </Badge>
                       )}
                       <span
@@ -505,7 +505,7 @@ export default function DiagnosticPage(): React.JSX.Element {
                 htmlFor="numeric-answer-input"
                 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block"
               >
-                Enter Your Numerical Answer:
+                {t('enterNumericalAnswer')}
               </label>
               <div className="relative">
                 <input
@@ -582,21 +582,21 @@ export default function DiagnosticPage(): React.JSX.Element {
                     <h4 className="text-base sm:text-lg font-bold leading-snug">
                       {isPendingCompletion
                         ? feedback.isCorrect
-                          ? '🎉 Diagnostic Complete! Bilkul Sahi!'
-                          : '🏁 Diagnostic Assessment Completed!'
+                          ? t('diagnosticCompleteSuccess')
+                          : t('diagnosticCompleted')
                         : feedback.isCorrect
-                          ? '🎉 Excellent! Bilkul Sahi!'
-                          : '💪 Work on your weakness!'}
+                          ? t('excellentSuccess')
+                          : t('workOnWeakness')}
                     </h4>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {isPendingCompletion
-                        ? 'You have answered all diagnostic questions! Click below to view your personalized learning summary and mastery roadmap.'
+                        ? t('viewSummaryDesc')
                         : feedback.isCorrect
-                          ? 'Mastery score increased on this concept. Keep going!'
-                          : `Correct answer was Option ${feedback.correctAnswerId}. ${
+                          ? t('scoreIncreasedDesc')
+                          : `${t('correctAnswerWas', { option: feedback.correctAnswerId || '' })} ${
                               feedback.isWeaknessReview
-                                ? "We've adapted your next question to strengthen this prerequisite foundation!"
-                                : "Let's learn from this and conquer the concept."
+                                ? t('weaknessAdaptedDesc')
+                                : t('learnFromMistakeDesc')
                             }`}
                     </p>
                   </div>

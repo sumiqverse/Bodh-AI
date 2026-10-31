@@ -223,18 +223,19 @@ export default function StudentHomePage(): React.JSX.Element {
             <div className="flex items-center gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 <GraduationCap className="h-3.5 w-3.5" />
-                Student Learning Portal
+                {t('portalBadge')}
               </span>
               {rollNumber && (
-                <span className="text-xs font-mono text-muted-foreground">Roll #{rollNumber}</span>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {t('rollBadge', { roll: rollNumber })}
+                </span>
               )}
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-              My Enrolled Classes
+              {t('myEnrolledClasses')}
             </h1>
             <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-              Welcome, <span className="font-semibold text-foreground">{studentName}</span>. Select
-              an approved classroom below to start learning.
+              {t('welcomeStudent', { name: studentName })}
             </p>
           </div>
 
@@ -246,7 +247,7 @@ export default function StudentHomePage(): React.JSX.Element {
                 className="min-h-[42px] px-4 text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <Plus className="h-4 w-4" />
-                Join Another Class
+                {t('joinAnotherClass')}
               </Button>
             </Link>
             <Link href="/profile">
@@ -255,7 +256,7 @@ export default function StudentHomePage(): React.JSX.Element {
                 size="sm"
                 className="min-h-[42px] text-xs font-semibold border-primary/40 text-primary hover:bg-primary/10 cursor-pointer"
               >
-                My Profile
+                {t('myProfile')}
               </Button>
             </Link>
           </div>
@@ -265,7 +266,7 @@ export default function StudentHomePage(): React.JSX.Element {
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <Card className="p-4 shadow-xs text-center border-border/80">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
-              Enrolled Classes
+              {t('enrolledCount')}
             </span>
             <span className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-1 block">
               {enrolledClasses.length}
@@ -273,7 +274,7 @@ export default function StudentHomePage(): React.JSX.Element {
           </Card>
           <Card className="p-4 shadow-xs text-center border-emerald-500/20 bg-emerald-500/5">
             <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
-              Approved & Active
+              {t('approvedActive')}
             </span>
             <span className="font-serif text-2xl sm:text-3xl font-bold text-emerald-800 dark:text-emerald-200 mt-1 block">
               {activeClasses.length}
@@ -281,7 +282,7 @@ export default function StudentHomePage(): React.JSX.Element {
           </Card>
           <Card className="p-4 shadow-xs text-center border-amber-500/20 bg-amber-500/5">
             <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider block">
-              Awaiting Approval
+              {t('awaitingApproval')}
             </span>
             <span className="font-serif text-2xl sm:text-3xl font-bold text-amber-800 dark:text-amber-200 mt-1 block">
               {pendingClasses.length}
@@ -295,13 +296,10 @@ export default function StudentHomePage(): React.JSX.Element {
             <Clock className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
             <div className="text-sm space-y-1">
               <p className="font-semibold text-base">
-                Teacher Approval Pending for {pendingClasses.length} Classroom
-                {pendingClasses.length > 1 ? 's' : ''}
+                {t('pendingApprovalBanner', { count: pendingClasses.length })}
               </p>
               <p className="text-amber-800/90 dark:text-amber-300/90 text-xs sm:text-sm leading-relaxed">
-                Your educator must accept your enrollment request before tests, lessons, and skill
-                maps unlock. Please notify your teacher to approve your request in their teacher
-                dashboard.
+                {t('pendingApprovalBannerDesc')}
               </p>
             </div>
           </div>
@@ -365,7 +363,7 @@ export default function StudentHomePage(): React.JSX.Element {
                           className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-0.5 px-2.5 flex items-center gap-1"
                         >
                           <CheckCircle2 className="h-3 w-3" />
-                          Approved
+                          {t('approvedBadge')}
                         </Badge>
                       ) : (
                         <Badge
@@ -374,7 +372,7 @@ export default function StudentHomePage(): React.JSX.Element {
                           className="bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/40 font-semibold text-xs py-0.5 px-2.5 flex items-center gap-1"
                         >
                           <Clock className="h-3 w-3" />
-                          Awaiting Approval
+                          {t('awaitingApprovalBadge')}
                         </Badge>
                       )}
                     </div>
@@ -386,14 +384,11 @@ export default function StudentHomePage(): React.JSX.Element {
                     <div className="text-sm text-muted-foreground mt-1 space-y-1">
                       <div className="flex items-center gap-1.5 font-medium text-foreground/80">
                         <UserCheck className="h-4 w-4 text-primary" />
-                        Educator: {cls.teacherName || 'Assigned Teacher'}
+                        {t('educatorLabel', { name: cls.teacherName || 'Assigned Teacher' })}
                       </div>
                       {cls.joinCode && (
                         <div className="text-xs font-mono text-muted-foreground pt-0.5">
-                          Class Code:{' '}
-                          <span className="font-bold text-foreground tracking-wider">
-                            {cls.joinCode}
-                          </span>
+                          {t('classCodeLabel', { code: cls.joinCode })}
                         </div>
                       )}
                     </div>
@@ -402,16 +397,12 @@ export default function StudentHomePage(): React.JSX.Element {
                   <CardContent className="px-6 py-2">
                     {isApproved ? (
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Full access granted. Explore curriculum competencies, take adaptive
-                        assessments, and practice lessons.
+                        {t('fullAccessDesc')}
                       </p>
                     ) : (
                       <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200 leading-relaxed flex items-start gap-2">
                         <Lock className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                        <span>
-                          Access is locked while your teacher verifies your join request. Lessons
-                          and tests will unlock as soon as your teacher approves you.
-                        </span>
+                        <span>{t('pendingApprovalBannerDesc')}</span>
                       </div>
                     )}
                   </CardContent>
@@ -424,7 +415,7 @@ export default function StudentHomePage(): React.JSX.Element {
                         onClick={() => handleEnterClass(cls)}
                         className="w-full min-h-[46px] font-bold text-sm shadow-xs cursor-pointer flex items-center justify-center gap-2"
                       >
-                        Enter Classroom
+                        {t('enterClassroom')}
                         <ArrowRight className="h-4 w-4" />
                       </Button>
                     ) : (
@@ -436,10 +427,10 @@ export default function StudentHomePage(): React.JSX.Element {
                           className="w-full min-h-[46px] font-medium text-sm cursor-not-allowed opacity-60 border-dashed text-muted-foreground flex items-center justify-center gap-2"
                         >
                           <Lock className="h-4 w-4" />
-                          Awaiting Teacher Approval
+                          {t('awaitingTeacherApproval')}
                         </Button>
                         <p className="text-center text-[11px] text-muted-foreground">
-                          Ask your educator to approve your enrollment in their teacher dashboard
+                          {t('askTeacherDesc')}
                         </p>
                       </div>
                     )}
@@ -474,21 +465,17 @@ export default function StudentHomePage(): React.JSX.Element {
               Approval Required
             </Badge>
             <CardTitle className="font-serif text-2xl font-bold text-foreground">
-              Classroom Access Locked
+              {t('accessLockedTitle')}
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground mt-2 leading-relaxed">
-              Your educator{' '}
-              <span className="font-semibold text-foreground">
-                {activeClass?.teacherName || 'Teacher'}
-              </span>{' '}
-              has not yet accepted your join request for{' '}
-              <span className="font-semibold text-foreground">{activeClass?.name}</span>.
+              {t('accessLockedDesc', {
+                teacher: activeClass?.teacherName || 'Teacher',
+                classroom: activeClass?.name || '',
+              })}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 mb-6 text-xs text-muted-foreground leading-relaxed">
-            Under DPDP Act compliance and classroom safety protocols, students can only access
-            competency maps, diagnostic assessments, and practice questions once approved by the
-            educator.
+            {t('dpdpComplianceNotice')}
           </CardContent>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
@@ -498,7 +485,7 @@ export default function StudentHomePage(): React.JSX.Element {
               className="w-full sm:w-auto min-h-[44px] px-6 font-semibold cursor-pointer flex items-center justify-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to My Classes
+              {t('backToClasses')}
             </Button>
             <Button
               type="button"
@@ -507,7 +494,7 @@ export default function StudentHomePage(): React.JSX.Element {
               className="w-full sm:w-auto min-h-[44px] px-6 font-medium cursor-pointer flex items-center justify-center gap-2"
             >
               <RefreshCw className="h-4 w-4" />
-              Check Status
+              {t('checkStatus')}
             </Button>
           </div>
         </Card>
@@ -555,7 +542,7 @@ export default function StudentHomePage(): React.JSX.Element {
               onClick={refetch}
               className="w-full min-h-[44px] cursor-pointer"
             >
-              Try Again
+              {t('tryAgain')}
             </Button>
             <Button
               type="button"
@@ -563,7 +550,7 @@ export default function StudentHomePage(): React.JSX.Element {
               onClick={handleBackToClasses}
               className="w-full min-h-[44px] cursor-pointer"
             >
-              ← Back to My Classes
+              ← {t('backToClasses')}
             </Button>
           </CardContent>
         </Card>
@@ -584,7 +571,7 @@ export default function StudentHomePage(): React.JSX.Element {
             className="min-h-[40px] text-xs font-bold border-primary/30 text-primary hover:bg-primary/10 cursor-pointer flex items-center gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
-            All Classes
+            {t('backToClasses')}
           </Button>
 
           {/* Quick Classroom Switcher if multiple active classes */}
@@ -616,7 +603,7 @@ export default function StudentHomePage(): React.JSX.Element {
               size="sm"
               className="min-h-[40px] text-xs font-semibold cursor-pointer border-primary/30 text-primary hover:bg-primary/10"
             >
-              Diagnostic
+              {t('diagnosticNav')}
             </Button>
           </Link>
           <Link href="/progress">
@@ -625,7 +612,7 @@ export default function StudentHomePage(): React.JSX.Element {
               size="sm"
               className="min-h-[40px] text-xs font-medium cursor-pointer"
             >
-              Progress
+              {t('progressNav')}
             </Button>
           </Link>
           <Link href="/profile">
@@ -634,7 +621,7 @@ export default function StudentHomePage(): React.JSX.Element {
               size="sm"
               className="min-h-[40px] text-xs font-medium cursor-pointer"
             >
-              Profile
+              {t('profileNav')}
             </Button>
           </Link>
         </div>
@@ -649,7 +636,7 @@ export default function StudentHomePage(): React.JSX.Element {
               size="sm"
               className="bg-emerald-600 text-white font-semibold text-xs py-0.5 px-2"
             >
-              Active Classroom
+              {t('activeClassroom')}
             </Badge>
             <span className="text-xs font-mono text-muted-foreground">
               {activeClass?.curriculumCode}
@@ -657,11 +644,11 @@ export default function StudentHomePage(): React.JSX.Element {
           </div>
           <h2 className="font-serif text-2xl font-bold text-foreground">{activeClass?.name}</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Educator:{' '}
-            <span className="font-medium text-foreground">
-              {activeClass?.teacherName || 'Teacher'}
-            </span>{' '}
-            • Grade {activeClass?.grade} Section {activeClass?.section}
+            {t('educatorLabel', { name: activeClass?.teacherName || 'Teacher' })} •{' '}
+            {t('gradeSectionLabel', {
+              grade: activeClass?.grade || 8,
+              section: activeClass?.section || 'A',
+            })}
           </p>
         </div>
 
@@ -672,7 +659,7 @@ export default function StudentHomePage(): React.JSX.Element {
               size="sm"
               className="text-xs font-bold min-h-[38px] cursor-pointer shadow-xs"
             >
-              Start Diagnostic Test →
+              {t('startDiagnosticTest')}
             </Button>
           </Link>
         </div>
@@ -851,7 +838,8 @@ export default function StudentHomePage(): React.JSX.Element {
                     </div>
                   </div>
                   <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1 shrink-0">
-                    {topicSkills.length} {topicSkills.length === 1 ? 'Topic' : 'Topics'}
+                    {topicSkills.length}{' '}
+                    {topicSkills.length === 1 ? t('topicUnit') : t('topicsUnit')}
                   </Badge>
                 </div>
 
@@ -912,7 +900,7 @@ export default function StudentHomePage(): React.JSX.Element {
                             size="sm"
                             className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
                           >
-                            Test
+                            {t('testButton')}
                           </Button>
                         </Link>
                       </div>
@@ -945,7 +933,8 @@ export default function StudentHomePage(): React.JSX.Element {
                     </div>
                   </div>
                   <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1 shrink-0">
-                    {filteredSkills.length} {filteredSkills.length === 1 ? 'Topic' : 'Topics'}
+                    {filteredSkills.length}{' '}
+                    {filteredSkills.length === 1 ? t('topicUnit') : t('topicsUnit')}
                   </Badge>
                 </div>
 
@@ -1005,7 +994,7 @@ export default function StudentHomePage(): React.JSX.Element {
                             size="sm"
                             className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
                           >
-                            Test
+                            {t('testButton')}
                           </Button>
                         </Link>
                       </div>

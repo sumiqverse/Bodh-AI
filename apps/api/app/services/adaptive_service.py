@@ -84,6 +84,7 @@ class AdaptiveService:
         self,
         student_id: uuid.UUID,
         request: AttemptSubmitRequest,
+        language: str = "en",
     ) -> AttemptResponse:
         """Process question attempt with strict idempotency and Bayesian update."""
         # 1. Enforce DPDP guardian consent with active version check
@@ -118,11 +119,24 @@ class AdaptiveService:
             raise NotFoundError("Question", request.question_id)
 
         is_correct = False
-        explanation = "Detailed explanation available in review mode."
+        explanation = (
+            "विस्तृत समाधान समीक्षा मोड में उपलब्ध है।"
+            if language == "hi"
+            else "Detailed explanation available in review mode."
+        )
 
         if question.translations:
-            trans = question.translations[0]
-            explanation = trans.explanation or trans.worked_solution or "Evaluation complete."
+            trans = next((t for t in question.translations if t.language == language), None)
+            if trans is None:
+                trans = next(
+                    (t for t in question.translations if t.language == "en"),
+                    question.translations[0],
+                )
+            explanation = (
+                trans.explanation
+                or trans.worked_solution
+                or ("मूल्यांकन पूर्ण।" if language == "hi" else "Evaluation complete.")
+            )
             if trans.options:
                 for opt in trans.options:
                     if str(
@@ -203,6 +217,7 @@ class AdaptiveService:
         self,
         student_id: uuid.UUID,
         curriculum_code: str = "NCERT-MATH-C8",
+        language: str = "en",
     ) -> NextItemResponse:
         """Select next optimal practice item using RecommendationRanker."""
         # Check student enrollment approval status and resolve target curriculum
@@ -372,11 +387,27 @@ class AdaptiveService:
             decision = ranked[0]
 
         selected_q = q_by_id[decision.question_id]
-        trans = selected_q.translations[0] if selected_q.translations else None
+        trans = next((t for t in selected_q.translations if t.language == language), None)
+        if trans is None and selected_q.translations:
+            trans = next(
+                (t for t in selected_q.translations if t.language == "en"),
+                selected_q.translations[0],
+            )
 
-        prompt = trans.prompt if trans else "Problem statement unavailable."
+        no_statement = (
+            "समस्या कथन उपलब्ध नहीं है।" if language == "hi" else "Problem statement unavailable."
+        )
+        prompt = trans.prompt if trans else no_statement
         options = trans.options if trans else []
         hints = trans.hints if trans else []
+
+        rationale = decision.rationale
+        if language == "hi":
+            pred_pct = round(decision.predicted_success * 100)
+            rationale = (
+                f"लक्षित प्रवाह क्षेत्र में {pred_pct}% अनुमानित सफलता दर के साथ अभ्यास "
+                f"({decision.skill_code}) चुना गया।"
+            )
 
         return NextItemResponse(
             question_id=selected_q.id,
@@ -394,7 +425,7 @@ class AdaptiveService:
             hint_ladder=decision.hint_ladder.value,
             is_test_gate=decision.is_test_gate,
             is_skip_ahead=decision.is_skip_ahead,
-            rationale=decision.rationale,
+            rationale=rationale,
         )
 
     async def get_student_mastery(self, student_id: uuid.UUID) -> list[MasteryResponse]:
@@ -427,6 +458,7 @@ class AdaptiveService:
         self,
         student_id: uuid.UUID,
         request: DiagnosticStartRequest,
+        language: str = "en",
     ) -> DiagnosticResponse:
         """Start a CAT diagnostic assessment session for a student scoped to their class subject."""
         # 1. Resolve student's target curriculum from classroom enrollment
@@ -549,7 +581,9 @@ class AdaptiveService:
         raw_items_dict: dict[str, dict[str, Any]] = {}
         for q in questions:
             qid_str = str(q.id)
-            trans = q.translations[0] if q.translations else None
+            trans = next((t for t in q.translations if t.language == language), None)
+            if trans is None and q.translations:
+                trans = next((t for t in q.translations if t.language == "en"), q.translations[0])
             sk_obj = skills_by_id.get(str(q.skill_id))
             skill_code = sk_obj.name if sk_obj else (q.code or str(q.skill_id))
             top_obj = topics_by_id.get(str(sk_obj.topic_id)) if sk_obj and sk_obj.topic_id else None
@@ -573,6 +607,7 @@ class AdaptiveService:
                 "options": trans.options if trans else [],
                 "verified_answer": trans.verified_answer if trans else "",
                 "topic_name": topic_name,
+                "translations": {t.language: t for t in q.translations},
             }
 
         min_q = min(15, max(3, len(questions)))
@@ -608,14 +643,22 @@ class AdaptiveService:
         next_item_resp = None
         if decision.item:
             raw = raw_items_dict.get(decision.item.question_id, {})
+            trans_map = raw.get("translations", {})
+            trans = (
+                trans_map.get(language)
+                or trans_map.get("en")
+                or (next(iter(trans_map.values())) if trans_map else None)
+            )
+            prompt = trans.prompt if trans else raw.get("prompt", "")
+            options = trans.options if trans else raw.get("options", [])
             next_item_resp = DiagnosticItemResponse(
                 question_id=decision.item.question_id,
                 code=decision.item.code,
                 skill_id=decision.item.skill_id,
                 skill_code=decision.item.skill_code,
                 difficulty=decision.item.difficulty,
-                prompt=raw.get("prompt", ""),
-                options=raw.get("options", []),
+                prompt=prompt,
+                options=options,
                 question_type=decision.item.question_type or "mcq",
                 topic_name=getattr(decision.item, "topic_name", None) or raw.get("topic_name"),
             )
@@ -633,6 +676,7 @@ class AdaptiveService:
         self,
         student_id: uuid.UUID,
         request: DiagnosticProgressRequest,
+        language: str = "en",
     ) -> DiagnosticResponse:
         """Submit answer and advance CAT diagnostic session."""
         _ = student_id
@@ -818,14 +862,22 @@ class AdaptiveService:
                 await self.session.rollback()
         elif decision.item:
             raw_next = raw_items_dict.get(decision.item.question_id, {})
+            trans_map = raw_next.get("translations", {})
+            trans = (
+                trans_map.get(language)
+                or trans_map.get("en")
+                or (next(iter(trans_map.values())) if trans_map else None)
+            )
+            prompt = trans.prompt if trans else raw_next.get("prompt", "")
+            options = trans.options if trans else raw_next.get("options", [])
             next_item_resp = DiagnosticItemResponse(
                 question_id=decision.item.question_id,
                 code=decision.item.code,
                 skill_id=decision.item.skill_id,
                 skill_code=decision.item.skill_code,
                 difficulty=decision.item.difficulty,
-                prompt=raw_next.get("prompt", ""),
-                options=raw_next.get("options", []),
+                prompt=prompt,
+                options=options,
                 question_type=decision.item.question_type or "mcq",
                 topic_name=getattr(decision.item, "topic_name", None) or raw_next.get("topic_name"),
             )

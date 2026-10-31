@@ -18,6 +18,7 @@ from app.repositories.user_repo import UserRepository
 __all__ = [
     "get_current_user",
     "get_db",
+    "get_request_language",
     "require_role",
     "set_rls_context",
     "verify_csrf",
@@ -142,6 +143,20 @@ def require_role(*allowed_roles: Any) -> Callable[..., User]:
         return user
 
     return role_dependency
+
+
+def get_request_language(
+    request: Request,
+    language: str | None = None,
+    accept_language: str | None = None,
+) -> str:
+    """Resolve requested language ('hi' or 'en') from query param or Accept-Language header."""
+    if language in ("hi", "en"):
+        return language
+    header_val = accept_language or request.headers.get("Accept-Language", "")
+    if "hi" in header_val.lower():
+        return "hi"
+    return "en"
 
 
 def verify_csrf(request: Request) -> None:

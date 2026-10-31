@@ -611,6 +611,7 @@ export interface ApiClientOptions {
   readonly fetchFn?: typeof fetch;
   readonly defaultHeaders?: Record<string, string>;
   readonly getToken?: () => string | null;
+  readonly getLocale?: () => string | null;
 }
 
 export interface UserProfileResponse<T = Record<string, unknown>> {
@@ -647,6 +648,7 @@ export class BodhaiApiClient {
   private readonly fetchFn: typeof fetch;
   private readonly defaultHeaders: Record<string, string>;
   private readonly getToken?: () => string | null;
+  private readonly getLocale?: () => string | null;
 
   public constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
@@ -654,6 +656,7 @@ export class BodhaiApiClient {
     this.fetchFn = options.fetchFn ?? defaultFetch;
     this.defaultHeaders = options.defaultHeaders ?? {};
     this.getToken = options.getToken;
+    this.getLocale = options.getLocale;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -674,6 +677,22 @@ export class BodhaiApiClient {
 
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/json');
+    }
+
+    if (!headers.has('Accept-Language')) {
+      let activeLocale = this.getLocale ? this.getLocale() : null;
+      if (!activeLocale && typeof document !== 'undefined') {
+        const lang = document.documentElement.lang;
+        if (lang === 'hi' || lang === 'en') activeLocale = lang;
+      }
+      if (!activeLocale && typeof window !== 'undefined') {
+        const p = window.location.pathname;
+        if (p.startsWith('/hi') || p === '/hi') activeLocale = 'hi';
+        else if (p.startsWith('/en') || p === '/en') activeLocale = 'en';
+      }
+      if (activeLocale) {
+        headers.set('Accept-Language', activeLocale);
+      }
     }
 
     const signal =
@@ -991,7 +1010,13 @@ export class BodhaiApiClient {
   }): Promise<QuestionResponse[]> {
     const query = new URLSearchParams();
     query.set('skill_id', params.skillId);
-    if (params.language) query.set('language', params.language);
+    const effectiveLang =
+      params.language ??
+      (this.getLocale ? this.getLocale() : undefined) ??
+      (typeof document !== 'undefined' && document.documentElement.lang === 'hi'
+        ? 'hi'
+        : undefined);
+    if (effectiveLang) query.set('language', effectiveLang);
     if (params.skip !== undefined) query.set('skip', params.skip.toString());
     if (params.limit !== undefined) query.set('limit', params.limit.toString());
     return this.request<QuestionResponse[]>(`/api/v1/questions?${query.toString()}`);
@@ -1059,9 +1084,20 @@ export class BodhaiApiClient {
     });
   }
 
-  public async getNextItem(curriculumCode?: string, token?: string): Promise<NextItemResponse> {
+  public async getNextItem(
+    curriculumCode?: string,
+    token?: string,
+    language?: string,
+  ): Promise<NextItemResponse> {
     const query = new URLSearchParams();
     if (curriculumCode) query.set('curriculum_code', curriculumCode);
+    const effectiveLang =
+      language ??
+      (this.getLocale ? this.getLocale() : undefined) ??
+      (typeof document !== 'undefined' && document.documentElement.lang === 'hi'
+        ? 'hi'
+        : undefined);
+    if (effectiveLang) query.set('language', effectiveLang);
     const qs = query.toString() ? `?${query.toString()}` : '';
     return this.request<NextItemResponse>(`/api/v1/next-item${qs}`, {
       headers: this.authHeaders(token),

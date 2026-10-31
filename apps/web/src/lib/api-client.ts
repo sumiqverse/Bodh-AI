@@ -84,6 +84,19 @@ export function clearAuthSession(): void {
   }
 }
 
+export function getActiveLocale(): string {
+  if (typeof document !== 'undefined') {
+    const lang = document.documentElement.lang;
+    if (lang === 'hi' || lang === 'en') return lang;
+  }
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    if (path.startsWith('/hi') || path === '/hi') return 'hi';
+    if (path.startsWith('/en') || path === '/en') return 'en';
+  }
+  return 'en';
+}
+
 let clientInstance: BodhaiApiClient | null = null;
 
 export function getWebApiClient(): BodhaiApiClient {
@@ -91,6 +104,7 @@ export function getWebApiClient(): BodhaiApiClient {
     clientInstance = new BodhaiApiClient({
       baseUrl: API_BASE_URL,
       getToken: getAuthToken,
+      getLocale: getActiveLocale,
     });
   }
   return clientInstance;

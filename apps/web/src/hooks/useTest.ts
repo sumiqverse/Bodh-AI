@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocale } from 'next-intl';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
 import type { AttemptResponse } from '@bodhai/api-client';
 
@@ -81,13 +82,37 @@ const DEFAULT_TEST_QUESTIONS: TestQuestion[] = [
 export function useTest(options?: UseTestOptions): UseTestReturn {
   const queryClient = useQueryClient();
   const apiClient = getWebApiClient();
+  const locale = useLocale();
 
-  const [questions] = React.useState<TestQuestion[]>(DEFAULT_TEST_QUESTIONS);
+  const [questions, setQuestions] = React.useState<TestQuestion[]>(DEFAULT_TEST_QUESTIONS);
   const [currentIndex, setCurrentIndex] = React.useState<number>(0);
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [evaluations, setEvaluations] = React.useState<AttemptResponse[]>([]);
   const [isCompleted, setIsCompleted] = React.useState<boolean>(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (options?.skillId) {
+      void apiClient
+        .listQuestions({ skillId: options.skillId, language: locale, limit: 3 })
+        .then((items) => {
+          if (items && items.length > 0) {
+            setQuestions(
+              items.map((q) => ({
+                id: q.id,
+                code: q.code || 'NCERT-TEST-Q',
+                skillId: q.skill_id,
+                prompt: q.prompt,
+                options: (q.options as Array<{ id: string; text: string }>) || [],
+              })),
+            );
+          }
+        })
+        .catch(() => {
+          // fallback
+        });
+    }
+  }, [options?.skillId, locale, apiClient]);
 
   const currentQuestion = questions[currentIndex] ?? null;
 

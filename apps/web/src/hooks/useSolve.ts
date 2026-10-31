@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocale } from 'next-intl';
 import { z } from 'zod';
 import { MasteryStateMachine, type SkillState } from '@bodhai/engine-ts';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
@@ -69,6 +70,7 @@ const DEFAULT_PRACTICE_QUESTIONS: Record<string, SolveQuestionData> = {
 export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const queryClient = useQueryClient();
   const apiClient = getWebApiClient();
+  const locale = useLocale();
 
   const [hintLevel, setHintLevel] = React.useState<number>(0);
   const [submissionResult, setSubmissionResult] = React.useState<AttemptResponse | null>(null);
@@ -77,11 +79,15 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
 
   // Fetch question if questionId or skillId provided
   const questionQuery = useQuery({
-    queryKey: ['solve-question', options?.questionId ?? options?.skillId ?? 'default'],
+    queryKey: ['solve-question', options?.questionId ?? options?.skillId ?? 'default', locale],
     queryFn: async (): Promise<SolveQuestionData> => {
       if (options?.skillId) {
         try {
-          const list = await apiClient.listQuestions({ skillId: options.skillId, limit: 1 });
+          const list = await apiClient.listQuestions({
+            skillId: options.skillId,
+            language: locale,
+            limit: 1,
+          });
           if (list && list.length > 0 && list[0]) {
             const q: QuestionResponse = list[0];
             return {

@@ -124,6 +124,7 @@ class DiagnosticStartRequest(BaseModel):
     initial_skills: list[str] | None = Field(
         default=None, description="Optional subset of skill codes to assess"
     )
+    language: str = Field(default="en", description="Preferred response language ('en', 'hi')")
 
 
 class DiagnosticProgressRequest(BaseModel):
@@ -134,6 +135,7 @@ class DiagnosticProgressRequest(BaseModel):
     selected_answer: str = Field(description="Selected answer option ID")
     time_spent_ms: int = Field(ge=0, description="Time spent solving in milliseconds")
     hint_level: int = Field(default=0, ge=0, le=3, description="Hint scaffold level requested")
+    language: str = Field(default="en", description="Preferred response language ('en', 'hi')")
 
 
 class DiagnosticItemResponse(BaseModel):

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocale } from 'next-intl';
 import { getWebApiClient, getAuthToken, getCurrentUser, clearAuthSession } from '@/lib/api-client';
 import type { MasteryResponse, NextItemResponse, TopicResponse } from '@bodhai/api-client';
 
@@ -50,6 +51,7 @@ export interface UseSkillMapReturn {
 
 export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn {
   const apiClient = getWebApiClient();
+  const locale = useLocale();
 
   // Query 1: Full curriculum competency graph (nodes = topics + atomic skills)
   const graphQuery = useQuery({
@@ -93,11 +95,11 @@ export function useSkillMap(curriculumCode = 'NCERT-MATH-C8'): UseSkillMapReturn
 
   // Query 3: Next recommended item
   const nextItemQuery = useQuery({
-    queryKey: ['next-item', curriculumCode],
+    queryKey: ['next-item', curriculumCode, locale],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
       try {
-        return await apiClient.getNextItem(curriculumCode, token);
+        return await apiClient.getNextItem(curriculumCode, token, locale);
       } catch {
         return null;
       }

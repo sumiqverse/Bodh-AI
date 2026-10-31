@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocale } from 'next-intl';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import type { DiagnosticItemResponse, DiagnosticResponse } from '@bodhai/api-client';
 
@@ -42,6 +43,7 @@ export interface UseDiagnosticReturn {
 export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticReturn {
   const curriculumCode = options?.curriculumCode;
   const totalQuestions = options?.totalTarget ?? 15;
+  const locale = useLocale();
 
   const queryClient = useQueryClient();
   const apiClient = getWebApiClient();
@@ -55,10 +57,13 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
 
   // TanStack Query for initial diagnostic session calibration
   const initialSessionQuery = useQuery({
-    queryKey: ['diagnostic-session-init', curriculumCode, sessionKey],
+    queryKey: ['diagnostic-session-init', curriculumCode, sessionKey, locale],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
-      const payload = curriculumCode ? { curriculum_code: curriculumCode } : {};
+      const payload = {
+        ...(curriculumCode ? { curriculum_code: curriculumCode } : {}),
+        language: locale,
+      };
       return apiClient.startDiagnostic(payload, token);
     },
     staleTime: 0,
@@ -89,6 +94,7 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
             question_id: currentItem.question_id,
             selected_answer: payload.selectedOption,
             time_spent_ms: payload.timeSpentMs,
+            language: locale,
           },
           token,
         );

@@ -3,10 +3,10 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, get_request_language, require_role
 from app.models.auth import User
 from app.schemas.assessment import (
     AttemptResponse,
@@ -31,17 +31,26 @@ async def handle_diagnostic(
     request: DiagnosticStartRequest | DiagnosticProgressRequest,
     current_user: Annotated[User, Depends(require_role("student"))],
     session: Annotated[AsyncSession, Depends(get_db)],
+    raw_request: Request,
+    accept_language: Annotated[str | None, Header(alias="Accept-Language")] = None,
 ) -> DiagnosticResponse:
     """Initialize a CAT diagnostic session or advance an active session with student answer."""
     service = AdaptiveService(session)
+    preferred_lang = getattr(request, "language", None)
+    lang = get_request_language(raw_request, preferred_lang, accept_language=accept_language)
+    if preferred_lang in ("hi", "en") and preferred_lang != "en":
+        lang = preferred_lang
+
     if isinstance(request, DiagnosticProgressRequest) or hasattr(request, "session_id"):
         return await service.progress_diagnostic(
             student_id=current_user.id,
             request=DiagnosticProgressRequest.model_validate(request),
+            language=lang,
         )
     return await service.start_diagnostic(
         student_id=current_user.id,
         request=DiagnosticStartRequest.model_validate(request),
+        language=lang,
     )
 
 
@@ -54,14 +63,21 @@ async def submit_attempt(
     request: AttemptSubmitRequest,
     current_user: Annotated[User, Depends(require_role("student"))],
     session: Annotated[AsyncSession, Depends(get_db)],
+    raw_request: Request,
     idempotency_key_header: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    accept_language: Annotated[str | None, Header(alias="Accept-Language")] = None,
 ) -> AttemptResponse:
     """Evaluate an assessment attempt with strict idempotency and Bayesian Knowledge Tracing."""
     if idempotency_key_header:
         request.idempotency_key = idempotency_key_header
 
+    lang = get_request_language(raw_request, accept_language=accept_language)
     service = AdaptiveService(session)
-    return await service.submit_attempt(student_id=current_user.id, request=request)
+    return await service.submit_attempt(
+        student_id=current_user.id,
+        request=request,
+        language=lang,
+    )
 
 
 @router.get(
@@ -72,15 +88,20 @@ async def submit_attempt(
 async def get_next_item(
     current_user: Annotated[User, Depends(require_role("student"))],
     session: Annotated[AsyncSession, Depends(get_db)],
+    raw_request: Request,
     curriculum_code: str = "NCERT-MATH-C8",
+    language: Annotated[str | None, Query(description="Preferred language ('en', 'hi')")] = None,
+    accept_language: Annotated[str | None, Header(alias="Accept-Language")] = None,
 ) -> NextItemResponse:
     """Select the next optimal question balancing gap remediation, flow-state difficulty,
     and spacing.
     """
+    lang = get_request_language(raw_request, language=language, accept_language=accept_language)
     service = AdaptiveService(session)
     return await service.get_next_item(
         student_id=current_user.id,
         curriculum_code=curriculum_code,
+        language=lang,
     )
 
 

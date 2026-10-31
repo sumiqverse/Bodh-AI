@@ -68,6 +68,18 @@ async def setup_adaptive_data(
         explanation="Add 5 to -3 gives 2.",
         hints=["Think of number line moving right 5 units."],
     )
+    await question_repo.add_translation(
+        question_id=q1.id,
+        language="hi",
+        prompt="(-3) + 5 का मान क्या होगा?",
+        options=[
+            {"id": "A", "text": "2", "is_correct": True},
+            {"id": "B", "text": "-2", "is_correct": False},
+        ],
+        verified_answer="2",
+        explanation="-3 में 5 जोड़ने पर 2 प्राप्त होता है।",
+        hints=["संख्या रेखा पर 5 इकाई दाईं ओर चलें।"],
+    )
 
     q2 = await question_repo.create(QuestionFactory.build(skill_id=skill2.id, difficulty=4))
     await question_repo.add_translation(
@@ -81,6 +93,18 @@ async def setup_adaptive_data(
         verified_answer="10/21",
         explanation="Multiply numerators and denominators.",
         hints=["Multiply tops, then multiply bottoms."],
+    )
+    await question_repo.add_translation(
+        question_id=q2.id,
+        language="hi",
+        prompt="(2/3) * (5/7) का मान ज्ञात कीजिए।",
+        options=[
+            {"id": "A", "text": "10/21", "is_correct": True},
+            {"id": "B", "text": "7/10", "is_correct": False},
+        ],
+        verified_answer="10/21",
+        explanation="अंश और हर को आपस में गुणा करें।",
+        hints=["ऊपर की संख्याओं को गुणा करें, फिर नीचे की संख्याओं को।"],
     )
 
     await db_session.commit()
@@ -272,3 +296,36 @@ async def test_adaptive_next_item_curriculum_scoping(
     assert res.status_code == 200
     item = res.json()
     assert item["skill_id"] in valid_skill_ids
+
+
+@pytest.mark.asyncio
+async def test_adaptive_next_item_and_diagnostic_in_hindi(
+    client: AsyncClient,
+    setup_adaptive_data: dict[str, Any],
+) -> None:
+    """Verify adaptive endpoints return Hindi translations when requested via language
+    param or Accept-Language header.
+    """
+    headers = dict(setup_adaptive_data["headers"])
+    headers["Accept-Language"] = "hi"
+    curr_code = setup_adaptive_data["curriculum"].code
+
+    # Test next-item in Hindi
+    res = await client.get(
+        f"/api/v1/next-item?curriculum_code={curr_code}&language=hi",
+        headers=headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "लक्षित" in data["rationale"] or "मान क्या होगा" in data["prompt"]
+
+    # Test diagnostic start in Hindi
+    diag_res = await client.post(
+        "/api/v1/diagnostics",
+        headers=headers,
+        json={"curriculum_code": curr_code, "language": "hi"},
+    )
+    assert diag_res.status_code == 200
+    diag_data = diag_res.json()
+    assert diag_data["next_item"] is not None
+    assert "मान" in diag_data["next_item"]["prompt"]
