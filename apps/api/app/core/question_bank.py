@@ -371,8 +371,6 @@ def generate_authentic_questions_for_skill(
     questions tailored to the subject and bloom level. Deterministically shuffles option
     positions so correct answers are balanced across A, B, C, and D.
     """
-    clean_subj = subject.replace("_", " ").title()
-
     # Check for direct curated match
     if skill_name in _CURATED_QUESTIONS:
         curated_list = _CURATED_QUESTIONS[skill_name]
@@ -401,85 +399,375 @@ def generate_authentic_questions_for_skill(
     # Domain-specialized parametric question generation tailored to subject and skill
     questions = []
 
-    # Question 1: Foundational Rule / Definition
+    # Question 1: Foundational Conceptual Understanding
     if subject == "mathematics":
-        q1_en = f"In Class {grade} Mathematics, which mathematical property or rule defines '{skill_name}' under {topic_name}?"
-        q1_hi = f"कक्षा {grade} गणित के अंतर्गत, '{topic_name}' में '{skill_name}' को कौन-सा गणितीय नियम सटीक रूप से परिभाषित करता है?"
-        q1_corr = f"It establishes the systematic algebraic/arithmetic procedure for {skill_description.lower()}."
+        q1_en = (
+            f"In Class {grade} Mathematics, which mathematical property or rule defines '{skill_name}'"
+            f" under {topic_name}?"
+        )
+        q1_hi = (
+            f"कक्षा {grade} गणित के अंतर्गत, '{topic_name}' में '{skill_name}' को कौन-सा गणितीय नियम सटीक"
+            f" रूप से परिभाषित करता है?"
+        )
+        q1_corr = (
+            f"It establishes the systematic mathematical procedure for {skill_description.lower()}."
+        )
         q1_dist = [
-            f"It permits ignoring operational signs whenever negative integers appear in {topic_name}.",
+            f"It permits ignoring operational signs whenever negative values appear in {topic_name}.",
             "It applies exclusively when all variables and constants are equal to zero.",
-            "It requires memorizing arbitrary answers without structural step-by-step proof.",
+            "It requires memorizing arbitrary answers without structural step-by-step balance.",
         ]
-        q1_exp = f"In NCERT Class {grade} Mathematics, '{skill_name}' ({skill_description}) provides the verified mathematical rule for problem solving."
+        q1_exp = (
+            f"In NCERT Class {grade} Mathematics, '{skill_name}' ({skill_description}) provides the"
+            f" verified rule for rigorous mathematical problem solving."
+        )
         q1_hints = [
             f"Review the properties and definitions under {topic_name}.",
             f"Consider which option reflects standard mathematical rigour for {skill_name}.",
-            "Look for the principle specifying accurate operations and inverse balances.",
+            "Look for the principle specifying accurate operations and equation balancing.",
         ]
+
+        # Q2: Application and Step-by-Step Problem Solving
+        q2_en = (
+            f"When solving an applied problem involving '{skill_name}' in {topic_name},"
+            f" which method ensures an accurate solution?"
+        )
+        q2_hi = (
+            f"'{topic_name}' में '{skill_name}' से संबंधित प्रश्न हल करते समय सटीक उत्तर के लिए"
+            f" कौन-सी विधि अनिवार्य है?"
+        )
+        q2_corr = (
+            f"Identifying given numerical data and applying the core operational formula for"
+            f" {skill_description.lower()}."
+        )
+        q2_dist = [
+            "Skipping intermediate algebraic steps and guessing the answer based on visual inspection.",
+            "Reversing operational sequences arbitrarily and ignoring order of operations (BODMAS).",
+            "Dropping standard units and decimal places to speed up arithmetic calculations.",
+        ]
+        q2_exp = (
+            f"In Class {grade} Mathematics, accurate problem solving requires systematic step-by-step"
+            f" execution adhering to NCERT standards for '{skill_name}'."
+        )
+        q2_hints = [
+            "Identify the sequential analytical steps prescribed in the textbook.",
+            "Avoid shortcuts that skip necessary verification or unit conversions.",
+            "Select the option emphasizing disciplined calculation methodology.",
+        ]
+
+        # Q3: Common Misconception and Boundary Conditions
+        q3_en = (
+            f"Which of the following represents a frequent mathematical misconception students must avoid"
+            f" regarding '{skill_name}'?"
+        )
+        q3_hi = (
+            f"'{skill_name}' के संदर्भ में छात्रों को निम्नलिखित में से किस सामान्य गणितीय भ्रांति से बचना चाहिए?"
+        )
+        q3_corr = (
+            f"Overgeneralizing operational shortcuts of '{skill_name}' to incompatible expressions"
+            f" without checking validity conditions."
+        )
+        q3_dist = [
+            "Verifying each calculation step by substituting answers back into the original equation.",
+            "Checking whether intermediate values satisfy all domain constraints and number properties.",
+            "Consulting standard geometric and algebraic definitions to confirm terminology.",
+        ]
+        q3_exp = (
+            f"A frequent error in '{skill_name}' is applying rules mechanically without checking"
+            f" underlying mathematical domain restrictions."
+        )
+        q3_hints = [
+            "Look for the habit that leads to incorrect solutions or false equivalences.",
+            "Notice which choice represents a faulty shortcut rather than rigorous verification.",
+            "Systematic checking is good practice; unverified generalization is the error.",
+        ]
+
     elif subject == "english":
-        q1_en = f"In Class {grade} English Grammar, what is the core structural rule governing '{skill_name}'?"
-        q1_hi = f"कक्षा {grade} अंग्रेजी व्याकरण में, '{skill_name}' का मूल संरचनात्मक नियम क्या है?"
+        q1_en = (
+            f"In Class {grade} English, what is the core structural convention governing '{skill_name}'"
+            f" in {topic_name}?"
+        )
+        q1_hi = f"कक्षा {grade} अंग्रेजी में, '{topic_name}' के अंतर्गत '{skill_name}' का मुख्य संरचनात्मक नियम क्या है?"
         q1_corr = f"It governs the correct grammatical syntax and standard usage for {skill_description.lower()}."
         q1_dist = [
-            "It allows interchangeable word order regardless of subject-verb agreement.",
-            "It is an obsolete rule no longer followed in modern formal prose.",
-            "It applies only to poetic verse and cannot be used in formal essays.",
+            "It allows interchangeable word order regardless of subject-verb agreement or tense harmony.",
+            "It is an obsolete rule no longer observed in contemporary formal writing.",
+            "It applies only to poetic verse and cannot be used in formal essays or comprehension.",
         ]
-        q1_exp = f"According to NCERT Class {grade} English grammar guidelines, '{skill_name}' ensures accurate syntax, coherence, and grammatical correctness."
+        q1_exp = (
+            f"According to NCERT Class {grade} English guidelines, '{skill_name}' ensures accurate syntax,"
+            f" coherence, and grammatical correctness."
+        )
         q1_hints = [
             f"Focus on standard grammatical conventions in {topic_name}.",
             f"Consider how {skill_name} affects sentence meaning and readability.",
             "Choose the option emphasizing standard grammatical syntax.",
         ]
+
+        q2_en = (
+            f"When constructing complex sentences or answering comprehension on '{skill_name}',"
+            f" which approach demonstrates correct mastery?"
+        )
+        q2_hi = f"'{skill_name}' से संबंधित वाक्य रचना या बोध प्रश्न हल करते समय कौन-सा तरीका सही भाषाई दक्षता दर्शाता है?"
+        q2_corr = (
+            f"Maintaining appropriate grammatical concord, logical transition, and accurate context for"
+            f" {skill_description.lower()}."
+        )
+        q2_dist = [
+            "Shifting tense randomly between past and present within the same sentence structure.",
+            "Omitting prepositions, articles, and auxiliary verbs to make sentences as brief as possible.",
+            "Relying on word-for-word translation without adapting to English sentence structure.",
+        ]
+        q2_exp = (
+            f"Mastery of '{skill_name}' requires maintaining concord and coherent transitions in accordance"
+            f" with standard English prose."
+        )
+        q2_hints = [
+            "Ensure agreement between sentence components across clauses.",
+            "Look for the option that emphasizes coherence and syntactical accuracy.",
+            "Avoid choices promoting arbitrary omission of functional grammar.",
+        ]
+
+        q3_en = f"Which of the following represents a common syntactical or usage error regarding '{skill_name}'?"
+        q3_hi = (
+            f"'{skill_name}' का प्रयोग करते समय निम्नलिखित में से किस सामान्य व्याकरणिक त्रुटि से बचना चाहिए?"
+        )
+        q3_corr = f"Failing to align subject-verb concord, tense markers, or reference pronouns correctly for '{skill_name}'."
+        q3_dist = [
+            "Using appropriate contextual vocabulary to clarify the intended meaning of the sentence.",
+            "Checking punctuation marks to separate independent and subordinate clauses cleanly.",
+            "Re-reading written sentences to verify clarity and tone for the audience.",
+        ]
+        q3_exp = f"Common errors in '{skill_name}' stem from improper concord or misplaced modifying clauses."
+        q3_hints = [
+            "Identify the behavior that introduces ambiguity or incorrect grammar.",
+            "Recall that punctuation and vocabulary checks are beneficial practices.",
+            "Select the option describing a genuine syntactical flaw.",
+        ]
+
     elif subject == "science":
-        q1_en = f"In Class {grade} Science, which scientific fact or observation best explains '{skill_name}' in {topic_name}?"
-        q1_hi = f"कक्षा {grade} विज्ञान में, '{topic_name}' के अंतर्गत '{skill_name}' को कौन-सा वैज्ञानिक तथ्य या प्रेक्षण सही रूप से स्पष्ट करता है?"
+        q1_en = (
+            f"In Class {grade} Science, which scientific fact or observation best explains '{skill_name}'"
+            f" in {topic_name}?"
+        )
+        q1_hi = (
+            f"कक्षा {grade} विज्ञान में, '{topic_name}' के अंतर्गत '{skill_name}' को कौन-सा वैज्ञानिक तथ्य"
+            f" या प्रेक्षण सही रूप से स्पष्ट करता है?"
+        )
         q1_corr = (
             f"It describes the verified natural principle underlying {skill_description.lower()}."
         )
         q1_dist = [
-            "It is a hypothetical concept with no observable physical or biological evidence.",
-            "It occurs spontaneously without any energy exchange or physical interaction.",
-            "It represents an outdated hypothesis that has been disproved by modern experiments.",
+            "It is a hypothetical concept with no observable physical, chemical, or biological evidence.",
+            "It occurs spontaneously without any energy exchange, force, or physical interaction.",
+            "It represents an outdated hypothesis that has been disproved by modern laboratory findings.",
         ]
-        q1_exp = f"In NCERT Class {grade} Science, '{skill_name}' explains observable natural phenomena supported by experimental verification."
+        q1_exp = (
+            f"In NCERT Class {grade} Science, '{skill_name}' explains observable natural phenomena supported"
+            f" by experimental verification."
+        )
         q1_hints = [
             f"Recall the textbook activities and experiments for {topic_name}.",
-            f"Think about the physical/biological mechanism behind {skill_name}.",
+            f"Think about the physical or biological mechanism behind {skill_name}.",
             "Select the option grounded in empirical scientific principles.",
         ]
+
+        q2_en = (
+            f"During a laboratory investigation or practical observation of '{skill_name}' in {topic_name},"
+            f" what is the scientifically sound procedure?"
+        )
+        q2_hi = (
+            f"'{topic_name}' के अंतर्गत '{skill_name}' से संबंधित प्रयोगात्मक गतिविधि के दौरान कौन-सा वैज्ञानिक"
+            f" तरीका सही है?"
+        )
+        q2_corr = (
+            f"Controlling independent variables, measuring observations with standard SI units, and relating"
+            f" findings to {skill_description.lower()}."
+        )
+        q2_dist = [
+            "Modifying experimental observations to conform with preconceived personal expectations.",
+            "Disregarding safety precautions and mixing reagents or handling apparatus without supervision.",
+            "Drawing broad conclusions from a single untested trial without repeating measurements.",
+        ]
+        q2_exp = (
+            f"Scientific inquiry for '{skill_name}' requires controlled variables and objective recording"
+            f" of empirical observations."
+        )
+        q2_hints = [
+            "Look for rigorous laboratory safety and experimental methodology.",
+            "Remember that reproducible measurements are central to science.",
+            "Reject choices that distort data or violate safety protocols.",
+        ]
+
+        q3_en = (
+            f"Which of the following is an inaccurate scientific misconception that students should avoid"
+            f" regarding '{skill_name}'?"
+        )
+        q3_hi = (
+            f"'{topic_name}' में '{skill_name}' के संबंध में निम्नलिखित में से कौन-सी एक वैज्ञानिक भ्रांति"
+            f" है जिससे बचना चाहिए?"
+        )
+        q3_corr = (
+            f"Assuming that natural laws governing '{skill_name}' cease to apply in everyday non-laboratory"
+            f" situations."
+        )
+        q3_dist = [
+            "Understanding that energy and matter obey conservation principles in all processes.",
+            "Recognizing that microscopic and macroscopic phenomena share common physical laws.",
+            "Using systematic classification based on observable properties and characteristics.",
+        ]
+        q3_exp = (
+            f"Scientific laws describing '{skill_name}' apply universally under stated boundary conditions,"
+            f" both inside and outside the laboratory."
+        )
+        q3_hints = [
+            "Look for the belief that contradicts universal scientific laws.",
+            "Recognize that conservation laws and systematic categorization are true facts.",
+            "Identify the misconception that treats classroom science as separate from the real world.",
+        ]
+
     elif subject == "hindi":
         q1_en = (
-            f"In NCERT Class {grade} Hindi Grammar, which rule correctly explains '{skill_name}'?"
+            f"In NCERT Class {grade} Hindi, which grammatical or literary rule defines '{skill_name}'"
+            f" under {topic_name}?"
         )
-        q1_hi = f"एनसीईआरटी कक्षा {grade} हिंदी व्याकरण में, '{skill_name}' का सही नियम अथवा लक्षण क्या है?"
-        q1_corr = f"यह मानक व्याकरण के अनुसार {skill_description} के शुद्ध नियम को स्पष्ट करता है।"
+        q1_hi = (
+            f"एनसीईआरटी कक्षा {grade} हिंदी में, '{topic_name}' के अंतर्गत '{skill_name}' का मानक नियम अथवा"
+            f" लक्षण क्या है?"
+        )
+        q1_corr = (
+            f"यह मानक व्याकरण एवं पाठ्य संदर्भ के अनुसार {skill_description} के शुद्ध प्रयोग को स्पष्ट करता है।"
+        )
         q1_dist = [
-            "यह केवल बोलचाल की अनौपचारिक भाषा में प्रयुक्त होता है, मानक व्याकरण में नहीं।",
-            "इसमें मात्राओं और वर्णों के संयोजन का कोई निश्चित नियम नहीं होता।",
-            "यह संस्कृत का अप्रचलित नियम है जिसका आधुनिक हिंदी में प्रयोग वर्जित है।",
+            "यह केवल अनौपचारिक बोलचाल की भाषा का रूप है जिसका मानक लेखन में प्रयोग अमान्य है।",
+            "इसमें मात्राओं, वर्णों और पद-क्रम का कोई निश्चित नियम नहीं होता।",
+            "यह संस्कृत का अप्रचलित नियम है जो आधुनिक मानक हिंदी में पूरी तरह से अनुपयुक्त है।",
         ]
-        q1_exp = f"कक्षा {grade} हिंदी व्याकरण के अनुसार '{skill_name}' ({skill_description}) भाषा की शुद्धता और मानक प्रयोग का आधार है।"
+        q1_exp = (
+            f"कक्षा {grade} हिंदी के अनुसार '{skill_name}' ({skill_description}) भाषा की शुद्धता और मानक प्रयोग"
+            f" का आधार है।"
+        )
         q1_hints = [
             f"कक्षा {grade} की पाठ्यपुस्तक में {topic_name} के नियमों को याद करें।",
-            "शुद्ध वर्तनी और व्याकरण के नियमों पर ध्यान दें।",
+            "शुद्ध वर्तनी और मानक व्याकरण के नियमों पर ध्यान दें।",
             "मानक हिंदी व्याकरण के सर्वमान्य नियम को चुनें।",
         ]
-    else:  # Social science
-        q1_en = f"In NCERT Class {grade} Social Science, which evidence or principle characterizes '{skill_name}'?"
-        q1_hi = f"कक्षा {grade} सामाजिक विज्ञान में, '{skill_name}' की मुख्य विशेषता क्या है?"
-        q1_corr = f"It provides historical, geographic, or civic evidence explaining {skill_description.lower()}."
-        q1_dist = [
-            "It is an unverified myth unsupported by archaeological or statistical records.",
-            "It has had no lasting impact on contemporary Indian society or geography.",
-            "It applies only to foreign nations and has no relevance to India.",
+
+        q2_en = (
+            f"When using '{skill_name}' in Hindi sentence formation or textual interpretation,"
+            f" which practice is essential?"
+        )
+        q2_hi = f"हिंदी वाक्य रचना या पाठ्य विश्लेषण में '{skill_name}' का प्रयोग करते समय कौन-सा अभ्यास अनिवार्य है?"
+        q2_corr = f"लिंग, वचन, कारक और अन्विति के नियमों का पालन करते हुए {skill_description} का शुद्ध प्रयोग करना।"
+        q2_dist = [
+            "कर्ता और क्रिया के मध्य लिंग एवं वचन के सामंजस्य (अन्विति) की उपेक्षा करना।",
+            "विराम-चिह्नों और वर्तनी की शुद्धता को अनावश्यक मानकर छोड़ देना।",
+            "अर्थ की संगति पर विचार किए बिना शब्दों को मनमाने क्रम में जोड़ना।",
         ]
-        q1_exp = f"In NCERT Social Science, '{skill_name}' provides essential contextual evidence regarding {topic_name}."
+        q2_exp = f"'{skill_name}' का सटीक प्रयोग लिंग, वचन और कारक की अन्विति तथा उचित पद-क्रम पर निर्भर करता है।"
+        q2_hints = [
+            "वाक्य में कर्ता, कर्म और क्रिया के आपसी संबंध पर ध्यान दें।",
+            "शुद्ध पद-क्रम और विराम चिह्नों के महत्व को पहचानें।",
+            "अशुद्धियों को बढ़ावा देने वाले विकल्पों को छोड़ें।",
+        ]
+
+        q3_en = f"Which common linguistic error should students avoid when studying '{skill_name}' in Hindi?"
+        q3_hi = (
+            f"हिंदी में '{skill_name}' का अध्ययन करते समय छात्रों को किस सामान्य त्रुटि (गलती) से बचना चाहिए?"
+        )
+        q3_corr = "क्षेत्रीय बोलियों के अनौपचारिक प्रयोगों को मानक हिंदी व्याकरण के नियमों पर बिना जांचे थोपना।"
+        q3_dist = [
+            "कठिन शब्दों के अर्थ और पर्याय को शब्दकोश से जांचना।",
+            "पाठ के मूल भाव और लेखक के मंतव्य को समझकर उत्तर लिखना।",
+            "मानक वर्तनी और शुद्ध उच्चारण का अभ्यास करना।",
+        ]
+        q3_exp = f"'{skill_name}' में सामान्य गलती अनौपचारिक या अशुद्ध प्रयोगों को मानक व्याकरण मान लेना है।"
+        q3_hints = [
+            "उस विकल्प को खोजें जो भाषा में अशुद्धि उत्पन्न करता है।",
+            "शब्दकोश और शुद्ध वर्तनी का अभ्यास सही पद्धतियाँ हैं।",
+            "मानक भाषा और अनौपचारिक बोली के अंतर को समझें।",
+        ]
+
+    else:  # Social science
+        q1_en = (
+            f"In NCERT Class {grade} Social Science, which historical, geographic, or civic concept defines"
+            f" '{skill_name}' in {topic_name}?"
+        )
+        q1_hi = (
+            f"एनसीईआरटी कक्षा {grade} सामाजिक विज्ञान में, '{topic_name}' के अंतर्गत '{skill_name}' का सही"
+            f" ऐतिहासिक, भौगोलिक या नागरिक संदर्भ क्या है?"
+        )
+        q1_corr = (
+            f"It explains historical events, geographic patterns, or constitutional principles related to"
+            f" {skill_description.lower()}."
+        )
+        q1_dist = [
+            "It is an unverified popular myth unsupported by archaeological, archival, or survey records.",
+            "It claims that physical environments and societal institutions in India have remained static for millennia.",
+            "It dismisses constitutional checks, public institutions, and citizen rights as having no real impact.",
+        ]
+        q1_exp = (
+            f"In NCERT Social Science, '{skill_name}' provides verified contextual evidence regarding"
+            f" {topic_name}."
+        )
         q1_hints = [
             f"Connect this concept to the chapter on {topic_name}.",
             "Examine historical sources, geographical maps, or constitutional provisions.",
             "Select the option backed by NCERT factual records.",
+        ]
+
+        q2_en = (
+            f"When evaluating case studies, thematic maps, or constitutional provisions on '{skill_name}',"
+            f" which analytical approach is most rigorous?"
+        )
+        q2_hi = (
+            f"'{skill_name}' से संबंधित केस स्टडीज, मानचित्रों या संवैधानिक प्रावधानों का विश्लेषण करते समय"
+            f" कौन-सा दृष्टिकोण सबसे उपयुक्त है?"
+        )
+        q2_corr = (
+            f"Correlating primary historical evidence, geographic factors, and socio-economic data for"
+            f" {skill_description.lower()}."
+        )
+        q2_dist = [
+            "Accepting subjective personal opinions as definitive factual evidence without historical cross-checking.",
+            "Overlooking map scales, legends, and geographical coordinates during regional spatial analysis.",
+            "Ignoring chronological timelines and attributing modern governance structures to ancient societies.",
+        ]
+        q2_exp = (
+            f"Rigorous social science analysis for '{skill_name}' combines empirical evidence, chronological"
+            f" context, and spatial awareness."
+        )
+        q2_hints = [
+            "Look for evidence-based correlation between geography, history, and civic institutions.",
+            "Avoid choices that accept hearsay or ignore chronological sequence.",
+            "Choose the option highlighting primary source corroboration.",
+        ]
+
+        q3_en = (
+            f"Which statement represents a common historical or civic misconception regarding '{skill_name}'"
+            f" in {topic_name}?"
+        )
+        q3_hi = (
+            f"'{topic_name}' में '{skill_name}' के संबंध में कौन-सी एक सामान्य सामाजिक या ऐतिहासिक भ्रांति"
+            f" है जिससे बचना चाहिए?"
+        )
+        q3_corr = (
+            "Attributing complex historical movements, climate phenomena, or economic trends"
+            " to a single isolated cause."
+        )
+        q3_dist = [
+            "Evaluating how natural resources influence industrial location and human settlement patterns.",
+            "Recognizing that democratic institutions require active citizen participation and constitutional safeguards.",
+            "Comparing multiple historical perspectives to understand the diverse experiences of different communities.",
+        ]
+        q3_exp = (
+            f"Historical and social phenomena under '{skill_name}' are multifaceted and cannot be reduced"
+            f" to simplistic mono-causal explanations."
+        )
+        q3_hints = [
+            "Identify the simplistic assumption that ignores multifaceted causation.",
+            "Recall that democratic participation and resource analysis are accurate principles.",
+            "Look for the error of oversimplifying complex historical or geographical realities.",
         ]
 
     opts_1 = _shuffle_options(f"{skill_code}-q1", q1_corr, q1_dist)
@@ -496,21 +784,6 @@ def generate_authentic_questions_for_skill(
         }
     )
 
-    # Question 2: Practical Application / Problem-Solving Scenario
-    q2_en = f"When solving an applied NCERT question on '{skill_name}' ({topic_name}), which method is required for correct analysis?"
-    q2_hi = f"'{topic_name}' के अंतर्गत '{skill_name}' से संबंधित प्रश्न को हल करते समय सही निष्कर्ष तक पहुँचने के लिए क्या आवश्यक है?"
-    q2_corr = f"Systematically identifying given data and applying the core formula/rule for {skill_description.lower()}."
-    q2_dist = [
-        "Skipping the intermediate steps and guessing the answer based on rough intuition.",
-        "Ignoring the fundamental constraints and reversing the operational sequence arbitrarily.",
-        "Omitting standard units, grammatical agreement, or context to save calculation time.",
-    ]
-    q2_exp = f"In {clean_subj}, accurate problem-solving requires systematic step-by-step execution following verified NCERT rubrics for '{skill_name}'."
-    q2_hints = [
-        "Identify the sequential analytical steps prescribed in the textbook.",
-        "Avoid shortcuts that skip necessary verification or unit conversions.",
-        "Select the option emphasizing disciplined methodology.",
-    ]
     opts_2 = _shuffle_options(f"{skill_code}-q2", q2_corr, q2_dist)
     questions.append(
         {
@@ -525,21 +798,6 @@ def generate_authentic_questions_for_skill(
         }
     )
 
-    # Question 3: Diagnostic Misconception / Critical Evaluation
-    q3_en = f"Which of the following represents a common conceptual error that students must avoid regarding '{skill_name}'?"
-    q3_hi = f"'{skill_name}' के संदर्भ में निम्नलिखित में से किस सामान्य भ्रांति (गलती) से छात्रों को बचना चाहिए?"
-    q3_corr = f"Confusing the specific constraints of '{skill_name}' with unrelated general rules from other chapters."
-    q3_dist = [
-        "Verifying each calculation or grammatical structure against textbook examples.",
-        "Checking whether intermediate values satisfy all boundary conditions.",
-        "Consulting standard definitions to confirm the contextual meaning of terms.",
-    ]
-    q3_exp = f"A frequent misconception in '{skill_name}' is overgeneralizing rules across disparate topics without verifying applicability criteria."
-    q3_hints = [
-        "Look for the habit that leads to incorrect answers or flawed logic.",
-        "Notice which choice represents a faulty misconception rather than a good practice.",
-        "Rigorous verification is correct; overgeneralizing without checks is the error.",
-    ]
     opts_3 = _shuffle_options(f"{skill_code}-q3", q3_corr, q3_dist)
     questions.append(
         {

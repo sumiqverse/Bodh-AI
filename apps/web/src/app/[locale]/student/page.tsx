@@ -779,11 +779,11 @@ export default function StudentHomePage(): React.JSX.Element {
         </Card>
       </section>
 
-      {/* Topic Filter Pills */}
+      {/* Chapter Filter Pills */}
       <div
         className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none"
         role="tablist"
-        aria-label="Filter topics"
+        aria-label="Filter chapters"
       >
         <button
           type="button"
@@ -796,7 +796,7 @@ export default function StudentHomePage(): React.JSX.Element {
               : 'bg-muted/70 text-muted-foreground hover:bg-muted'
           }`}
         >
-          {t('filterAll')} ({skills.length})
+          {t('filterAll')} ({topics.length})
         </button>
 
         {topics.map((topic) => {
@@ -821,75 +821,200 @@ export default function StudentHomePage(): React.JSX.Element {
         })}
       </div>
 
-      {/* SKILL MAP GRID — SHOWING THE THREE MASTERY STATES */}
-      <section aria-label="Curriculum Skills Map" className="space-y-4">
+      {/* CHAPTER-WISE TOPICS GRID — SHOWING CHAPTERS AND THEIR TOPICS */}
+      <section aria-label="Curriculum Skills Map" className="space-y-8">
         {filteredSkills.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
             {t('emptyState')}
           </div>
+        ) : selectedTopic === 'all' ? (
+          // Grouped by Chapter
+          topics.map((topic) => {
+            const topicSkills = skillsByTopic[topic.code] ?? [];
+            if (topicSkills.length === 0) return null;
+            return (
+              <div key={topic.id} className="space-y-4">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                      <BookOpen className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground">
+                        {topic.name}
+                      </h3>
+                      {topic.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {topic.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1 shrink-0">
+                    {topicSkills.length} {topicSkills.length === 1 ? 'Topic' : 'Topics'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {topicSkills.map((skill: SkillItem) => (
+                    <Card
+                      key={skill.id}
+                      className="flex flex-col justify-between p-5 transition-all hover:border-primary/40 hover:shadow-card focus-within:ring-2 focus-within:ring-primary"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            {skill.code}
+                          </span>
+                          {getMasteryBadge(skill.state)}
+                        </div>
+
+                        <h4 className="font-serif text-base sm:text-lg font-bold text-foreground leading-snug">
+                          {skill.name}
+                        </h4>
+
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+                          <span className="line-clamp-1">{skill.topicName}</span>
+                          <span>•</span>
+                          <span>{t('attemptsLabel', { count: skill.attemptsCount })}</span>
+                        </div>
+                      </div>
+
+                      {/* Direct Action Links for Mobile Touch Targets */}
+                      <div className="flex items-center gap-2 pt-5 border-t border-border/60 mt-4">
+                        <Link href={`/learn?skillId=${skill.id}`} className="flex-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full min-h-[42px] text-xs font-medium cursor-pointer"
+                          >
+                            {t('startLesson')}
+                          </Button>
+                        </Link>
+
+                        <Link href={`/solve?skillId=${skill.id}`} className="flex-1">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full min-h-[42px] text-xs font-semibold cursor-pointer"
+                          >
+                            {t('startSolve')}
+                          </Button>
+                        </Link>
+
+                        <Link
+                          href={`/test?skillId=${skill.id}`}
+                          className="shrink-0"
+                          title={t('startTest')}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
+                          >
+                            Test
+                          </Button>
+                        </Link>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            );
+          })
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredSkills.map((skill: SkillItem) => (
-              <Card
-                key={skill.id}
-                className="flex flex-col justify-between p-5 transition-all hover:border-primary/40 hover:shadow-card focus-within:ring-2 focus-within:ring-primary"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-mono text-muted-foreground">{skill.code}</span>
-                    {getMasteryBadge(skill.state)}
+          // Single Selected Chapter
+          (() => {
+            const activeTopic = topics.find((t) => t.code === selectedTopic);
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                      <BookOpen className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground">
+                        {activeTopic?.name ?? selectedTopic}
+                      </h3>
+                      {activeTopic?.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {activeTopic.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-
-                  <h3 className="font-serif text-lg font-bold text-foreground leading-snug">
-                    {skill.name}
-                  </h3>
-
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
-                    <span>{skill.topicName}</span>
-                    <span>•</span>
-                    <span>{t('attemptsLabel', { count: skill.attemptsCount })}</span>
-                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1 shrink-0">
+                    {filteredSkills.length} {filteredSkills.length === 1 ? 'Topic' : 'Topics'}
+                  </Badge>
                 </div>
 
-                {/* Direct Action Links for Mobile Touch Targets */}
-                <div className="flex items-center gap-2 pt-5 border-t border-border/60 mt-4">
-                  <Link href={`/learn?skillId=${skill.id}`} className="flex-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full min-h-[42px] text-xs font-medium cursor-pointer"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {filteredSkills.map((skill: SkillItem) => (
+                    <Card
+                      key={skill.id}
+                      className="flex flex-col justify-between p-5 transition-all hover:border-primary/40 hover:shadow-card focus-within:ring-2 focus-within:ring-primary"
                     >
-                      {t('startLesson')}
-                    </Button>
-                  </Link>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            {skill.code}
+                          </span>
+                          {getMasteryBadge(skill.state)}
+                        </div>
 
-                  <Link href={`/solve?skillId=${skill.id}`} className="flex-1">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="w-full min-h-[42px] text-xs font-semibold cursor-pointer"
-                    >
-                      {t('startSolve')}
-                    </Button>
-                  </Link>
+                        <h4 className="font-serif text-base sm:text-lg font-bold text-foreground leading-snug">
+                          {skill.name}
+                        </h4>
 
-                  <Link
-                    href={`/test?skillId=${skill.id}`}
-                    className="shrink-0"
-                    title={t('startTest')}
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
-                    >
-                      Test
-                    </Button>
-                  </Link>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+                          <span className="line-clamp-1">{skill.topicName}</span>
+                          <span>•</span>
+                          <span>{t('attemptsLabel', { count: skill.attemptsCount })}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-5 border-t border-border/60 mt-4">
+                        <Link href={`/learn?skillId=${skill.id}`} className="flex-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full min-h-[42px] text-xs font-medium cursor-pointer"
+                          >
+                            {t('startLesson')}
+                          </Button>
+                        </Link>
+
+                        <Link href={`/solve?skillId=${skill.id}`} className="flex-1">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full min-h-[42px] text-xs font-semibold cursor-pointer"
+                          >
+                            {t('startSolve')}
+                          </Button>
+                        </Link>
+
+                        <Link
+                          href={`/test?skillId=${skill.id}`}
+                          className="shrink-0"
+                          title={t('startTest')}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
+                          >
+                            Test
+                          </Button>
+                        </Link>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </Card>
-            ))}
-          </div>
+              </div>
+            );
+          })()
         )}
       </section>
     </div>
