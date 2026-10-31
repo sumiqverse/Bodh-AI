@@ -12,25 +12,20 @@ export function ThemeToggle({ label = 'Toggle theme' }: { label?: string }): Rea
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <Button variant="ghost" size="icon" aria-label={label} disabled>
-        <span className="h-4 w-4 rounded-full bg-muted" aria-hidden="true" />
-      </Button>
-    );
-  }
-
-  const isDark = resolvedTheme === 'dark';
+  const isDark = mounted && resolvedTheme === 'dark';
 
   return (
     <Button
       variant="ghost"
       size="icon"
       aria-label={label}
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       title={label}
+      suppressHydrationWarning
     >
-      {isDark ? (
+      {!mounted ? (
+        <span className="h-4 w-4 rounded-full bg-muted" aria-hidden="true" />
+      ) : isDark ? (
         <svg
           className="h-4 w-4 text-warning"
           xmlns="http://www.w3.org/2000/svg"
