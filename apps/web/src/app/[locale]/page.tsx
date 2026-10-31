@@ -3,13 +3,13 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { HomeAuthRedirect } from '@/components/home-auth-redirect';
 import {
-  Button,
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
   Badge,
+  buttonVariants,
 } from '@bodhai/ui';
 import {
   Target,
@@ -105,7 +105,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
   ];
 
   return (
-    <div className="flex flex-col gap-20 py-8 sm:py-16">
+    <div suppressHydrationWarning className="flex flex-col gap-20 py-8 sm:py-16">
       <HomeAuthRedirect />
       {/* 1. Hero Section */}
       <section className="container mx-auto max-w-6xl px-4 sm:px-6 text-center flex flex-col items-center">
@@ -128,29 +128,43 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
           aria-label="Class Selection"
         >
           {grades.map((item) => (
-            <Link key={item.grade} href="/diagnostic">
-              <Button variant="outline" size="sm" className="font-medium hover:border-primary">
-                {item.label}
-              </Button>
+            <Link
+              key={item.grade}
+              href="/diagnostic"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'sm',
+                className: 'font-medium hover:border-primary',
+              })}
+            >
+              {item.label}
             </Link>
           ))}
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/diagnostic">
-            <Button variant="primary" size="lg" className="font-semibold shadow-elevated">
-              {t('heroCtaPrimary')}
-            </Button>
+          <Link
+            href="/diagnostic"
+            className={buttonVariants({
+              variant: 'primary',
+              size: 'lg',
+              className: 'font-semibold shadow-elevated',
+            })}
+          >
+            {t('heroCtaPrimary')}
           </Link>
-          <Link href="/profile">
-            <Button variant="outline" size="lg" className="border-primary/50 text-primary font-bold hover:bg-primary/10 shadow-xs">
-              {locale === 'hi' ? '👤 मेरी प्रोफ़ाइल' : '👤 My Profile'}
-            </Button>
+          <Link
+            href="/profile"
+            className={buttonVariants({
+              variant: 'outline',
+              size: 'lg',
+              className: 'border-primary/50 text-primary font-bold hover:bg-primary/10 shadow-xs',
+            })}
+          >
+            {locale === 'hi' ? '👤 मेरी प्रोफ़ाइल' : '👤 My Profile'}
           </Link>
-          <a href="#how-it-works">
-            <Button variant="outline" size="lg">
-              {locale === 'hi' ? 'यह कैसे काम करता है ↓' : 'How it Works ↓'}
-            </Button>
+          <a href="#how-it-works" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+            {locale === 'hi' ? 'यह कैसे काम करता है ↓' : 'How it Works ↓'}
           </a>
         </div>
       </section>
@@ -216,7 +230,10 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
       {/* 3. Section: How BodhAI Works (5-Step Adaptive Loop) */}
       <section id="how-it-works" className="container mx-auto max-w-6xl px-4 sm:px-6 scroll-mt-20">
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
-          <Badge variant="outline" className="text-xs font-bold text-primary border-primary/30 bg-primary/10">
+          <Badge
+            variant="outline"
+            className="text-xs font-bold text-primary border-primary/30 bg-primary/10"
+          >
             {locale === 'hi' ? '5-चरणीय अनुकूली अधिगम चक्र' : '5-Step Adaptive Pedagogical Loop'}
           </Badge>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
@@ -237,17 +254,15 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs border ${st.badgeColor}`}>
+                    <span
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs border ${st.badgeColor}`}
+                    >
                       0{st.num}
                     </span>
                     <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <h3 className="font-bold text-base text-foreground">
-                    {st.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {st.desc}
-                  </p>
+                  <h3 className="font-bold text-base text-foreground">{st.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{st.desc}</p>
                 </div>
               </div>
             );
@@ -258,7 +273,10 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
       {/* 4. Section: Solutions for Students, Teachers & Schools */}
       <section id="stakeholders" className="container mx-auto max-w-6xl px-4 sm:px-6 scroll-mt-20">
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
-          <Badge variant="outline" className="text-xs font-bold text-primary border-primary/30 bg-primary/10">
+          <Badge
+            variant="outline"
+            className="text-xs font-bold text-primary border-primary/30 bg-primary/10"
+          >
             {locale === 'hi' ? 'समाधान: सभी हितधारकों के लिए' : 'Solutions For Every Stakeholder'}
           </Badge>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
@@ -282,12 +300,8 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                   <GraduationCap className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">
-                    {tStudents('title')}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {tStudents('subtitle')}
-                  </p>
+                  <h3 className="text-xl font-bold text-foreground">{tStudents('title')}</h3>
+                  <p className="text-xs text-muted-foreground">{tStudents('subtitle')}</p>
                 </div>
               </div>
 
@@ -313,10 +327,15 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </div>
             </div>
 
-            <Link href="/diagnostic" className="w-full">
-              <Button variant="primary" size="sm" className="w-full font-semibold gap-1.5 shadow-xs">
-                {locale === 'hi' ? 'निदान परीक्षा शुरू करें' : 'Start Diagnostic'} →
-              </Button>
+            <Link
+              href="/diagnostic"
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'sm',
+                className: 'w-full font-semibold gap-1.5 shadow-xs',
+              })}
+            >
+              {locale === 'hi' ? 'निदान परीक्षा शुरू करें' : 'Start Diagnostic'} →
             </Link>
           </div>
 
@@ -328,12 +347,8 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                   <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">
-                    {tTeachers('title')}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {tTeachers('subtitle')}
-                  </p>
+                  <h3 className="text-xl font-bold text-foreground">{tTeachers('title')}</h3>
+                  <p className="text-xs text-muted-foreground">{tTeachers('subtitle')}</p>
                 </div>
               </div>
 
@@ -359,10 +374,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </div>
             </div>
 
-            <Link href="/classes" className="w-full">
-              <Button variant="outline" size="sm" className="w-full font-semibold border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 gap-1.5">
-                {locale === 'hi' ? 'शिक्षक कक्षाएँ देखें' : 'View Classroom Dashboard'} →
-              </Button>
+            <Link
+              href="/classes"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'sm',
+                className:
+                  'w-full font-semibold border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 gap-1.5',
+              })}
+            >
+              {locale === 'hi' ? 'शिक्षक कक्षाएँ देखें' : 'View Classroom Dashboard'} →
             </Link>
           </div>
 
@@ -374,12 +395,8 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                   <School className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">
-                    {tSchools('title')}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {tSchools('subtitle')}
-                  </p>
+                  <h3 className="text-xl font-bold text-foreground">{tSchools('title')}</h3>
+                  <p className="text-xs text-muted-foreground">{tSchools('subtitle')}</p>
                 </div>
               </div>
 
@@ -403,20 +420,32 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </div>
             </div>
 
-            <Link href="/contact" className="w-full">
-              <Button variant="outline" size="sm" className="w-full font-semibold border-purple-500/40 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 gap-1.5">
-                {locale === 'hi' ? 'विद्यालय संपर्क' : 'School Pilot Inquiry'} →
-              </Button>
+            <Link
+              href="/contact"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'sm',
+                className:
+                  'w-full font-semibold border-purple-500/40 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 gap-1.5',
+              })}
+            >
+              {locale === 'hi' ? 'विद्यालय संपर्क' : 'School Pilot Inquiry'} →
             </Link>
           </div>
         </div>
       </section>
 
       {/* 5. Section: Vernacular First & Offline Resilient */}
-      <section id="languages-offline" className="container mx-auto max-w-6xl px-4 sm:px-6 scroll-mt-20">
+      <section
+        id="languages-offline"
+        className="container mx-auto max-w-6xl px-4 sm:px-6 scroll-mt-20"
+      >
         <div className="rounded-3xl border border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 p-8 sm:p-12 shadow-sm space-y-10">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <Badge variant="outline" className="text-xs font-bold text-primary border-primary/30 bg-primary/10">
+            <Badge
+              variant="outline"
+              className="text-xs font-bold text-primary border-primary/30 bg-primary/10"
+            >
               {locale === 'hi' ? 'मातृभाषा प्रथम एवं ऑफ़लाइन सक्षम' : 'Vernacular & Offline-First'}
             </Badge>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -432,9 +461,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Globe className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-lg text-foreground">
-                {tLanguages('langTitle')}
-              </h3>
+              <h3 className="font-bold text-lg text-foreground">{tLanguages('langTitle')}</h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {tLanguages('langDesc')}
               </p>
@@ -444,9 +471,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <WifiOff className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-lg text-foreground">
-                {tLanguages('offlineTitle')}
-              </h3>
+              <h3 className="font-bold text-lg text-foreground">{tLanguages('offlineTitle')}</h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {tLanguages('offlineDesc')}
               </p>
@@ -458,15 +483,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
       {/* 6. Section: Student Privacy & Child Safety (DPDP Act 2023) */}
       <section id="safety" className="container mx-auto max-w-6xl px-4 sm:px-6 scroll-mt-20">
         <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <Badge variant="outline" className="text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+          <Badge
+            variant="outline"
+            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
+          >
             {locale === 'hi' ? 'डीपीडीपी 2023 अनुपालन' : 'DPDP Act 2023 Compliant'}
           </Badge>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {tPrivacy('title')}
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {tPrivacy('subtitle')}
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{tPrivacy('subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -474,9 +500,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
-              {tPrivacy('principle1Title')}
-            </h3>
+            <h3 className="font-bold text-base text-foreground">{tPrivacy('principle1Title')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {tPrivacy('principle1Desc')}
             </p>
@@ -486,9 +510,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
             <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Lock className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
-              {tPrivacy('principle2Title')}
-            </h3>
+            <h3 className="font-bold text-base text-foreground">{tPrivacy('principle2Title')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {tPrivacy('principle2Desc')}
             </p>
@@ -498,9 +520,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
             <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-foreground">
-              {tPrivacy('principle3Title')}
-            </h3>
+            <h3 className="font-bold text-base text-foreground">{tPrivacy('principle3Title')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {tPrivacy('principle3Desc')}
             </p>
@@ -513,11 +533,18 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
         <div className="rounded-3xl border border-primary/20 bg-gradient-to-b from-primary/5 via-card to-card p-8 sm:p-12 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="space-y-3 max-w-2xl">
-              <Badge variant="outline" className="text-xs font-bold text-primary border-primary/30 bg-primary/10">
-                {locale === 'hi' ? '🔒 DPDP 2023 अनुपालित व्यक्तिगत प्रोफ़ाइल' : '🔒 DPDP 2023 Compliant Private Profiles'}
+              <Badge
+                variant="outline"
+                className="text-xs font-bold text-primary border-primary/30 bg-primary/10"
+              >
+                {locale === 'hi'
+                  ? '🔒 DPDP 2023 अनुपालित व्यक्तिगत प्रोफ़ाइल'
+                  : '🔒 DPDP 2023 Compliant Private Profiles'}
               </Badge>
               <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                {locale === 'hi' ? 'प्रत्येक छात्र एवं शिक्षक के लिए अलग, सुरक्षित प्रोफ़ाइल' : 'Dedicated, Private Telemetry for Every Student & Educator'}
+                {locale === 'hi'
+                  ? 'प्रत्येक छात्र एवं शिक्षक के लिए अलग, सुरक्षित प्रोफ़ाइल'
+                  : 'Dedicated, Private Telemetry for Every Student & Educator'}
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {locale === 'hi'
@@ -526,10 +553,15 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </p>
             </div>
 
-            <Link href="/profile">
-              <Button variant="primary" size="lg" className="font-bold text-sm gap-2 shrink-0 shadow-md">
-                {locale === 'hi' ? 'मेरी प्रोफ़ाइल खोलें' : 'Access My Profile'} →
-              </Button>
+            <Link
+              href="/profile"
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'lg',
+                className: 'font-bold text-sm gap-2 shrink-0 shadow-md',
+              })}
+            >
+              {locale === 'hi' ? 'मेरी प्रोफ़ाइल खोलें' : 'Access My Profile'} →
             </Link>
           </div>
         </div>

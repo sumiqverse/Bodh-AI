@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/routing';
-import { Navbar, Button } from '@bodhai/ui';
+import { Navbar, Button, buttonVariants } from '@bodhai/ui';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import {
@@ -212,78 +212,82 @@ export function SiteHeader(): React.JSX.Element {
             <>
               {/* Student Classrooms Dashboard shortcut */}
               {currentUser.role === 'student' && (
-                <Link href="/student">
-                  <Button
-                    variant={pathname.startsWith('/student') ? 'primary' : 'outline'}
-                    size="sm"
-                    className={`font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0 ${
+                <Link
+                  href="/student"
+                  className={buttonVariants({
+                    variant: pathname.startsWith('/student') ? 'primary' : 'outline',
+                    size: 'sm',
+                    className: `font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0 ${
                       pathname.startsWith('/student')
                         ? 'shadow-xs'
                         : 'border-primary/40 text-primary hover:bg-primary/10'
-                    }`}
-                  >
-                    {currentLocale === 'hi' ? 'मेरी कक्षाएं' : 'My Classrooms'}
-                  </Button>
+                    }`,
+                  })}
+                >
+                  {currentLocale === 'hi' ? 'मेरी कक्षाएं' : 'My Classrooms'}
                 </Link>
               )}
               {/* Teacher Classroom Dashboard shortcut */}
               {currentUser.role === 'teacher' && (
-                <Link href="/classes">
-                  <Button
-                    variant={pathname.startsWith('/classes') ? 'primary' : 'outline'}
-                    size="sm"
-                    className={`font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0 ${
+                <Link
+                  href="/classes"
+                  className={buttonVariants({
+                    variant: pathname.startsWith('/classes') ? 'primary' : 'outline',
+                    size: 'sm',
+                    className: `font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0 ${
                       pathname.startsWith('/classes')
                         ? 'shadow-xs'
                         : 'border-primary/40 text-primary hover:bg-primary/10'
-                    }`}
-                  >
-                    {tNav.has('classes')
-                      ? tNav('classes')
-                      : currentLocale === 'hi'
-                        ? 'मेरी कक्षाएँ'
-                        : 'My Classes'}
-                  </Button>
+                    }`,
+                  })}
+                >
+                  {tNav.has('classes')
+                    ? tNav('classes')
+                    : currentLocale === 'hi'
+                      ? 'मेरी कक्षाएँ'
+                      : 'My Classes'}
                 </Link>
               )}
               {/* Admin Dashboard shortcut */}
               {currentUser.role === 'admin' && (
-                <Link href="/admin/stats">
-                  <Button
-                    variant={pathname.startsWith('/admin') ? 'primary' : 'outline'}
-                    size="sm"
-                    className={`font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0 ${
+                <Link
+                  href="/admin/stats"
+                  className={buttonVariants({
+                    variant: pathname.startsWith('/admin') ? 'primary' : 'outline',
+                    size: 'sm',
+                    className: `font-semibold text-xs sm:text-sm whitespace-nowrap shrink-0 ${
                       pathname.startsWith('/admin')
                         ? 'shadow-xs'
                         : 'border-primary/40 text-primary hover:bg-primary/10'
-                    }`}
-                  >
-                    {currentLocale === 'hi' ? 'एडमिन' : 'Admin'}
-                  </Button>
+                    }`,
+                  })}
+                >
+                  {currentLocale === 'hi' ? 'एडमिन' : 'Admin'}
                 </Link>
               )}
               {/* Profile button */}
-              <Link href="/profile">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`font-semibold text-xs sm:text-sm border-primary/40 hover:border-primary text-primary transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              <Link
+                href="/profile"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className: `font-semibold text-xs sm:text-sm border-primary/40 hover:border-primary text-primary transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
                     pathname === '/profile' ? 'bg-primary/15 border-primary shadow-xs' : ''
-                  }`}
-                >
-                  {userAvatar && (
-                    <img
-                      src={userAvatar}
-                      alt="Avatar"
-                      className="w-4 h-4 rounded-full object-cover shrink-0 ring-1 ring-primary/40"
-                    />
-                  )}
-                  {tNav.has('myProfile')
-                    ? tNav('myProfile')
-                    : currentLocale === 'hi'
-                      ? 'मेरी प्रोफ़ाइल'
-                      : 'My Profile'}
-                </Button>
+                  }`,
+                })}
+              >
+                {userAvatar && (
+                  <img
+                    src={userAvatar}
+                    alt="Avatar"
+                    className="w-4 h-4 rounded-full object-cover shrink-0 ring-1 ring-primary/40"
+                  />
+                )}
+                {tNav.has('myProfile')
+                  ? tNav('myProfile')
+                  : currentLocale === 'hi'
+                    ? 'मेरी प्रोफ़ाइल'
+                    : 'My Profile'}
               </Link>
               <Button
                 variant="ghost"
@@ -297,27 +301,29 @@ export function SiteHeader(): React.JSX.Element {
           ) : (
             <>
               {/* Logged out state: Sign In, Sign Up, Settings */}
-              <Link href="/login">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`font-medium text-xs sm:text-sm whitespace-nowrap shrink-0 ${
+              <Link
+                href="/login"
+                className={buttonVariants({
+                  variant: 'ghost',
+                  size: 'sm',
+                  className: `font-medium text-xs sm:text-sm whitespace-nowrap shrink-0 ${
                     pathname === '/login' ? 'bg-muted text-foreground' : ''
-                  }`}
-                >
-                  {tNav('login')}
-                </Button>
+                  }`,
+                })}
+              >
+                {tNav('login')}
               </Link>
-              <Link href="/signup">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className={`font-semibold text-xs sm:text-sm shadow-xs whitespace-nowrap shrink-0 ${
+              <Link
+                href="/signup"
+                className={buttonVariants({
+                  variant: 'primary',
+                  size: 'sm',
+                  className: `font-semibold text-xs sm:text-sm shadow-xs whitespace-nowrap shrink-0 ${
                     pathname === '/signup' ? 'ring-2 ring-primary ring-offset-1' : ''
-                  }`}
-                >
-                  {tNav('signup')}
-                </Button>
+                  }`,
+                })}
+              >
+                {tNav('signup')}
               </Link>
             </>
           )}
