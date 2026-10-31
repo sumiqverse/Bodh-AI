@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { Button, Badge } from '@bodhai/ui';
+import { Badge, buttonVariants } from '@bodhai/ui';
 import { getCurrentUser, getWebApiClient, getAuthToken } from '@/lib/api-client';
 import {
   getProfileForUser,
@@ -185,11 +185,16 @@ export default function MyProfilePage(): React.JSX.Element {
         </p>
 
         <div className="pt-2">
-          <Link href="/login">
-            <Button variant="primary" size="lg" className="font-bold text-sm shadow-md gap-2">
-              <Lock className="w-4 h-4" />
-              {locale === 'hi' ? 'अपने खाते में लॉगिन करें' : 'Sign In to Your Account'}
-            </Button>
+          <Link
+            href="/login"
+            className={buttonVariants({
+              variant: 'primary',
+              size: 'lg',
+              className: 'font-bold text-sm shadow-md gap-2 inline-flex items-center',
+            })}
+          >
+            <Lock className="w-4 h-4" />
+            {locale === 'hi' ? 'अपने खाते में लॉगिन करें' : 'Sign In to Your Account'}
           </Link>
         </div>
       </div>

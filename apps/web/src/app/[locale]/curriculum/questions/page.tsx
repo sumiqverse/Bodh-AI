@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { CurriculumTabs } from '@/components/curriculum-tabs';
-import { Button, Badge, Card, Input, Skeleton } from '@bodhai/ui';
+import { Button, buttonVariants, Badge, Card, Input, Skeleton } from '@bodhai/ui';
 import {
   Search,
   CheckCircle2,
@@ -136,11 +136,16 @@ function QuestionReviewContent(): React.JSX.Element {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link href="/curriculum/questions/new">
-                <Button variant="primary" size="sm" className="gap-2 shadow-xs">
-                  <PlusCircle className="h-4 w-4" />
-                  <span>Draft New Question</span>
-                </Button>
+              <Link
+                href="/curriculum/questions/new"
+                className={buttonVariants({
+                  variant: 'primary',
+                  size: 'sm',
+                  className: 'gap-2 shadow-xs inline-flex items-center justify-center',
+                })}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Draft New Question</span>
               </Link>
             </div>
           </div>
@@ -371,15 +376,16 @@ function QuestionReviewContent(): React.JSX.Element {
                         )}
 
                         {/* Edit Button */}
-                        <Link href={`/curriculum/questions/${q.id}/edit`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            title="Edit Question"
-                          >
-                            <Edit3 className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                          </Button>
+                        <Link
+                          href={`/curriculum/questions/${q.id}/edit`}
+                          className={buttonVariants({
+                            variant: 'ghost',
+                            size: 'sm',
+                            className: 'h-7 w-7 p-0 inline-flex items-center justify-center',
+                          })}
+                          title="Edit Question"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                         </Link>
                       </td>
                     </tr>

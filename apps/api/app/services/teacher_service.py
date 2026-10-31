@@ -10,6 +10,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.curriculum import resolve_curriculum_code
 from app.core.errors import NotFoundError
 from app.models.auth import User
 from app.models.organization import SchoolClass
@@ -53,8 +54,13 @@ class TeacherDashboardService:
         curriculum_code: str | None = None,
     ) -> ClassHeatmapResponse:
         """Construct the student x skill mastery matrix with sub-300ms precomputed retrieval."""
+        effective_curriculum = curriculum_code or resolve_curriculum_code(
+            school_class.grade, school_class.name
+        )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
-        skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
+        skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
+        if not skills_raw and effective_curriculum != curriculum_code:
+            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         students = [
             HeatmapStudent(
@@ -160,9 +166,7 @@ class TeacherDashboardService:
                 )
             )
 
-        # Check existing aggregates; persist precomputation if first time
-        existing_aggs = await self.repo.get_cached_skill_aggregates(school_class.id)
-        if not existing_aggs and aggregates_to_save:
+        if aggregates_to_save:
             await self.repo.refresh_class_aggregates(school_class.id, aggregates_to_save)
 
         return ClassHeatmapResponse.model_construct(
@@ -184,10 +188,16 @@ class TeacherDashboardService:
         school_class: SchoolClass,
         min_students: int = 2,
         min_ratio: float = 0.15,
+        curriculum_code: str | None = None,
     ) -> ClassGapClustersResponse:
         """Cluster students sharing an identified conceptual gap with a suggested plan."""
+        effective_curriculum = curriculum_code or resolve_curriculum_code(
+            school_class.grade, school_class.name
+        )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
-        skills_raw = await self.repo.get_skills_for_class(school_class.grade)
+        skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
+        if not skills_raw and effective_curriculum != curriculum_code:
+            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         student_ids = [s.id for s, _ in students_raw]
         skill_ids = [sk.id for sk, _ in skills_raw]
@@ -323,8 +333,12 @@ class TeacherDashboardService:
         self,
         school_class: SchoolClass,
         student_id: uuid.UUID,
+        curriculum_code: str | None = None,
     ) -> StudentProfileResponse:
         """Assemble deep profile: mastery per skill, recurring errors, hint usage, and trend."""
+        effective_curriculum = curriculum_code or resolve_curriculum_code(
+            school_class.grade, school_class.name
+        )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         target_student_entry = next(
             (item for item in students_raw if item[0].id == student_id), None
@@ -333,7 +347,9 @@ class TeacherDashboardService:
             raise NotFoundError("Student in class", student_id)
 
         target_student, roll = target_student_entry
-        skills_raw = await self.repo.get_skills_for_class(school_class.grade)
+        skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
+        if not skills_raw and effective_curriculum != curriculum_code:
+            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
         skill_ids = [sk.id for sk, _ in skills_raw]
 
         mastery_records = await self.repo.get_mastery_matrix([student_id], skill_ids)
@@ -435,12 +451,18 @@ class TeacherDashboardService:
     async def get_class_suggestions(
         self,
         school_class: SchoolClass,
+        curriculum_code: str | None = None,
     ) -> ClassSuggestionsResponse:
         """Generate pedagogical engine suggestions explicitly labeled as advisory."""
         decisions = await self.repo.get_teacher_decisions(school_class.id)
         decision_map = {d.suggestion_id: d.action for d in decisions}
 
-        skills_raw = await self.repo.get_skills_for_class(school_class.grade)
+        effective_curriculum = curriculum_code or resolve_curriculum_code(
+            school_class.grade, school_class.name
+        )
+        skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
+        if not skills_raw and effective_curriculum != curriculum_code:
+            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
         skills = [sk for sk, _ in skills_raw]
 
         suggestions: list[SuggestionItem] = []
@@ -594,10 +616,16 @@ class TeacherDashboardService:
     async def get_progress_summary(
         self,
         school_class: SchoolClass,
+        curriculum_code: str | None = None,
     ) -> ClassProgressSummaryResponse:
         """Class-level longitudinal progress and reassessment growth metrics."""
+        effective_curriculum = curriculum_code or resolve_curriculum_code(
+            school_class.grade, school_class.name
+        )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
-        skills_raw = await self.repo.get_skills_for_class(school_class.grade)
+        skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
+        if not skills_raw and effective_curriculum != curriculum_code:
+            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         student_ids = [s.id for s, _ in students_raw]
         skill_ids = [sk.id for sk, _ in skills_raw]
@@ -629,10 +657,16 @@ class TeacherDashboardService:
     async def export_privacy_aware_csv(
         self,
         school_class: SchoolClass,
+        curriculum_code: str | None = None,
     ) -> str:
         """Generate privacy-compliant CSV export without sensitive PII or grades."""
+        effective_curriculum = curriculum_code or resolve_curriculum_code(
+            school_class.grade, school_class.name
+        )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
-        skills_raw = await self.repo.get_skills_for_class(school_class.grade)
+        skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
+        if not skills_raw and effective_curriculum != curriculum_code:
+            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         student_ids = [s.id for s, _ in students_raw]
         skill_ids = [sk.id for sk, _ in skills_raw]

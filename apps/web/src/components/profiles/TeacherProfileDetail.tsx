@@ -18,6 +18,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  buttonVariants,
 } from '@bodhai/ui';
 import { type TeacherProfile, saveUserCustomProfile } from '@/lib/profiles-data';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
@@ -425,15 +426,17 @@ export function TeacherProfileDetail({
                 <Share2 className="w-3.5 h-3.5" />
                 {copiedProfileLink ? t('copied') : t('shareProfile')}
               </Button>
-              <Link href="/classes" className="w-full">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs font-bold gap-1.5 shadow-xs"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Classroom Hub
-                </Button>
+              <Link
+                href="/classes"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className:
+                    'w-full text-xs font-bold gap-1.5 shadow-xs inline-flex items-center justify-center',
+                })}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                Classroom Hub
               </Link>
             </div>
           </div>
@@ -588,11 +591,16 @@ export function TeacherProfileDetail({
                       ? '16 छात्रों का कोहोर्ट शुरू करें'
                       : 'Initialize Starter Cohort (16 Students)'}
                 </Button>
-                <Link href="/classes">
-                  <Button variant="outline" size="sm" className="text-xs font-semibold gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    {locale === 'hi' ? 'क्लासरूम हब में जाएं' : 'Open Classroom Hub'}
-                  </Button>
+                <Link
+                  href="/classes"
+                  className={buttonVariants({
+                    variant: 'outline',
+                    size: 'sm',
+                    className: 'text-xs font-semibold gap-1.5 inline-flex items-center',
+                  })}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  {locale === 'hi' ? 'क्लासरूम हब में जाएं' : 'Open Classroom Hub'}
                 </Link>
               </div>
             </Card>
@@ -621,15 +629,17 @@ export function TeacherProfileDetail({
                         ? '+ नया कोहोर्ट जोड़ें'
                         : '+ Add Sample Cohort'}
                   </Button>
-                  <Link href="/classes">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 shadow-xs"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {locale === 'hi' ? 'क्लासरूम हब' : 'Classroom Hub'}
-                    </Button>
+                  <Link
+                    href="/classes"
+                    className={buttonVariants({
+                      variant: 'primary',
+                      size: 'sm',
+                      className:
+                        'text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 shadow-xs inline-flex items-center',
+                    })}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    {locale === 'hi' ? 'क्लासरूम हब' : 'Classroom Hub'}
                   </Link>
                 </div>
               </div>
@@ -690,14 +700,16 @@ export function TeacherProfileDetail({
                       </div>
 
                       <div className="pt-2 border-t border-border/40">
-                        <Link href={`/classes?classId=${cls.id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-xs font-semibold"
-                          >
-                            Open Class Dashboard & Heatmap
-                          </Button>
+                        <Link
+                          href={`/classes?classId=${cls.id}`}
+                          className={buttonVariants({
+                            variant: 'outline',
+                            size: 'sm',
+                            className:
+                              'w-full text-xs font-semibold inline-flex items-center justify-center',
+                          })}
+                        >
+                          Open Class Dashboard & Heatmap
                         </Link>
                       </div>
                     </CardContent>
@@ -738,11 +750,16 @@ export function TeacherProfileDetail({
                   ? 'जब छात्र अभ्यास करेंगे और त्रुटि समूह बनेंगे, BodhAI AI आपको सुझाव देगा जिन्हें आप स्वीकार या संशोधित कर सकते हैं।'
                   : 'As your enrolled students complete diagnostic drills, BodhAI AI generates targeted suggestions in your Classroom Hub for your review.'}
               </p>
-              <Link href="/classes">
-                <Button variant="outline" size="sm" className="text-xs font-semibold gap-1.5 mt-2">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  {locale === 'hi' ? 'सलाहकार हब खोलें' : 'Open Suggestions Hub'}
-                </Button>
+              <Link
+                href="/classes"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className: 'text-xs font-semibold gap-1.5 mt-2 inline-flex items-center',
+                })}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                {locale === 'hi' ? 'सलाहकार हब खोलें' : 'Open Suggestions Hub'}
               </Link>
             </Card>
           ) : (

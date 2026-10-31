@@ -3,7 +3,14 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@bodhai/ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+  buttonVariants,
+} from '@bodhai/ui';
 
 export default function NotFoundPage(): React.JSX.Element {
   const t = useTranslations('errors');
@@ -20,10 +27,14 @@ export default function NotFoundPage(): React.JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex justify-center pt-4">
-          <Link href="/">
-            <Button variant="primary" size="md">
-              {tCommon('backToHome')}
-            </Button>
+          <Link
+            href="/"
+            className={buttonVariants({
+              variant: 'primary',
+              size: 'md',
+            })}
+          >
+            {tCommon('backToHome')}
           </Link>
         </CardFooter>
       </Card>

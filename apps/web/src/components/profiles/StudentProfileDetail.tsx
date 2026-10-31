@@ -17,6 +17,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  buttonVariants,
 } from '@bodhai/ui';
 import { type StudentProfile, saveUserCustomProfile } from '@/lib/profiles-data';
 import {
@@ -347,15 +348,17 @@ export function StudentProfileDetail({
                 <Share2 className="w-3.5 h-3.5" />
                 {copiedLink ? t('copied') : t('shareProfile')}
               </Button>
-              <Link href="/diagnostic" className="w-full">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs font-bold gap-1.5 shadow-xs"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {t('startPractice')}
-                </Button>
+              <Link
+                href="/diagnostic"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className:
+                    'w-full text-xs font-bold gap-1.5 shadow-xs inline-flex items-center justify-center',
+                })}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {t('startPractice')}
               </Link>
             </div>
           </div>
@@ -632,10 +635,15 @@ export function StudentProfileDetail({
                       {sk.attemptsCount}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/solve?skill=${sk.skillCode}`}>
-                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2 font-medium">
-                          Practice
-                        </Button>
+                      <Link
+                        href={`/solve?skill=${sk.skillCode}`}
+                        className={buttonVariants({
+                          variant: 'ghost',
+                          size: 'sm',
+                          className: 'text-xs h-7 px-2 font-medium',
+                        })}
+                      >
+                        Practice
                       </Link>
                     </TableCell>
                   </TableRow>
@@ -979,11 +987,16 @@ export function StudentProfileDetail({
                     <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
                       <Clock className="w-3.5 h-3.5" />~{stp.estimatedMinutes} mins
                     </span>
-                    <Link href={`/solve?skill=${stp.skillCode}`}>
-                      <Button variant="primary" size="sm" className="text-xs font-bold gap-1">
-                        Start
-                        <ArrowRight className="w-3 h-3" />
-                      </Button>
+                    <Link
+                      href={`/solve?skill=${stp.skillCode}`}
+                      className={buttonVariants({
+                        variant: 'primary',
+                        size: 'sm',
+                        className: 'text-xs font-bold gap-1 inline-flex items-center',
+                      })}
+                    >
+                      Start
+                      <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </div>

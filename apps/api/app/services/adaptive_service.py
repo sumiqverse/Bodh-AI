@@ -784,7 +784,11 @@ class AdaptiveService:
                 for skill_id_str, skill_state in session_state.skill_states.items():
                     try:
                         sk_uuid = uuid.UUID(skill_id_str)
-                        if sk_uuid not in skills_by_id:
+                        if (
+                            skill_id_str not in skills_by_id
+                            and str(sk_uuid) not in skills_by_id
+                            and sk_uuid not in skills_by_id
+                        ):
                             continue
                         obs_count = max(1, skill_state.observations_count)
                         confidence = min(

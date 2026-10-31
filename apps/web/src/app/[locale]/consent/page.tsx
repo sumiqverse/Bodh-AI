@@ -3,7 +3,17 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Badge } from '@bodhai/ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Button,
+  buttonVariants,
+  Input,
+  Select,
+  Badge,
+} from '@bodhai/ui';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
 import type { ConsentDetailResponse } from '@bodhai/api-client';
 
@@ -160,23 +170,25 @@ export default function ConsentPage(): React.JSX.Element {
           <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/diagnostic">
-            <Button
-              variant="primary"
-              size="md"
-              className="cursor-pointer font-semibold shadow-elevated"
-            >
-              Continue to Diagnostic →
-            </Button>
+          <Link
+            href="/diagnostic"
+            className={buttonVariants({
+              variant: 'primary',
+              size: 'md',
+              className: 'cursor-pointer font-semibold shadow-elevated inline-flex items-center',
+            })}
+          >
+            Continue to Diagnostic →
           </Link>
-          <Link href="/student">
-            <Button
-              variant="outline"
-              size="md"
-              className="cursor-pointer font-semibold"
-            >
-              Student Home →
-            </Button>
+          <Link
+            href="/student"
+            className={buttonVariants({
+              variant: 'outline',
+              size: 'md',
+              className: 'cursor-pointer font-semibold inline-flex items-center',
+            })}
+          >
+            Student Home →
           </Link>
         </div>
       </div>
@@ -251,9 +263,7 @@ export default function ConsentPage(): React.JSX.Element {
                     setGuardianPhone(filtered);
                   }}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  {t('phoneHelp')}
-                </p>
+                <p className="text-[11px] text-muted-foreground">{t('phoneHelp')}</p>
               </div>
             </div>
 

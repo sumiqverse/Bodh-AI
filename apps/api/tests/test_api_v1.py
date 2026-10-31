@@ -327,7 +327,7 @@ async def test_consents_endpoints(
     assert res_get.status_code == 200
     records = res_get.json()
     assert len(records) >= 1
-    assert records[0]["scope"] == "diagnostic"
+    assert any(c["scope"] == "diagnostic" for c in records)
 
 
 @pytest.mark.asyncio

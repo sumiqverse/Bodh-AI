@@ -15,6 +15,7 @@ import {
   CardContent,
   CardFooter,
   Button,
+  buttonVariants,
   Badge,
   Skeleton,
 } from '@bodhai/ui';
@@ -87,10 +88,14 @@ function SolveContent(): React.JSX.Element {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/student">
-              <Button variant="primary" className="w-full min-h-[44px]">
-                {tCommon('backToHome')}
-              </Button>
+            <Link
+              href="/student"
+              className={buttonVariants({
+                variant: 'primary',
+                className: 'w-full min-h-[44px] inline-flex items-center justify-center',
+              })}
+            >
+              {tCommon('backToHome')}
             </Link>
           </CardContent>
         </Card>

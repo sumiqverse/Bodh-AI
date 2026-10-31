@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Link } from '@/i18n/routing';
-import { Card, Button } from '@bodhai/ui';
+import { Card, buttonVariants } from '@bodhai/ui';
 import { getStudentProfileById, getAllStudents } from '@/lib/profiles-data';
 import { StudentProfileDetail } from '@/components/profiles/StudentProfileDetail';
 import { GraduationCap } from 'lucide-react';
@@ -31,19 +31,30 @@ export default function StudentProfilePage({ params }: StudentProfilePageProps):
             Student Profile Not Found / विद्यार्थी प्रोफ़ाइल नहीं मिली
           </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            No active student profile matches the identifier &ldquo;{studentId}&rdquo;. You can view the profiles directory or inspect a recommended student profile.
+            No active student profile matches the identifier &ldquo;{studentId}&rdquo;. You can view
+            the profiles directory or inspect a recommended student profile.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Link href="/profile">
-              <Button variant="outline" size="sm" className="gap-1.5 font-semibold">
-                Go to My Profile
-              </Button>
+            <Link
+              href="/profile"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'sm',
+                className: 'gap-1.5 font-semibold inline-flex items-center',
+              })}
+            >
+              Go to My Profile
             </Link>
             {fallbackStudent && (
-              <Link href={`/profiles/students/${fallbackStudent.slug}`}>
-                <Button variant="primary" size="sm" className="font-semibold">
-                  View {fallbackStudent.fullName}&apos;s Profile
-                </Button>
+              <Link
+                href={`/profiles/students/${fallbackStudent.slug}`}
+                className={buttonVariants({
+                  variant: 'primary',
+                  size: 'sm',
+                  className: 'font-semibold inline-flex items-center',
+                })}
+              >
+                View {fallbackStudent.fullName}&apos;s Profile
               </Link>
             )}
           </div>

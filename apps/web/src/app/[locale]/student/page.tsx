@@ -15,6 +15,7 @@ import {
   Button,
   Badge,
   Skeleton,
+  buttonVariants,
 } from '@bodhai/ui';
 import {
   BookOpen,
@@ -222,24 +223,28 @@ function StudentHomeContent(): React.JSX.Element {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/join">
-              <Button
-                variant="primary"
-                size="sm"
-                className="min-h-[42px] px-4 text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
-              >
-                <Plus className="h-4 w-4" />
-                {t('joinAnotherClass')}
-              </Button>
+            <Link
+              href="/join"
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'sm',
+                className:
+                  'min-h-[42px] px-4 text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5',
+              })}
+            >
+              <Plus className="h-4 w-4" />
+              {t('joinAnotherClass')}
             </Link>
-            <Link href="/profile">
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[42px] text-xs font-semibold border-primary/40 text-primary hover:bg-primary/10 cursor-pointer"
-              >
-                {t('myProfile')}
-              </Button>
+            <Link
+              href="/profile"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'sm',
+                className:
+                  'min-h-[42px] text-xs font-semibold border-primary/40 text-primary hover:bg-primary/10 cursor-pointer',
+              })}
+            >
+              {t('myProfile')}
             </Link>
           </div>
         </div>
@@ -300,11 +305,16 @@ function StudentHomeContent(): React.JSX.Element {
               {t('noClassesJoinedDesc')}
             </p>
             <div className="mt-6">
-              <Link href="/join">
-                <Button variant="primary" size="lg" className="min-h-[48px] px-8 font-bold">
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('joinClassWithCode')}
-                </Button>
+              <Link
+                href="/join"
+                className={buttonVariants({
+                  variant: 'primary',
+                  size: 'lg',
+                  className: 'min-h-[48px] px-8 font-bold inline-flex items-center',
+                })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('joinClassWithCode')}
               </Link>
             </div>
           </Card>
@@ -607,32 +617,36 @@ function StudentHomeContent(): React.JSX.Element {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-[40px] text-xs font-semibold cursor-pointer border-primary/30 text-primary hover:bg-primary/10"
-            >
-              {t('diagnosticNav')}
-            </Button>
+          <Link
+            href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}
+            className={buttonVariants({
+              variant: 'outline',
+              size: 'sm',
+              className:
+                'min-h-[40px] text-xs font-semibold cursor-pointer border-primary/30 text-primary hover:bg-primary/10',
+            })}
+          >
+            {t('diagnosticNav')}
           </Link>
-          <Link href="/progress">
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-[40px] text-xs font-medium cursor-pointer"
-            >
-              {t('progressNav')}
-            </Button>
+          <Link
+            href="/progress"
+            className={buttonVariants({
+              variant: 'outline',
+              size: 'sm',
+              className: 'min-h-[40px] text-xs font-medium cursor-pointer',
+            })}
+          >
+            {t('progressNav')}
           </Link>
-          <Link href="/profile">
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-[40px] text-xs font-medium cursor-pointer"
-            >
-              {t('profileNav')}
-            </Button>
+          <Link
+            href="/profile"
+            className={buttonVariants({
+              variant: 'outline',
+              size: 'sm',
+              className: 'min-h-[40px] text-xs font-medium cursor-pointer',
+            })}
+          >
+            {t('profileNav')}
           </Link>
         </div>
       </div>
@@ -663,14 +677,15 @@ function StudentHomeContent(): React.JSX.Element {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-          <Link href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}>
-            <Button
-              variant="primary"
-              size="sm"
-              className="text-xs font-bold min-h-[38px] cursor-pointer shadow-xs"
-            >
-              {t('startDiagnosticTest')}
-            </Button>
+          <Link
+            href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}
+            className={buttonVariants({
+              variant: 'primary',
+              size: 'sm',
+              className: 'text-xs font-bold min-h-[38px] cursor-pointer shadow-xs',
+            })}
+          >
+            {t('startDiagnosticTest')}
           </Link>
         </div>
       </div>
@@ -880,38 +895,41 @@ function StudentHomeContent(): React.JSX.Element {
 
                       {/* Direct Action Links for Mobile Touch Targets */}
                       <div className="flex items-center gap-2 pt-5 border-t border-border/60 mt-4">
-                        <Link href={`/learn?skillId=${skill.id}`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full min-h-[42px] text-xs font-medium cursor-pointer"
-                          >
-                            {t('startLesson')}
-                          </Button>
+                        <Link
+                          href={`/learn?skillId=${skill.id}`}
+                          className={buttonVariants({
+                            variant: 'outline',
+                            size: 'sm',
+                            className:
+                              'flex-1 w-full min-h-[42px] text-xs font-medium cursor-pointer',
+                          })}
+                        >
+                          {t('startLesson')}
                         </Link>
 
-                        <Link href={`/solve?skillId=${skill.id}`} className="flex-1">
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="w-full min-h-[42px] text-xs font-semibold cursor-pointer"
-                          >
-                            {t('startSolve')}
-                          </Button>
+                        <Link
+                          href={`/solve?skillId=${skill.id}`}
+                          className={buttonVariants({
+                            variant: 'primary',
+                            size: 'sm',
+                            className:
+                              'flex-1 w-full min-h-[42px] text-xs font-semibold cursor-pointer',
+                          })}
+                        >
+                          {t('startSolve')}
                         </Link>
 
                         <Link
                           href={`/test?skillId=${skill.id}`}
-                          className="shrink-0"
+                          className={buttonVariants({
+                            variant: 'outline',
+                            size: 'sm',
+                            className:
+                              'shrink-0 min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500',
+                          })}
                           title={t('startTest')}
                         >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
-                          >
-                            {t('testButton')}
-                          </Button>
+                          {t('testButton')}
                         </Link>
                       </div>
                     </Card>
@@ -974,38 +992,41 @@ function StudentHomeContent(): React.JSX.Element {
                       </div>
 
                       <div className="flex items-center gap-2 pt-5 border-t border-border/60 mt-4">
-                        <Link href={`/learn?skillId=${skill.id}`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full min-h-[42px] text-xs font-medium cursor-pointer"
-                          >
-                            {t('startLesson')}
-                          </Button>
+                        <Link
+                          href={`/learn?skillId=${skill.id}`}
+                          className={buttonVariants({
+                            variant: 'outline',
+                            size: 'sm',
+                            className:
+                              'flex-1 w-full min-h-[42px] text-xs font-medium cursor-pointer',
+                          })}
+                        >
+                          {t('startLesson')}
                         </Link>
 
-                        <Link href={`/solve?skillId=${skill.id}`} className="flex-1">
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="w-full min-h-[42px] text-xs font-semibold cursor-pointer"
-                          >
-                            {t('startSolve')}
-                          </Button>
+                        <Link
+                          href={`/solve?skillId=${skill.id}`}
+                          className={buttonVariants({
+                            variant: 'primary',
+                            size: 'sm',
+                            className:
+                              'flex-1 w-full min-h-[42px] text-xs font-semibold cursor-pointer',
+                          })}
+                        >
+                          {t('startSolve')}
                         </Link>
 
                         <Link
                           href={`/test?skillId=${skill.id}`}
-                          className="shrink-0"
+                          className={buttonVariants({
+                            variant: 'outline',
+                            size: 'sm',
+                            className:
+                              'shrink-0 min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500',
+                          })}
                           title={t('startTest')}
                         >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="min-h-[42px] px-3 text-xs font-medium cursor-pointer text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
-                          >
-                            {t('testButton')}
-                          </Button>
+                          {t('testButton')}
                         </Link>
                       </div>
                     </Card>

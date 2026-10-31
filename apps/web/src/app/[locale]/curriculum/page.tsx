@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { CurriculumTabs } from '@/components/curriculum-tabs';
-import { Card, Badge, Button, Input, Skeleton } from '@bodhai/ui';
+import { Card, Badge, Button, buttonVariants, Input, Skeleton } from '@bodhai/ui';
 import {
   BookOpen,
   Search,
@@ -153,23 +153,38 @@ export default function CurriculumBrowserPage(): React.JSX.Element {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link href="/curriculum/graph">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Network className="h-4 w-4 text-primary" />
-                  <span>{t('viewGraph')}</span>
-                </Button>
+              <Link
+                href="/curriculum/graph"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className: 'gap-2 inline-flex items-center',
+                })}
+              >
+                <Network className="h-4 w-4 text-primary" />
+                <span>{t('viewGraph')}</span>
               </Link>
-              <Link href="/curriculum/questions">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <HelpCircle className="h-4 w-4 text-primary" />
-                  <span>{t('manageQuestions')}</span>
-                </Button>
+              <Link
+                href="/curriculum/questions"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className: 'gap-2 inline-flex items-center',
+                })}
+              >
+                <HelpCircle className="h-4 w-4 text-primary" />
+                <span>{t('manageQuestions')}</span>
               </Link>
-              <Link href="/curriculum/import">
-                <Button variant="primary" size="sm" className="gap-2 shadow-xs">
-                  <PlusCircle className="h-4 w-4" />
-                  <span>{t('importPack')}</span>
-                </Button>
+              <Link
+                href="/curriculum/import"
+                className={buttonVariants({
+                  variant: 'primary',
+                  size: 'sm',
+                  className: 'gap-2 shadow-xs inline-flex items-center',
+                })}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>{t('importPack')}</span>
               </Link>
             </div>
           </div>

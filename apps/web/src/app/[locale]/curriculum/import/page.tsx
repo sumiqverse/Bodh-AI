@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { CurriculumTabs } from '@/components/curriculum-tabs';
-import { Button, Badge, Card } from '@bodhai/ui';
+import { Button, buttonVariants, Badge, Card } from '@bodhai/ui';
 import {
   UploadCloud,
   FileCode,
@@ -410,21 +410,28 @@ export default function BulkImportPage(): React.JSX.Element {
                   {/* Next Steps on Success */}
                   {importResult.is_valid && (
                     <div className="pt-2 border-t border-border flex items-center gap-3">
-                      <Link href="/curriculum" className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
-                          <BookOpen className="h-3.5 w-3.5" />
-                          <span>Browse Curriculum</span>
-                        </Button>
+                      <Link
+                        href="/curriculum"
+                        className={buttonVariants({
+                          variant: 'outline',
+                          size: 'sm',
+                          className: 'flex-1 gap-2 text-xs inline-flex items-center justify-center',
+                        })}
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        <span>Browse Curriculum</span>
                       </Link>
-                      <Link href="/curriculum/graph" className="flex-1">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="w-full gap-2 text-xs shadow-xs"
-                        >
-                          <Network className="h-3.5 w-3.5" />
-                          <span>View Graph</span>
-                        </Button>
+                      <Link
+                        href="/curriculum/graph"
+                        className={buttonVariants({
+                          variant: 'primary',
+                          size: 'sm',
+                          className:
+                            'flex-1 gap-2 text-xs shadow-xs inline-flex items-center justify-center',
+                        })}
+                      >
+                        <Network className="h-3.5 w-3.5" />
+                        <span>View Graph</span>
                       </Link>
                     </div>
                   )}

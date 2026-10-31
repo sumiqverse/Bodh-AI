@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardContent,
   Button,
+  buttonVariants,
   Badge,
   Skeleton,
 } from '@bodhai/ui';
@@ -146,10 +147,15 @@ export default function ProgressPage(): React.JSX.Element {
           <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t('subtitle')}</p>
         </div>
 
-        <Link href="/student">
-          <Button variant="primary" size="sm" className="min-h-[42px] px-4 font-semibold shadow-xs">
-            {t('startPracticing')}
-          </Button>
+        <Link
+          href="/student"
+          className={buttonVariants({
+            variant: 'primary',
+            size: 'sm',
+            className: 'min-h-[42px] px-4 font-semibold shadow-xs inline-flex items-center',
+          })}
+        >
+          {t('startPracticing')}
         </Link>
       </div>
 
@@ -227,10 +233,15 @@ export default function ProgressPage(): React.JSX.Element {
             <h3 className="font-serif text-lg font-bold text-foreground">{t('emptyTitle')}</h3>
             <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">{t('emptyDesc')}</p>
             <div className="mt-6">
-              <Link href="/diagnostic">
-                <Button variant="primary" size="md" className="min-h-[44px] font-semibold">
-                  Take Diagnostic Test
-                </Button>
+              <Link
+                href="/diagnostic"
+                className={buttonVariants({
+                  variant: 'primary',
+                  size: 'md',
+                  className: 'min-h-[44px] font-semibold inline-flex items-center justify-center',
+                })}
+              >
+                Take Diagnostic Test
               </Link>
             </div>
           </Card>
@@ -278,23 +289,27 @@ export default function ProgressPage(): React.JSX.Element {
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
-                  <Link href={`/solve?skillId=${item.skillId}`}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="min-h-[38px] text-xs font-semibold cursor-pointer"
-                    >
-                      {t('practiceAction')}
-                    </Button>
+                  <Link
+                    href={`/solve?skillId=${item.skillId}`}
+                    className={buttonVariants({
+                      variant: 'outline',
+                      size: 'sm',
+                      className:
+                        'min-h-[38px] text-xs font-semibold cursor-pointer inline-flex items-center',
+                    })}
+                  >
+                    {t('practiceAction')}
                   </Link>
-                  <Link href={`/test?skillId=${item.skillId}`}>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="min-h-[38px] text-xs font-semibold cursor-pointer"
-                    >
-                      {t('testAction')}
-                    </Button>
+                  <Link
+                    href={`/test?skillId=${item.skillId}`}
+                    className={buttonVariants({
+                      variant: 'primary',
+                      size: 'sm',
+                      className:
+                        'min-h-[38px] text-xs font-semibold cursor-pointer inline-flex items-center',
+                    })}
+                  >
+                    {t('testAction')}
                   </Link>
                 </div>
               </Card>

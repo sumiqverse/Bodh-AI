@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardContent,
   Button,
+  buttonVariants,
   Input,
   Select,
   Badge,
@@ -125,7 +126,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
         const [detailRes, heatmapRes, clusterRes, warningRes, suggRes, asgnRes, progRes] =
           await Promise.allSettled([
             apiClient.getClassDetails(classId, token),
-            apiClient.getClassHeatmap(classId, token),
+            apiClient.getClassHeatmap(classId, undefined, token),
             apiClient.getClassGapClusters(classId, undefined, undefined, token),
             apiClient.getClassEarlyWarnings(classId, warningDays, token),
             apiClient.getClassSuggestions(classId, token),
@@ -1001,10 +1002,15 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                   <strong className="text-foreground">{activeClass?.name}</strong>. Click any cell
                   to inspect student mastery details.
                 </span>
-                <Link href={`/classes/${selectedClassId}`}>
-                  <Button variant="outline" size="sm" className="text-xs h-7">
-                    Full Screen View ↗
-                  </Button>
+                <Link
+                  href={`/classes/${selectedClassId}`}
+                  className={buttonVariants({
+                    variant: 'outline',
+                    size: 'sm',
+                    className: 'text-xs h-7 inline-flex items-center',
+                  })}
+                >
+                  Full Screen View ↗
                 </Link>
               </div>
 
@@ -1251,10 +1257,15 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                       >
                         {isSelected ? '✓ Viewing Heatmap' : 'Open Heatmap'}
                       </Button>
-                      <Link href={`/classes/${cls.id}`} className="shrink-0">
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          Dashboard →
-                        </Button>
+                      <Link
+                        href={`/classes/${cls.id}`}
+                        className={buttonVariants({
+                          variant: 'ghost',
+                          size: 'sm',
+                          className: 'text-xs shrink-0 inline-flex items-center',
+                        })}
+                      >
+                        Dashboard →
                       </Link>
                     </div>
                   </CardContent>

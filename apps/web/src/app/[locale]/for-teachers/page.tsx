@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { Card, CardHeader, CardTitle, CardDescription, Button, Badge } from '@bodhai/ui';
+import { Card, CardHeader, CardTitle, CardDescription, Badge, buttonVariants } from '@bodhai/ui';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -71,15 +71,25 @@ export default async function ForTeachersPage({ params }: PageProps): Promise<Re
       </div>
 
       <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-center">
-        <Link href="/contact">
-          <Button variant="primary" size="lg" className="shadow-md">
-            {tCommon('contactUs')}
-          </Button>
+        <Link
+          href="/contact"
+          className={buttonVariants({
+            variant: 'primary',
+            size: 'lg',
+            className: 'shadow-md',
+          })}
+        >
+          {tCommon('contactUs')}
         </Link>
-        <Link href="/profile">
-          <Button variant="outline" size="lg" className="border-primary/40 text-primary font-bold hover:bg-primary/10">
-            {locale === 'hi' ? 'मेरी प्रोफ़ाइल' : 'My Profile'}
-          </Button>
+        <Link
+          href="/profile"
+          className={buttonVariants({
+            variant: 'outline',
+            size: 'lg',
+            className: 'border-primary/40 text-primary font-bold hover:bg-primary/10',
+          })}
+        >
+          {locale === 'hi' ? 'मेरी प्रोफ़ाइल' : 'My Profile'}
         </Link>
       </div>
     </div>

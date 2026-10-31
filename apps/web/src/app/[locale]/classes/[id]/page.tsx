@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardContent,
   Button,
+  buttonVariants,
   Badge,
   Table,
   TableHeader,
@@ -115,7 +116,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
       const [detailRes, heatmapRes, clusterRes, warningRes, suggRes, asgnRes, progRes] =
         await Promise.allSettled([
           apiClient.getClassDetails(classId, token),
-          apiClient.getClassHeatmap(classId, token),
+          apiClient.getClassHeatmap(classId, undefined, token),
           apiClient.getClassGapClusters(classId, undefined, undefined, token),
           apiClient.getClassEarlyWarnings(classId, warningDays, token),
           apiClient.getClassSuggestions(classId, token),
@@ -435,8 +436,15 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
     return (
       <div className="container mx-auto max-w-6xl px-4 py-12 text-center">
         <p className="text-destructive font-medium">{errorMessage || 'Class not found'}</p>
-        <Link href="/classes" className="mt-4 inline-block">
-          <Button variant="outline">{tClasses('title')}</Button>
+        <Link
+          href="/classes"
+          className={buttonVariants({
+            variant: 'outline',
+            size: 'md',
+            className: 'mt-4 inline-flex items-center',
+          })}
+        >
+          {tClasses('title')}
         </Link>
       </div>
     );
@@ -460,10 +468,15 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
         <div>
           <div className="flex items-center gap-2 mb-1 print:hidden">
-            <Link href="/classes">
-              <Button variant="ghost" size="sm" className="cursor-pointer text-xs">
-                ← {tTeacher('backToClasses')}
-              </Button>
+            <Link
+              href="/classes"
+              className={buttonVariants({
+                variant: 'ghost',
+                size: 'sm',
+                className: 'cursor-pointer text-xs inline-flex items-center',
+              })}
+            >
+              ← {tTeacher('backToClasses')}
             </Link>
             <Badge variant="outline" className="text-xs">
               Class {classDetail.grade}

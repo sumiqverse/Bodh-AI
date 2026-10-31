@@ -1266,11 +1266,23 @@ export class BodhaiApiClient {
     curriculumCode?: string,
     token?: string,
   ): Promise<ClassHeatmapResponse> {
-    const qs = curriculumCode ? `?curriculum_code=${encodeURIComponent(curriculumCode)}` : '';
+    let curr = curriculumCode;
+    let tok = token;
+    if (
+      curriculumCode &&
+      !token &&
+      (curriculumCode.startsWith('eyJ') ||
+        curriculumCode.startsWith('mock_token_') ||
+        curriculumCode.length > 50)
+    ) {
+      tok = curriculumCode;
+      curr = undefined;
+    }
+    const qs = curr ? `?curriculum_code=${encodeURIComponent(curr)}` : '';
     return this.request<ClassHeatmapResponse>(
       `/api/v1/classes/${encodeURIComponent(classId)}/heatmap${qs}`,
       {
-        headers: this.authHeaders(token),
+        headers: this.authHeaders(tok),
       },
     );
   }

@@ -44,11 +44,16 @@ export function ClassHeatmapView({
   const filteredStudents = React.useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return heatmap.students;
-    return heatmap.students.filter(
-      (st) =>
-        st.student_name.toLowerCase().includes(q) ||
-        (st.roll_number && st.roll_number.toLowerCase().includes(q)),
-    );
+    return heatmap.students.filter((st) => {
+      const name = (
+        st.student_name ||
+        (st as unknown as { full_name?: string }).full_name ||
+        (st as unknown as { username?: string }).username ||
+        ''
+      ).toLowerCase();
+      const roll = (st.roll_number || '').toLowerCase();
+      return name.includes(q) || roll.includes(q);
+    });
   }, [heatmap.students, searchQuery]);
 
   // Fast cell lookup map: studentId:skillId -> HeatmapCell
@@ -179,19 +184,23 @@ export function ClassHeatmapView({
                   >
                     {t('studentColumn')}
                   </th>
-                  {filteredSkills.map((sk) => (
-                    <th
-                      key={sk.skill_id}
-                      scope="col"
-                      className="px-2 py-2 text-center font-medium text-foreground min-w-[72px] max-w-[100px] border-r border-border/40 hover:bg-muted/40 transition-colors"
-                      title={`${sk.skill_code}: ${sk.skill_name} (${sk.topic_name})`}
-                    >
-                      <div className="truncate font-semibold">{sk.skill_code}</div>
-                      <div className="truncate text-[10px] text-muted-foreground font-normal">
-                        {sk.skill_name}
-                      </div>
-                    </th>
-                  ))}
+                  {filteredSkills.map((sk) => {
+                    const skillCode = sk.skill_code || '';
+                    const skillName = sk.skill_name || '';
+                    return (
+                      <th
+                        key={sk.skill_id}
+                        scope="col"
+                        className="px-2 py-2 text-center font-medium text-foreground min-w-[72px] max-w-[100px] border-r border-border/40 hover:bg-muted/40 transition-colors"
+                        title={`${skillCode}: ${skillName} (${sk.topic_name})`}
+                      >
+                        <div className="truncate font-semibold">{skillCode}</div>
+                        <div className="truncate text-[10px] text-muted-foreground font-normal">
+                          {skillName}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
 
@@ -208,69 +217,73 @@ export function ClassHeatmapView({
                     </td>
                   </tr>
                 ) : (
-                  filteredStudents.map((st) => (
-                    <tr key={st.student_id} className="hover:bg-muted/30 transition-colors">
-                      {/* Sticky Student Name Header with Modal Trigger */}
-                      <th
-                        scope="row"
-                        className="sticky left-0 z-10 bg-background px-3 py-2 text-left font-medium text-foreground border-r border-border whitespace-nowrap shadow-xs"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => onSelectStudent(st.student_id)}
-                          className="text-left font-medium text-primary hover:underline focus:outline-hidden focus:ring-2 focus:ring-primary rounded px-1 -mx-1"
-                          aria-label={`View detailed profile for ${st.student_name}`}
+                  filteredStudents.map((st) => {
+                    const studentDisplayName = st.student_name || 'Student';
+                    return (
+                      <tr key={st.student_id} className="hover:bg-muted/30 transition-colors">
+                        {/* Sticky Student Name Header with Modal Trigger */}
+                        <th
+                          scope="row"
+                          className="sticky left-0 z-10 bg-background px-3 py-2 text-left font-medium text-foreground border-r border-border whitespace-nowrap shadow-xs"
                         >
-                          <span className="font-semibold">{st.student_name}</span>
-                          {st.roll_number && (
-                            <span className="ml-1.5 text-[11px] text-muted-foreground">
-                              (#{st.roll_number})
-                            </span>
-                          )}
-                        </button>
-                      </th>
-
-                      {/* Heatmap Cells */}
-                      {filteredSkills.map((sk) => {
-                        const cell = cellMap.get(`${st.student_id}:${sk.skill_id}`);
-                        const state = cell?.state || 'not_learned';
-                        const pScore = cell?.p_mastery ?? 0;
-                        const pct = Math.round(pScore * 100);
-
-                        let bgClass = 'bg-muted/20 text-muted-foreground border-border/30';
-                        let stateLabel = t('notLearned');
-
-                        if (state === 'mastered') {
-                          bgClass =
-                            'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-200 border-emerald-400/50 dark:border-emerald-700/60 font-semibold';
-                          stateLabel = t('mastered');
-                        } else if (state === 'partial') {
-                          bgClass =
-                            'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-200 border-amber-400/50 dark:border-amber-700/60 font-semibold';
-                          stateLabel = t('partial');
-                        }
-
-                        return (
-                          <td
-                            key={sk.skill_id}
-                            className={`p-1 text-center border-r border-border/30 ${bgClass} transition-colors`}
-                            title={`${st.student_name} • ${sk.skill_name}: ${stateLabel} (${pct}%)`}
+                          <button
+                            type="button"
+                            onClick={() => onSelectStudent(st.student_id)}
+                            className="text-left font-medium text-primary hover:underline focus:outline-hidden focus:ring-2 focus:ring-primary rounded px-1 -mx-1"
+                            aria-label={`View detailed profile for ${studentDisplayName}`}
                           >
-                            <button
-                              type="button"
-                              onClick={() => onSelectStudent(st.student_id)}
-                              aria-label={`${st.student_name}: ${sk.skill_name} is ${stateLabel} (${pct}%)`}
-                              className="w-full h-8 flex items-center justify-center rounded-sm hover:scale-105 active:scale-95 transition-transform focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
-                            >
-                              <span className="text-xs font-semibold">
-                                {pScore > 0 ? `${pct}%` : '—'}
+                            <span className="font-semibold">{studentDisplayName}</span>
+                            {st.roll_number && (
+                              <span className="ml-1.5 text-[11px] text-muted-foreground">
+                                (#{st.roll_number})
                               </span>
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
+                            )}
+                          </button>
+                        </th>
+
+                        {/* Heatmap Cells */}
+                        {filteredSkills.map((sk) => {
+                          const skillName = sk.skill_name || '';
+                          const cell = cellMap.get(`${st.student_id}:${sk.skill_id}`);
+                          const state = cell?.state || 'not_learned';
+                          const pScore = cell?.p_mastery ?? 0;
+                          const pct = Math.round(pScore * 100);
+
+                          let bgClass = 'bg-muted/20 text-muted-foreground border-border/30';
+                          let stateLabel = t('notLearned');
+
+                          if (state === 'mastered') {
+                            bgClass =
+                              'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-200 border-emerald-400/50 dark:border-emerald-700/60 font-semibold';
+                            stateLabel = t('mastered');
+                          } else if (state === 'partial') {
+                            bgClass =
+                              'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-200 border-amber-400/50 dark:border-amber-700/60 font-semibold';
+                            stateLabel = t('partial');
+                          }
+
+                          return (
+                            <td
+                              key={sk.skill_id}
+                              className={`p-1 text-center border-r border-border/30 ${bgClass} transition-colors`}
+                              title={`${studentDisplayName} • ${skillName}: ${stateLabel} (${pct}%)`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => onSelectStudent(st.student_id)}
+                                aria-label={`${studentDisplayName}: ${skillName} is ${stateLabel} (${pct}%)`}
+                                className="w-full h-8 flex items-center justify-center rounded-sm hover:scale-105 active:scale-95 transition-transform focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
+                              >
+                                <span className="text-xs font-semibold">
+                                  {pScore > 0 ? `${pct}%` : '—'}
+                                </span>
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

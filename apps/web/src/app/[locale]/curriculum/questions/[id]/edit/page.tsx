@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { CurriculumTabs } from '@/components/curriculum-tabs';
-import { Button, Badge, Card, Input, Skeleton } from '@bodhai/ui';
+import { Button, buttonVariants, Badge, Card, Input, Skeleton } from '@bodhai/ui';
 import { Save, ArrowLeft, Eye, History, Sparkles } from 'lucide-react';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import { KatexRenderer } from '@/components/katex-renderer';
@@ -263,10 +263,15 @@ export default function QuestionEditorPage({ params }: PageProps): React.JSX.Ele
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Link href="/curriculum/questions">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+              <Link
+                href="/curriculum/questions"
+                className={buttonVariants({
+                  variant: 'ghost',
+                  size: 'sm',
+                  className: 'h-8 w-8 p-0 inline-flex items-center justify-center',
+                })}
+              >
+                <ArrowLeft className="h-4 w-4" />
               </Link>
               <div>
                 <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { Card, CardTitle, Button, Badge } from '@bodhai/ui';
+import { Card, CardTitle, Badge, buttonVariants } from '@bodhai/ui';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -60,10 +60,15 @@ export default async function ForSchoolsPage({ params }: PageProps): Promise<Rea
       </div>
 
       <div className="mt-14 text-center">
-        <Link href="/contact">
-          <Button variant="primary" size="lg" className="shadow-md">
-            {tCommon('contactUs')}
-          </Button>
+        <Link
+          href="/contact"
+          className={buttonVariants({
+            variant: 'primary',
+            size: 'lg',
+            className: 'shadow-md',
+          })}
+        >
+          {tCommon('contactUs')}
         </Link>
       </div>
     </div>

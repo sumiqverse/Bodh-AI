@@ -18,6 +18,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  buttonVariants,
 } from '@bodhai/ui';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import { getMockStudentProfile } from '@/lib/teacher-mock-data';
@@ -117,14 +118,16 @@ export function StudentProfileModal({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Link href={`/profiles/students/${studentSlug}`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs font-semibold text-primary border-primary/40"
-                >
-                  Full Profile Page ↗
-                </Button>
+              <Link
+                href={`/profiles/students/${studentSlug}`}
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'sm',
+                  className:
+                    'text-xs font-semibold text-primary border-primary/40 inline-flex items-center',
+                })}
+              >
+                Full Profile Page ↗
               </Link>
               <DialogClose asChild>
                 <Button

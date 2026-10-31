@@ -14,15 +14,28 @@ class HeatmapStudent(BaseModel):
     student_id: uuid.UUID
     full_name: str
     username: str
+    student_name: str | None = None
     roll_number: str | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.student_name:
+            self.student_name = self.full_name or self.username or "Student"
 
 
 class HeatmapSkill(BaseModel):
     skill_id: uuid.UUID
     code: str
     name: str
+    skill_code: str | None = None
+    skill_name: str | None = None
     topic_name: str
     difficulty: float
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.skill_code:
+            self.skill_code = self.code
+        if not self.skill_name:
+            self.skill_name = self.name
 
 
 class HeatmapCell(BaseModel):

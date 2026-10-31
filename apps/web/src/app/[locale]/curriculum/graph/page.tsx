@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { CurriculumTabs } from '@/components/curriculum-tabs';
-import { Button, Badge, Input } from '@bodhai/ui';
+import { Button, buttonVariants, Badge, Input } from '@bodhai/ui';
 import {
   ZoomIn,
   ZoomOut,
@@ -715,21 +715,26 @@ export default function SkillGraphPage(): React.JSX.Element {
               <div className="pt-2 border-t border-border space-y-2">
                 <Link
                   href={`/curriculum/questions?skill_id=${encodeURIComponent(selectedNode.id)}`}
-                  className="w-full"
+                  className={buttonVariants({
+                    variant: 'outline',
+                    size: 'sm',
+                    className: 'w-full gap-2 text-xs inline-flex items-center justify-center',
+                  })}
                 >
-                  <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    <span>View / Review Questions</span>
-                  </Button>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>View / Review Questions</span>
                 </Link>
 
                 <Link
                   href={`/curriculum/questions/new?skill_id=${encodeURIComponent(selectedNode.id)}`}
-                  className="w-full"
+                  className={buttonVariants({
+                    variant: 'primary',
+                    size: 'sm',
+                    className:
+                      'w-full gap-2 text-xs shadow-xs inline-flex items-center justify-center',
+                  })}
                 >
-                  <Button variant="primary" size="sm" className="w-full gap-2 text-xs shadow-xs">
-                    <span>Draft New Question for this Skill</span>
-                  </Button>
+                  <span>Draft New Question for this Skill</span>
                 </Link>
               </div>
             </div>
