@@ -1,0 +1,265 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bodhai.org.in/schemas/content-pack.schema.json",
+  "title": "BodhAI Curriculum & Content Pack Schema",
+  "description": "Schema definition for BodhAI curriculum competencies, DAG prerequisite graphs, and multilingual diagnostic items.",
+  "type": "object",
+  "required": ["curriculum", "topics", "skills"],
+  "additionalProperties": false,
+  "properties": {
+    "curriculum": {
+      "type": "object",
+      "required": ["code", "board", "grade", "subject", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "Unique curriculum identifier, e.g. NCERT-MATH-C8"
+        },
+        "board": {
+          "type": "string",
+          "description": "Educational board, e.g. NCERT, CBSE, ICSE"
+        },
+        "grade": {
+          "type": "integer",
+          "minimum": 6,
+          "maximum": 10,
+          "description": "Target class level (6 to 10)"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject identifier, e.g. mathematics, science"
+        },
+        "version": {
+          "type": "string",
+          "description": "Syllabus version, e.g. 2024.1"
+        }
+      }
+    },
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "sequence_order"],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Unique topic code within curriculum"
+          },
+          "name": {
+            "type": "string",
+            "description": "Topic or chapter title"
+          },
+          "description": {
+            "type": ["string", "null"],
+            "description": "Pedagogical scope and NCERT alignment details"
+          },
+          "sequence_order": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Pedagogical sequence index"
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "topic_code", "name", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Globally unique skill code (e.g. MATH-C8-RAT-01)"
+          },
+          "topic_code": {
+            "type": "string",
+            "description": "Parent topic code"
+          },
+          "name": {
+            "type": "string",
+            "description": "Skill name / learning outcome"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed competency description"
+          },
+          "difficulty": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "default": 0.5,
+            "description": "IRT baseline difficulty b-parameter"
+          },
+          "blooms_level": {
+            "type": "string",
+            "enum": ["remember", "understand", "apply", "analyze", "evaluate", "create"],
+            "default": "understand",
+            "description": "Bloom's Revised Taxonomy level"
+          },
+          "prerequisites": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "required": ["skill_code"],
+              "additionalProperties": false,
+              "properties": {
+                "skill_code": {
+                  "type": "string",
+                  "description": "Target parent skill required before this skill"
+                },
+                "relation_type": {
+                  "type": "string",
+                  "enum": ["hard", "soft", "reinforcing"],
+                  "default": "hard",
+                  "description": "Type of prerequisite dependency"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["term_en", "term_hi", "definition_en", "definition_hi"],
+        "additionalProperties": false,
+        "properties": {
+          "term_en": {
+            "type": "string",
+            "description": "English terminology"
+          },
+          "term_hi": {
+            "type": "string",
+            "description": "Hindi terminology (Devanagari)"
+          },
+          "definition_en": {
+            "type": "string",
+            "description": "Accessible English definition"
+          },
+          "definition_hi": {
+            "type": "string",
+            "description": "Accessible Hindi definition"
+          },
+          "category": {
+            "type": ["string", "null"],
+            "description": "Conceptual domain e.g. arithmetic, algebra"
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["code", "skill_code", "question_type", "difficulty", "translations"],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Unique item code, e.g. Q-MATH-C8-RAT-001"
+          },
+          "skill_code": {
+            "type": "string",
+            "description": "Target atomic skill code"
+          },
+          "question_type": {
+            "type": "string",
+            "enum": ["mcq", "numeric", "short_text"],
+            "description": "Item interaction modality"
+          },
+          "difficulty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Discrete difficulty level from 1 (basic) to 5 (advanced)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "reviewed", "published"],
+            "default": "draft",
+            "description": "Editorial review state"
+          },
+          "needs_teacher_review": {
+            "type": "boolean",
+            "default": true,
+            "description": "Flag indicating requirement of educator audit"
+          },
+          "translations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["language", "prompt", "verified_answer", "worked_solution", "hints"],
+              "additionalProperties": false,
+              "properties": {
+                "language": {
+                  "type": "string",
+                  "enum": ["en", "hi"],
+                  "description": "Language code (en or hi)"
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "Problem prompt text with optional KaTeX / LaTeX"
+                },
+                "options": {
+                  "type": ["array", "null"],
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "text", "is_correct"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Option key e.g. A, B, C, D"
+                      },
+                      "text": {
+                        "type": "string",
+                        "description": "Option choice string"
+                      },
+                      "is_correct": {
+                        "type": "boolean",
+                        "description": "Whether this distractor is the correct response"
+                      }
+                    }
+                  }
+                },
+                "verified_answer": {
+                  "type": "string",
+                  "description": "Canonical verified answer for automated evaluation"
+                },
+                "worked_solution": {
+                  "type": "string",
+                  "description": "Step-by-step worked mathematical solution"
+                },
+                "explanation": {
+                  "type": ["string", "null"],
+                  "description": "Summary rationale"
+                },
+                "hints": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Exactly three ordered progressive scaffolding hints"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

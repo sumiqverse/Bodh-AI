@@ -1,0 +1,32 @@
+{
+  "curriculumVersion": "1.0.0",
+  "country": "IN",
+  "framework": "NCERT",
+  "classes": [
+    {
+      "grade": 6,
+      "stage": "middle",
+      "subjects": ["mathematics", "science", "english", "social_science"]
+    },
+    {
+      "grade": 7,
+      "stage": "middle",
+      "subjects": ["mathematics", "science", "english", "social_science"]
+    },
+    {
+      "grade": 8,
+      "stage": "middle",
+      "subjects": ["mathematics", "science", "english", "social_science"]
+    },
+    {
+      "grade": 9,
+      "stage": "secondary",
+      "subjects": ["mathematics", "science", "english", "social_science"]
+    },
+    {
+      "grade": 10,
+      "stage": "secondary",
+      "subjects": ["mathematics", "science", "english", "social_science"]
+    }
+  ]
+}
