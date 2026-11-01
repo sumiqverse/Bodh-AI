@@ -1,4 +1,5 @@
 # Multi-stage production Dockerfile for BodhAI API (FastAPI, Python 3.12)
+# Built from the apps/api directory context
 # 1. Builder stage
 FROM python:3.12-slim AS builder
 
@@ -20,8 +21,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.5.26 /uv /uvx /bin/
 RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY apps/api/pyproject.toml apps/api/README.md ./apps/api/
-WORKDIR /app/apps/api
+COPY pyproject.toml README.md ./
 RUN uv pip install --no-cache -r pyproject.toml
 
 # 2. Minimal runtime runner stage
@@ -45,9 +45,9 @@ RUN groupadd -g 1001 appgroup && \
 
 # Copy virtualenv and application from builder
 COPY --from=builder --chown=appuser:appgroup /opt/venv /opt/venv
-COPY --chown=appuser:appgroup apps/api/app /app/app
-COPY --chown=appuser:appgroup apps/api/alembic /app/alembic
-COPY --chown=appuser:appgroup apps/api/alembic.ini /app/alembic.ini
+COPY --chown=appuser:appgroup app /app/app
+COPY --chown=appuser:appgroup alembic /app/alembic
+COPY --chown=appuser:appgroup alembic.ini /app/alembic.ini
 
 USER appuser
 
