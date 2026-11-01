@@ -615,40 +615,6 @@ function StudentHomeContent(): React.JSX.Element {
             <div className="font-serif text-lg font-bold text-foreground">{activeClass.name}</div>
           )}
         </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/diagnostic?curriculum=${activeClass.curriculumCode}`}
-            className={buttonVariants({
-              variant: 'outline',
-              size: 'sm',
-              className:
-                'min-h-[40px] text-xs font-semibold cursor-pointer border-primary/30 text-primary hover:bg-primary/10',
-            })}
-          >
-            {t('diagnosticNav')}
-          </Link>
-          <Link
-            href="/progress"
-            className={buttonVariants({
-              variant: 'outline',
-              size: 'sm',
-              className: 'min-h-[40px] text-xs font-medium cursor-pointer',
-            })}
-          >
-            {t('progressNav')}
-          </Link>
-          <Link
-            href="/profile"
-            className={buttonVariants({
-              variant: 'outline',
-              size: 'sm',
-              className: 'min-h-[40px] text-xs font-medium cursor-pointer',
-            })}
-          >
-            {t('profileNav')}
-          </Link>
-        </div>
       </div>
 
       {/* Classroom Banner */}
