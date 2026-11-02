@@ -23,7 +23,7 @@ export function buttonVariants({
 
   const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
     primary:
-      'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90 shadow-sm',
+      'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90 border-2 border-ink shadow-sm font-bold',
     secondary:
       'bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70 shadow-sm',
     outline: 'border border-border bg-background text-foreground hover:bg-muted active:bg-muted/80',

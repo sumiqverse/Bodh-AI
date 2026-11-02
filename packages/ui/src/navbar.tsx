@@ -62,7 +62,7 @@ export function Navbar({
             className="flex items-center gap-2.5 font-serif font-bold text-xl tracking-tight text-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-1 py-0.5"
           >
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-sans font-extrabold text-lg shadow-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-sans font-extrabold text-lg border-2 border-ink shadow-xs"
               aria-hidden="true"
             >
               बो

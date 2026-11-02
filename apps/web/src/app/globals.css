@@ -16,11 +16,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
 
-    /* Brand Primary: Deep Indigo (Trust, Focus, Knowledge) */
-    --primary: 243.4 75.4% 58.6%;
-    --primary-foreground: 210 40% 98%;
-    --primary-hover: 243.4 75.4% 50%;
-    --primary-subtle: 243.4 75.4% 96%;
+    /* Brand Primary: Gamified Warm Primary Orange (#E8800A) from design.md */
+    --primary: 32 92% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 32 100% 39%;
+    --primary-subtle: 43 93% 88%;
 
     /* Brand Secondary: Slate / Neutral */
     --secondary: 214.3 31.8% 91.4%;
@@ -49,8 +49,8 @@
 
     --border: 214.3 31.8% 88%;
     --input: 214.3 31.8% 88%;
-    --ring: 243.4 75.4% 58.6%;
-    --radius: 0.625rem;
+    --ring: 32 92% 48%;
+    --radius: 0.875rem;
 
     /* Gamified Learning Dashboard Design Tokens (design.md) */
     --color-primary-orange: #e8800a;
@@ -85,10 +85,10 @@
     --popover: 224 71% 7%;
     --popover-foreground: 213 31% 91%;
 
-    --primary: 239 84% 67%;
+    --primary: 32 92% 52%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 239 84% 72%;
-    --primary-subtle: 239 84% 16%;
+    --primary-hover: 32 92% 58%;
+    --primary-subtle: 32 92% 16%;
 
     --secondary: 215 28% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -114,7 +114,7 @@
 
     --border: 215 28% 18%;
     --input: 215 28% 18%;
-    --ring: 239 84% 67%;
+    --ring: 32 92% 52%;
 
     /* Gamified Learning Dark Tokens */
     --color-ink: #f0f0f0;

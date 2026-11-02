@@ -338,13 +338,13 @@ export default function LoginPage(): React.JSX.Element {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-lg flex-col items-center justify-center px-4 py-12">
-      <Card className="w-full shadow-floating">
+    <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-lg rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
         <CardHeader className="text-center">
-          <CardTitle className="font-serif text-2xl font-bold tracking-tight text-foreground">
+          <CardTitle className="font-extrabold text-2xl tracking-tight text-ink dark:text-white">
             {t('loginTitle')}
           </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
+          <CardDescription className="text-xs text-text-secondary dark:text-muted-foreground mt-1">
             {t('loginSubtitle')}
           </CardDescription>
         </CardHeader>
@@ -357,9 +357,13 @@ export default function LoginPage(): React.JSX.Element {
               setErrorMessage(null);
             }}
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="teacher">{t('tabTeacher')}</TabsTrigger>
-              <TabsTrigger value="student">{t('tabStudent')}</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 rounded-xl border-2 border-ink bg-surface-cream/40 p-1">
+              <TabsTrigger value="teacher" className="rounded-lg font-bold text-xs">
+                {t('tabTeacher')}
+              </TabsTrigger>
+              <TabsTrigger value="student" className="rounded-lg font-bold text-xs">
+                {t('tabStudent')}
+              </TabsTrigger>
             </TabsList>
 
             {successMessage && !errorMessage && (
