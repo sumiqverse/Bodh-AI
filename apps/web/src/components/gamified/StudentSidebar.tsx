@@ -59,9 +59,12 @@ export function StudentSidebar({
       <div className="space-y-6">
         {/* Logo */}
         <div className="flex items-center justify-center lg:justify-start gap-2.5 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-orange text-white font-extrabold text-xl border-2 border-ink shadow-xs">
-            B
-          </div>
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-orange text-white font-devanagari font-black text-xl border-2 border-ink shadow-sm shrink-0 select-none"
+            aria-hidden="true"
+          >
+            बो
+          </span>
           <span className="font-serif font-black text-2xl tracking-tight text-ink dark:text-white">
             BodhAI
           </span>

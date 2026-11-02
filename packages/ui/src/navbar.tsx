@@ -62,12 +62,14 @@ export function Navbar({
             className="flex items-center gap-2.5 font-serif font-bold text-xl tracking-tight text-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-1 py-0.5"
           >
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-sans font-extrabold text-lg border-2 border-ink shadow-xs"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-devanagari font-black text-xl border-2 border-ink shadow-sm shrink-0 select-none"
               aria-hidden="true"
             >
               बो
             </span>
-            <span>{brandName}</span>
+            <span className="font-serif font-black text-2xl tracking-tight text-foreground">
+              {brandName}
+            </span>
           </LinkElement>
 
           {/* Desktop Nav */}
