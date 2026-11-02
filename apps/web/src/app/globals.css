@@ -51,6 +51,27 @@
     --input: 214.3 31.8% 88%;
     --ring: 243.4 75.4% 58.6%;
     --radius: 0.625rem;
+
+    /* Gamified Learning Dashboard Design Tokens (design.md) */
+    --color-primary-orange: #e8800a;
+    --color-primary-orange-dark: #c96a00;
+    --color-ink: #1a1a1a;
+    --color-text-primary: #222222;
+    --color-text-secondary: #6b6b6b;
+    --color-divider: #dddddd;
+
+    --surface-white: #ffffff;
+    --surface-cream: #fdefc3;
+    --surface-butter: #fff4b5;
+    --surface-yellow: #ffd966;
+    --surface-blue: #dce8fb;
+    --surface-pink: #f9b9b9;
+    --surface-peach: #fdd9b5;
+    --surface-peach-light: #feebcf;
+
+    --podium-1: #f39c12;
+    --podium-2: #8b4a14;
+    --podium-3: #d9a21b;
   }
 
   .dark {
@@ -94,6 +115,39 @@
     --border: 215 28% 18%;
     --input: 215 28% 18%;
     --ring: 239 84% 67%;
+
+    /* Gamified Learning Dark Tokens */
+    --color-ink: #f0f0f0;
+    --color-divider: #333333;
+    --color-text-primary: #eeeeee;
+    --color-text-secondary: #a0a0a0;
+  }
+}
+
+@layer utilities {
+  /* Gamified Learning Neo-Brutalist Utility Classes */
+  .bg-canvas-gradient {
+    background: linear-gradient(180deg, #e9e9e9 0%, #f4f4f4 100%);
+  }
+
+  .dark .bg-canvas-gradient {
+    background: linear-gradient(180deg, #0f1115 0%, #171a21 100%);
+  }
+
+  .border-ink {
+    border-color: #1a1a1a;
+  }
+
+  .dark .border-ink {
+    border-color: #374151;
+  }
+
+  .dashed-divider-v {
+    border-right: 1.5px dashed #1a1a1a;
+  }
+
+  .dark .dashed-divider-v {
+    border-right: 1.5px dashed #374151;
   }
 }
 

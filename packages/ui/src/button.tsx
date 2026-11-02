@@ -2,13 +2,13 @@ import * as React from 'react';
 import { cn } from './utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link' | 'orange';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
 }
 
 export interface ButtonVariantsOptions {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link' | 'orange';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   className?: string;
 }
@@ -31,6 +31,8 @@ export function buttonVariants({
     destructive:
       'bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80 shadow-sm',
     link: 'text-primary underline-offset-4 hover:underline bg-transparent p-0 h-auto font-normal',
+    orange:
+      'bg-[#E8800A] text-white hover:bg-[#C96A00] active:bg-[#B55E00] border-2 border-ink shadow-sm',
   };
 
   const sizes: Record<NonNullable<ButtonProps['size']>, string> = {
