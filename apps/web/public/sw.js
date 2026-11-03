@@ -10,7 +10,19 @@
 
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js');
 
-if (self.workbox) {
+// If running on localhost or dev server, self-purge all caches to avoid stale chunks and hydration errors
+if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
+  self.addEventListener('install', () => self.skipWaiting());
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => self.registration.unregister())
+        .then(() => self.clients.claim()),
+    );
+  });
+} else if (self.workbox) {
   // Precache app shell and offline assets
   const PRECACHE_ASSETS = [
     { url: '/offline.html', revision: 'v1.0.0' },
