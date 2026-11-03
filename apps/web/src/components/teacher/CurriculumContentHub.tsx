@@ -17,7 +17,6 @@ import {
   Upload,
   PlusCircle,
   CheckCircle,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   Layers,
@@ -25,6 +24,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
+import { ClassLessonEditor } from './ClassLessonEditor';
 import type {
   CurriculumSearchResponse,
   ClassroomContentResponse,
@@ -79,7 +79,9 @@ export function CurriculumContentHub({
   const [createSuccessMsg, setCreateSuccessMsg] = React.useState<string | null>(null);
 
   // Sub-tab view: 'syllabus' | 'search' | 'upload' | 'create'
-  const [hubTab, setHubTab] = React.useState<'syllabus' | 'search' | 'upload' | 'create'>('syllabus');
+  const [hubTab, setHubTab] = React.useState<'syllabus' | 'search' | 'upload' | 'create'>(
+    'syllabus',
+  );
 
   // Load classroom content
   const loadClassroomContent = React.useCallback(
@@ -157,49 +159,6 @@ export function CurriculumContentHub({
     setExpandedSkills((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Load Sample Upload Pack
-  const handleLoadSamplePack = () => {
-    const samplePack = {
-      questions: [
-        {
-          skill_code: targetSkillCode || 'SKILL-M8-01-01',
-          prompt: 'Solve for x: $3x + 12 = 33$. What is the verified value of $x$?',
-          difficulty: 3,
-          options: [
-            { id: 'A', text: '$x = 7$', is_correct: true, distractor_feedback: 'Correct! $3(7) + 12 = 33$.' },
-            { id: 'B', text: '$x = 9$', is_correct: false, distractor_feedback: 'Check intermediate arithmetic: $33 - 12 = 21$.' },
-            { id: 'C', text: '$x = 15$', is_correct: false, distractor_feedback: 'Remember to divide by 3 after subtraction.' },
-            { id: 'D', text: '$x = 5$', is_correct: false, distractor_feedback: 'Substituted $x=5$ gives $27$, not $33$.' },
-          ],
-          hints: [
-            'Isolate the variable term $3x$ by subtracting 12 from both sides.',
-            'Perform $33 - 12 = 21$.',
-            'Divide both sides by 3 to find $x = 7$.',
-          ],
-          explanation: 'Using standard linear equation balance rules: $3x = 33 - 12 = 21$, hence $x = 21 / 3 = 7$.',
-        },
-        {
-          skill_code: targetSkillCode || 'SKILL-S8-01-01',
-          prompt: 'Which cellular organelle is responsible for cellular respiration and ATP synthesis?',
-          difficulty: 2,
-          options: [
-            { id: 'A', text: 'Mitochondria', is_correct: true, distractor_feedback: 'Correct! Known as the powerhouse of the cell.' },
-            { id: 'B', text: 'Chloroplast', is_correct: false, distractor_feedback: 'Chloroplast conducts photosynthesis, not respiration.' },
-            { id: 'C', text: 'Ribosome', is_correct: false, distractor_feedback: 'Ribosomes are responsible for protein synthesis.' },
-            { id: 'D', text: 'Golgi Apparatus', is_correct: false, distractor_feedback: 'Golgi packages and transports cellular molecules.' },
-          ],
-          hints: [
-            'Recall the organelle nicknamed the powerhouse of eukaryotic cells.',
-            'It possesses inner folds called cristae.',
-            'Option A is the verified cellular organelle.',
-          ],
-          explanation: 'Mitochondria generate cellular energy in the form of ATP via aerobic respiration.',
-        },
-      ],
-    };
-    setUploadJsonText(JSON.stringify(samplePack, null, 2));
-  };
-
   // Submit Content Upload Pack
   const handleUploadSubmit = async () => {
     if (!activeClass || !uploadJsonText.trim()) return;
@@ -216,7 +175,9 @@ export function CurriculumContentHub({
       void loadClassroomContent(selectedSubject);
       if (onRefreshData) onRefreshData();
     } catch (err: unknown) {
-      setUploadStatus(`❌ Upload failed: ${err instanceof Error ? err.message : 'Invalid JSON format'}`);
+      setUploadStatus(
+        `❌ Upload failed: ${err instanceof Error ? err.message : 'Invalid JSON format'}`,
+      );
     } finally {
       setIsUploading(false);
     }
@@ -253,7 +214,9 @@ export function CurriculumContentHub({
 
     try {
       const created = await apiClient.createClassroomQuestion(activeClass.id, payload, token);
-      setCreateSuccessMsg(`✅ Custom Question ${created.code} published and linked to ${created.skill_code}!`);
+      setCreateSuccessMsg(
+        `✅ Custom Question ${created.code} published and linked to ${created.skill_code}!`,
+      );
       // Reset form
       setPromptEn('');
       setPromptHi('');
@@ -268,7 +231,9 @@ export function CurriculumContentHub({
       void loadClassroomContent(selectedSubject);
       if (onRefreshData) onRefreshData();
     } catch (err: unknown) {
-      setCreateSuccessMsg(`❌ Creation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setCreateSuccessMsg(
+        `❌ Creation failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
     } finally {
       setIsCreatingQuestion(false);
     }
@@ -276,6 +241,7 @@ export function CurriculumContentHub({
 
   return (
     <div className="space-y-6">
+      {activeClass && <ClassLessonEditor classId={activeClass.id} content={classContent} />}
       {/* Top Banner & Hub Navigation */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
         <div>
@@ -284,7 +250,8 @@ export function CurriculumContentHub({
             Curriculum & Content Hub (Classes 6 to 10)
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Explore authentic NCERT chapter sequences, search competencies across all 5 core subjects, and upload custom questions for your classroom.
+            Explore authentic NCERT chapter sequences, search competencies across all 5 core
+            subjects, and upload custom questions for your classroom.
           </p>
         </div>
 
@@ -406,16 +373,26 @@ export function CurriculumContentHub({
           {/* Quick Filter Badges */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
             <span className="text-[11px] text-muted-foreground mr-1">Popular:</span>
-            {['Linear Equations', 'Fractions', 'Acids & Bases', 'Electricity', 'Light', 'Grammar Tenses', 'Polynomials'].map((term) => (
+            {[
+              'Linear Equations',
+              'Fractions',
+              'Acids & Bases',
+              'Electricity',
+              'Light',
+              'Grammar Tenses',
+              'Polynomials',
+            ].map((term) => (
               <button
                 key={term}
                 type="button"
                 onClick={() => {
                   setSearchQuery(term);
-                  void apiClient.searchCurriculumContent(term, undefined, getAuthToken() || undefined).then((res) => {
-                    setSearchResults(res);
-                    setHubTab('search');
-                  });
+                  void apiClient
+                    .searchCurriculumContent(term, undefined, getAuthToken() || undefined)
+                    .then((res) => {
+                      setSearchResults(res);
+                      setHubTab('search');
+                    });
                 }}
                 className="text-[11px] px-2 py-0.5 rounded-full bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer text-muted-foreground"
               >
@@ -432,7 +409,9 @@ export function CurriculumContentHub({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-primary" />
-              Search Results {searchResults && `(${searchResults.total_topics} Topics, ${searchResults.total_skills} Competencies)`}
+              Search Results{' '}
+              {searchResults &&
+                `(${searchResults.total_topics} Topics, ${searchResults.total_skills} Competencies)`}
             </h3>
             <Button
               variant="ghost"
@@ -446,15 +425,19 @@ export function CurriculumContentHub({
 
           {!searchResults && (
             <div className="p-8 text-center rounded-xl border border-dashed border-border text-muted-foreground text-xs">
-              Enter a search keyword above to inspect topics and competencies across Classes 6 to 10.
+              Enter a search keyword above to inspect topics and competencies across Classes 6 to
+              10.
             </div>
           )}
 
-          {searchResults && searchResults.total_topics === 0 && searchResults.total_skills === 0 && (
-            <div className="p-8 text-center rounded-xl border border-dashed border-border text-muted-foreground text-xs">
-              No matching NCERT topics or competencies found for &quot;{searchResults.query}&quot;. Try adjusting your keywords or filters.
-            </div>
-          )}
+          {searchResults &&
+            searchResults.total_topics === 0 &&
+            searchResults.total_skills === 0 && (
+              <div className="p-8 text-center rounded-xl border border-dashed border-border text-muted-foreground text-xs">
+                No matching NCERT topics or competencies found for &quot;{searchResults.query}
+                &quot;. Try adjusting your keywords or filters.
+              </div>
+            )}
 
           {searchResults && searchResults.topics.length > 0 && (
             <div className="space-y-2">
@@ -463,12 +446,18 @@ export function CurriculumContentHub({
               </span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {searchResults.topics.map((t) => (
-                  <Card key={t.id} className="border-border hover:border-primary/40 transition-colors">
+                  <Card
+                    key={t.id}
+                    className="border-border hover:border-primary/40 transition-colors"
+                  >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-1.5 mb-1">
-                            <Badge variant="outline" className="text-[10px] font-mono uppercase bg-primary/5 text-primary border-primary/20">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-mono uppercase bg-primary/5 text-primary border-primary/20"
+                            >
                               Class {t.grade}
                             </Badge>
                             <Badge variant="secondary" className="text-[10px] capitalize">
@@ -500,12 +489,18 @@ export function CurriculumContentHub({
               </span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {searchResults.skills.map((s) => (
-                  <Card key={s.id} className="border-border hover:border-primary/40 transition-colors">
+                  <Card
+                    key={s.id}
+                    className="border-border hover:border-primary/40 transition-colors"
+                  >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            <Badge variant="outline" className="text-[10px] font-mono uppercase bg-primary/5 text-primary border-primary/20">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-mono uppercase bg-primary/5 text-primary border-primary/20"
+                            >
                               Class {s.grade}
                             </Badge>
                             <Badge variant="secondary" className="text-[10px] capitalize">
@@ -564,12 +559,18 @@ export function CurriculumContentHub({
                 <Layers className="w-4 h-4 text-primary" />
                 {classContent ? `${classContent.class_name} Syllabus` : 'Classroom Curriculum'}
                 {classContent && (
-                  <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-mono text-primary bg-primary/5"
+                  >
                     Class {classContent.grade} • {classContent.topics.length} Chapters
                   </Badge>
                 )}
                 {classContent && classContent.custom_questions_count > 0 && (
-                  <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-600 font-semibold">
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] bg-emerald-500/10 text-emerald-600 font-semibold"
+                  >
                     {classContent.custom_questions_count} Teacher Questions
                   </Badge>
                 )}
@@ -683,7 +684,10 @@ export function CurriculumContentHub({
                                     <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted font-semibold">
                                       {skill.code}
                                     </span>
-                                    <Badge variant="secondary" className="text-[10px] uppercase font-bold text-primary">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] uppercase font-bold text-primary"
+                                    >
                                       {skill.blooms_level}
                                     </Badge>
                                     <span className="text-[10px] text-muted-foreground">
@@ -723,7 +727,9 @@ export function CurriculumContentHub({
                                     onClick={() => toggleSkill(skill.id)}
                                     className="text-[10px] h-6 px-2 text-muted-foreground cursor-pointer"
                                   >
-                                    {isSkillExpanded ? 'Hide' : `Questions (${skill.questions.length})`}
+                                    {isSkillExpanded
+                                      ? 'Hide'
+                                      : `Questions (${skill.questions.length})`}
                                   </Button>
                                 </div>
                               </div>
@@ -736,7 +742,8 @@ export function CurriculumContentHub({
                                   </span>
                                   {skill.questions.length === 0 && (
                                     <p className="text-[11px] text-muted-foreground italic">
-                                      No questions linked yet. Use &quot;Add Question&quot; to author one!
+                                      No questions linked yet. Use &quot;Add Question&quot; to
+                                      author one!
                                     </p>
                                   )}
                                   {skill.questions.map((q, qIdx) => (
@@ -746,7 +753,9 @@ export function CurriculumContentHub({
                                     >
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-1.5">
-                                          <span className="font-bold text-primary">Q{qIdx + 1}.</span>
+                                          <span className="font-bold text-primary">
+                                            Q{qIdx + 1}.
+                                          </span>
                                           <span className="font-mono text-[10px] text-muted-foreground">
                                             {q.code}
                                           </span>
@@ -797,7 +806,10 @@ export function CurriculumContentHub({
                                             3-Level Hints:
                                           </span>
                                           {q.hints.map((hint, hIdx) => (
-                                            <div key={hIdx} className="text-[10px] text-muted-foreground pl-3 border-l border-amber-500/40">
+                                            <div
+                                              key={hIdx}
+                                              className="text-[10px] text-muted-foreground pl-3 border-l border-amber-500/40"
+                                            >
                                               <strong>Hint {hIdx + 1}:</strong> {hint}
                                             </div>
                                           ))}
@@ -829,7 +841,8 @@ export function CurriculumContentHub({
               Author Custom Question with Pedagogical Hints & Math Preview
             </CardTitle>
             <CardDescription className="text-xs">
-              Create an assessment question calibrated for your classroom. Supports LaTeX math expressions enclosed in $...$.
+              Create an assessment question calibrated for your classroom. Supports LaTeX math
+              expressions enclosed in $...$.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-2">
@@ -919,10 +932,30 @@ export function CurriculumContentHub({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
-                    { key: 'A' as const, val: optionA, setVal: setOptionA, placeholder: 'Option A (e.g. x = 10)' },
-                    { key: 'B' as const, val: optionB, setVal: setOptionB, placeholder: 'Option B (e.g. x = 8)' },
-                    { key: 'C' as const, val: optionC, setVal: setOptionC, placeholder: 'Option C (e.g. x = 4)' },
-                    { key: 'D' as const, val: optionD, setVal: setOptionD, placeholder: 'Option D (e.g. x = 12)' },
+                    {
+                      key: 'A' as const,
+                      val: optionA,
+                      setVal: setOptionA,
+                      placeholder: 'Option A (e.g. x = 10)',
+                    },
+                    {
+                      key: 'B' as const,
+                      val: optionB,
+                      setVal: setOptionB,
+                      placeholder: 'Option B (e.g. x = 8)',
+                    },
+                    {
+                      key: 'C' as const,
+                      val: optionC,
+                      setVal: setOptionC,
+                      placeholder: 'Option C (e.g. x = 4)',
+                    },
+                    {
+                      key: 'D' as const,
+                      val: optionD,
+                      setVal: setOptionD,
+                      placeholder: 'Option D (e.g. x = 12)',
+                    },
                   ].map((opt) => (
                     <div
                       key={opt.key}
@@ -940,7 +973,10 @@ export function CurriculumContentHub({
                         className="cursor-pointer"
                         id={`opt-${opt.key}`}
                       />
-                      <label htmlFor={`opt-${opt.key}`} className="text-xs font-bold text-foreground shrink-0 cursor-pointer">
+                      <label
+                        htmlFor={`opt-${opt.key}`}
+                        className="text-xs font-bold text-foreground shrink-0 cursor-pointer"
+                      >
                         {opt.key}:
                       </label>
                       <Input
@@ -1033,7 +1069,8 @@ export function CurriculumContentHub({
               Batch Content Pack Uploader (JSON Format)
             </CardTitle>
             <CardDescription className="text-xs">
-              Upload multiple calibrated questions in one bulk submission attached to your classroom section.
+              Upload multiple calibrated questions in one bulk submission attached to your classroom
+              section.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-2 space-y-4">
@@ -1041,16 +1078,6 @@ export function CurriculumContentHub({
               <span className="text-xs text-muted-foreground">
                 Paste JSON question definitions matching the standard schema below.
               </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleLoadSamplePack}
-                className="text-xs gap-1 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                Load Sample Question Pack
-              </Button>
             </div>
 
             <textarea

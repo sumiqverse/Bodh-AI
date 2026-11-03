@@ -11,10 +11,10 @@ interface StatTilesProps {
 }
 
 export function StatTiles({
-  xp = 1320,
-  levelTitle = 'Trainee',
-  streakDays = 9,
-  rank = 10,
+  xp = 0,
+  levelTitle = 'Novice',
+  streakDays = 0,
+  rank = 0,
 }: StatTilesProps): React.JSX.Element {
   const tiles = [
     {
@@ -40,7 +40,7 @@ export function StatTiles({
     },
     {
       id: 'rank',
-      value: `#${rank}`,
+      value: rank ? `#${rank}` : '�',
       label: 'Rank',
       bgClass: 'bg-surface-pink',
       icon: <PodiumStarIcon className="w-14 h-14 -mr-1 -mb-1" />,

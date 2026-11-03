@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/routing';
 import {
   Dialog,
   DialogContent,
@@ -18,10 +17,8 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  buttonVariants,
 } from '@bodhai/ui';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
-import { getMockStudentProfile } from '@/lib/teacher-mock-data';
 import type {
   StudentProfileResponse,
   StudentProfileSkillItem,
@@ -59,12 +56,6 @@ export function StudentProfileModal({
     const token = getAuthToken();
     if (!token) return;
 
-    if (token.startsWith('mock_token_') || classId.startsWith('cls-mock-')) {
-      setProfile(getMockStudentProfile(studentId));
-      setIsLoading(false);
-      return;
-    }
-
     let isMounted = true;
     setIsLoading(true);
     setErrorMsg(null);
@@ -76,8 +67,8 @@ export function StudentProfileModal({
       })
       .catch((_err: unknown) => {
         if (isMounted) {
-          // Fallback to high-fidelity mock profile
-          setProfile(getMockStudentProfile(studentId));
+          setProfile(null);
+          setErrorMsg('Could not load this student profile.');
         }
       })
       .finally(() => {
@@ -90,17 +81,6 @@ export function StudentProfileModal({
   }, [apiClient, classId, studentId]);
 
   const isOpen = Boolean(studentId);
-
-  const studentSlug = React.useMemo(() => {
-    if (!profile) return 'stu-aarav-sharma';
-    const name = profile.student_name.toLowerCase();
-    if (name.includes('priya')) return 'stu-priya-patel';
-    if (name.includes('rohan')) return 'stu-rohan-verma';
-    if (name.includes('ananya')) return 'stu-ananya-iyer';
-    if (name.includes('kabir')) return 'stu-kabir-singh';
-    if (name.includes('diya')) return 'stu-diya-mehta';
-    return 'stu-aarav-sharma';
-  }, [profile]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -118,17 +98,6 @@ export function StudentProfileModal({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                href={`/profiles/students/${studentSlug}`}
-                className={buttonVariants({
-                  variant: 'outline',
-                  size: 'sm',
-                  className:
-                    'text-xs font-semibold text-primary border-primary/40 inline-flex items-center',
-                })}
-              >
-                Full Profile Page ↗
-              </Link>
               <DialogClose asChild>
                 <Button
                   variant="ghost"
@@ -244,11 +213,15 @@ export function StudentProfileModal({
                                   ? 'Mastered'
                                   : item.state === 'partial'
                                     ? 'In Progress'
-                                    : 'Not Started'}
+                                    : item.state === 'unassessed'
+                                      ? 'Not Assessed'
+                                      : 'Needs Support'}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs font-mono text-right">
-                              {Math.round(item.p_mastery * 100)}%
+                              {item.state === 'unassessed'
+                                ? '—'
+                                : `${Math.round(item.p_mastery * 100)}%`}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -302,89 +275,7 @@ export function StudentProfileModal({
 
             {/* Tab 3: Hint Ladder Usage */}
             {activeTab === 'hints' && (
-              <div className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <span className="font-semibold text-muted-foreground block mb-1">
-                      {t('independentCount')}
-                    </span>
-                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                      {profile.hint_usage.independent_attempts_count}
-                    </span>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Solved without requesting any scaffolding
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <span className="font-semibold text-muted-foreground block mb-1">
-                      Total Hints Requested
-                    </span>
-                    <span className="text-2xl font-bold text-primary">
-                      {profile.hint_usage.total_hints_requested}
-                    </span>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Across 3 progressive scaffolding levels
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                  <span className="font-bold text-foreground block">Hint Ladder Breakdown</span>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Level 1: Conceptual Orientation</span>
-                        <span className="font-mono font-semibold">
-                          {profile.hint_usage.hint_1_count}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full"
-                          style={{
-                            width: `${profile.hint_usage.total_hints_requested ? (profile.hint_usage.hint_1_count / profile.hint_usage.total_hints_requested) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Level 2: Formula & Step Guidance</span>
-                        <span className="font-mono font-semibold">
-                          {profile.hint_usage.hint_2_count}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-amber-500 rounded-full"
-                          style={{
-                            width: `${profile.hint_usage.total_hints_requested ? (profile.hint_usage.hint_2_count / profile.hint_usage.total_hints_requested) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Level 3: Direct Resolution Step</span>
-                        <span className="font-mono font-semibold">
-                          {profile.hint_usage.hint_3_count}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-rose-500 rounded-full"
-                          style={{
-                            width: `${profile.hint_usage.total_hints_requested ? (profile.hint_usage.hint_3_count / profile.hint_usage.total_hints_requested) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">Hint usage is not recorded yet.</p>
             )}
 
             {/* Tab 4: Trend Over Time */}

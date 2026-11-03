@@ -20,7 +20,7 @@ import {
   TableCell,
   buttonVariants,
 } from '@bodhai/ui';
-import { type TeacherProfile, saveUserCustomProfile } from '@/lib/profiles-data';
+import { type TeacherProfile } from '@/lib/profiles-data';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import {
   Award,
@@ -179,8 +179,6 @@ export function TeacherProfileDetail({
     }
   };
 
-  const [isSettingUpCohort, setIsSettingUpCohort] = React.useState<boolean>(false);
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const updated: TeacherProfile = {
@@ -205,17 +203,15 @@ export function TeacherProfileDetail({
         .filter(Boolean),
     };
 
-    setProfileData(updated);
-    saveUserCustomProfile(updated.id, updated);
-    setIsEditModalOpen(false);
-
     try {
       const apiClient = getWebApiClient();
       const token = getAuthToken();
-      if (token) {
+      if (!token) throw new Error('Please sign in again.');
+      {
         const res = await apiClient.updateMyProfile(
           {
             fullName: updated.fullName,
+            employeeId: updated.employeeId,
             fullNameHi: updated.fullNameHi,
             title: updated.title,
             titleHi: updated.titleHi,
@@ -238,8 +234,10 @@ export function TeacherProfileDetail({
           onProfileUpdated?.(typedProfile);
         }
       }
-    } catch (err) {
-      console.warn('API update profile fallback:', err);
+      setIsEditModalOpen(false);
+    } catch {
+      setSavedSuccessNotice('Could not save your profile. Please try again.');
+      return;
     }
 
     setSavedSuccessNotice(
@@ -248,37 +246,6 @@ export function TeacherProfileDetail({
         : 'Your educator profile has been saved to the database successfully!',
     );
     setTimeout(() => setSavedSuccessNotice(null), 4000);
-  };
-
-  const handleSetupCohort = async () => {
-    try {
-      setIsSettingUpCohort(true);
-      const apiClient = getWebApiClient();
-      const token = getAuthToken();
-      const res = await apiClient.setupCohort(
-        {
-          grade: 8,
-          section: 'B',
-          subject: 'Mathematics',
-          className: 'Class 8-B Mathematics & Science',
-        },
-        token || undefined,
-      );
-      if (res && res.profile) {
-        const typedCohortProfile = res.profile as unknown as TeacherProfile;
-        setProfileData(typedCohortProfile);
-        onProfileUpdated?.(typedCohortProfile);
-        setSavedSuccessNotice(
-          locale === 'hi'
-            ? '16 छात्रों और अभ्यासों के साथ कक्षा सफलतापूर्वक डेटाबेस में जोड़ दी गई है!'
-            : 'Classroom with 16 students and diagnostic assignments created in database!',
-        );
-      }
-    } catch (err) {
-      console.error('Failed to setup cohort:', err);
-    } finally {
-      setIsSettingUpCohort(false);
-    }
   };
 
   return (
@@ -570,27 +537,11 @@ export function TeacherProfileDetail({
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {locale === 'hi'
-                    ? 'छात्रों को जोड़ने और उनकी दक्षता हीटमैप देखने के लिए नई कक्षा बनाएं, या तुरंत 16 विद्यार्थियों का डेमो कोहोर्ट शुरू करें।'
-                    : 'Create your first classroom section to generate student join codes, or instantiate a live 16-student starter cohort to explore heatmap telemetry.'}
+                    ? 'नई कक्षा बनाएं और उसका जॉइन कोड छात्रों के साथ साझा करें।'
+                    : 'Create your first classroom and share its join code with students.'}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSetupCohort}
-                  disabled={isSettingUpCohort}
-                  className="text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 cursor-pointer shadow-sm"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {isSettingUpCohort
-                    ? locale === 'hi'
-                      ? 'कक्षा बनाई जा रही है...'
-                      : 'Initializing Cohort...'
-                    : locale === 'hi'
-                      ? '16 छात्रों का कोहोर्ट शुरू करें'
-                      : 'Initialize Starter Cohort (16 Students)'}
-                </Button>
                 <Link
                   href="/classes"
                   className={buttonVariants({
@@ -613,22 +564,6 @@ export function TeacherProfileDetail({
                     : `Active sections managed by you with real-time competency cohort mastery:`}
                 </p>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSetupCohort}
-                    disabled={isSettingUpCohort}
-                    className="text-xs font-semibold gap-1.5"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                    {isSettingUpCohort
-                      ? locale === 'hi'
-                        ? 'जोड़ रहे हैं...'
-                        : 'Adding...'
-                      : locale === 'hi'
-                        ? '+ नया कोहोर्ट जोड़ें'
-                        : '+ Add Sample Cohort'}
-                  </Button>
                   <Link
                     href="/classes"
                     className={buttonVariants({

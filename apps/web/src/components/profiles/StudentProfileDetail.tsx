@@ -19,7 +19,8 @@ import {
   TableCell,
   buttonVariants,
 } from '@bodhai/ui';
-import { type StudentProfile, saveUserCustomProfile } from '@/lib/profiles-data';
+import { type StudentProfile } from '@/lib/profiles-data';
+import { getAuthToken, getWebApiClient } from '@/lib/api-client';
 import {
   Award,
   BookOpen,
@@ -51,7 +52,7 @@ interface StudentProfileDetailProps {
 
 export function StudentProfileDetail({
   profile,
-  onProfileUpdated: _onProfileUpdated,
+  onProfileUpdated,
 }: StudentProfileDetailProps): React.JSX.Element {
   const t = useTranslations('profiles');
   const locale = useLocale();
@@ -168,33 +169,33 @@ export function StudentProfileDetail({
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updated: StudentProfile = {
-      ...profileData,
-      avatarUrl: formData.avatarUrl,
-      fullName: formData.fullName.trim() || profileData.fullName,
-      fullNameHi: formData.fullNameHi.trim() || formData.fullName.trim() || profileData.fullNameHi,
-      grade: Number(formData.grade) || 8,
-      section: formData.section.trim() || 'A',
-      rollNumber: formData.rollNumber.trim() || '1',
-      schoolName: formData.schoolName.trim() || 'School',
-      age: Number(formData.age) || 13,
-      bio: formData.bio.trim(),
-      bioHi: formData.bioHi.trim() || formData.bio.trim(),
-      guardianName: formData.guardianName.trim(),
-      guardianRelation: formData.guardianRelation.trim() || 'Parent/Guardian',
-    };
-
-    setProfileData(updated);
-    saveUserCustomProfile(updated.id, updated);
-    setIsEditModalOpen(false);
-    setSavedSuccessNotice(
-      locale === 'hi'
-        ? 'विद्यार्थी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है!'
-        : 'Student profile updated successfully!',
-    );
-    setTimeout(() => setSavedSuccessNotice(null), 4000);
+    try {
+      const result = await getWebApiClient().updateMyProfile<StudentProfile>(
+        {
+          fullName: formData.fullName.trim(),
+          fullNameHi: formData.fullNameHi.trim(),
+          avatarUrl: formData.avatarUrl,
+          schoolName: formData.schoolName.trim(),
+          age: Number(formData.age),
+          bio: formData.bio.trim(),
+          bioHi: formData.bioHi.trim(),
+          guardianName: formData.guardianName.trim(),
+          guardianRelation: formData.guardianRelation.trim(),
+        },
+        getAuthToken() || undefined,
+      );
+      setProfileData(result.profile);
+      onProfileUpdated?.(result.profile);
+      setIsEditModalOpen(false);
+      setSavedSuccessNotice(
+        locale === 'hi' ? 'प्रोफ़ाइल अपडेट हो गई है।' : 'Profile updated successfully.',
+      );
+      setTimeout(() => setSavedSuccessNotice(null), 4000);
+    } catch {
+      setSavedSuccessNotice('Could not save your profile. Please try again.');
+    }
   };
 
   return (
@@ -1137,6 +1138,7 @@ export function StudentProfileDetail({
                   </label>
                   <select
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled
                     value={formData.grade}
                     onChange={(e) => setFormData({ ...formData, grade: Number(e.target.value) })}
                   >
@@ -1155,6 +1157,7 @@ export function StudentProfileDetail({
                   <Input
                     required
                     placeholder="e.g. A"
+                    disabled
                     value={formData.section}
                     onChange={(e) => setFormData({ ...formData, section: e.target.value })}
                   />
@@ -1167,6 +1170,7 @@ export function StudentProfileDetail({
                   <Input
                     required
                     placeholder="e.g. 101"
+                    disabled
                     value={formData.rollNumber}
                     onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
                   />

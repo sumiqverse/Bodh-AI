@@ -2,13 +2,11 @@
 
 import * as React from 'react';
 import { Play, ArrowUpRight } from 'lucide-react';
-import { HexCoinIcon } from './MascotIcons';
 
 interface ProgressItem {
   id: string;
   title: string;
   percentage: number;
-  xpReward: number;
 }
 
 interface CourseProgressCardProps {
@@ -23,16 +21,14 @@ export function CourseProgressCard({
   moduleLabel = 'Module 4 of 6',
   items = [
     {
-      id: 'alg',
-      title: 'Algebraic Expressions & Identities',
-      percentage: 68,
-      xpReward: 120,
+      id: 'mod4',
+      title: 'Module - 4',
+      percentage: 67,
     },
     {
-      id: 'lin',
-      title: 'Linear Equations in One Variable',
-      percentage: 84,
-      xpReward: 150,
+      id: 'overall',
+      title: 'Overall Progress',
+      percentage: 80,
     },
   ],
   onContinue,
@@ -108,12 +104,6 @@ export function CourseProgressCard({
                     className="h-full rounded-full bg-primary-orange transition-all duration-500"
                     style={{ width: `${item.percentage}%` }}
                   />
-                </div>
-
-                {/* Micro Hint: +XP on completion */}
-                <div className="flex items-center gap-1.5 text-[11px] text-text-secondary dark:text-muted-foreground pt-0.5">
-                  <HexCoinIcon className="w-3.5 h-3.5" />
-                  <span>+{item.xpReward} XP on completion</span>
                 </div>
               </div>
             ))}

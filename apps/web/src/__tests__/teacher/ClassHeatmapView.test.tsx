@@ -153,6 +153,27 @@ describe('ClassHeatmapView Component', () => {
     expect(handleSelect).toHaveBeenCalledWith('s-1');
   });
 
+  it('labels an unassessed skill without implying a zero mastery score', () => {
+    const matrix = mockHeatmapData.matrix.map((cell) =>
+      cell.student_id === 's-1' && cell.skill_id === 'sk-1'
+        ? { ...cell, state: 'unassessed', p_mastery: 0, attempts_count: 0 }
+        : cell,
+    );
+    renderWithIntl(
+      <ClassHeatmapView
+        heatmap={{
+          ...mockHeatmapData,
+          matrix,
+          summary: { ...mockHeatmapData.summary, unassessed: 1 },
+        }}
+        onSelectStudent={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Aarav Patel: Integer Addition is Not Assessed' }),
+    ).toBeDefined();
+  });
+
   it('filters students by search input', () => {
     const handleSelect = vi.fn();
     renderWithIntl(<ClassHeatmapView heatmap={mockHeatmapData} onSelectStudent={handleSelect} />);

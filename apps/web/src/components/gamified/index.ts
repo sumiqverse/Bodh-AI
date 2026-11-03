@@ -5,6 +5,7 @@ export * from './GreetingBanner';
 export * from './StatTiles';
 export * from './CourseProgressCard';
 export * from './TodayChallengeCard';
+export * from './TodayChallengeModal';
 export * from './LearningEfficiencyCard';
 export * from './MonthlyCalendarCard';
 export * from './LeaderboardCard';

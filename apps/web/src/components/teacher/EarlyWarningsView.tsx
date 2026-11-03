@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@bodhai/ui';
+import { Button } from '@bodhai/ui';
 import type { ClassEarlyWarningsResponse, EarlyWarningItem } from '@bodhai/api-client';
 
 interface EarlyWarningsViewProps {
@@ -32,19 +32,17 @@ export function EarlyWarningsView({
 
         {/* Time window selection */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-muted-foreground">
-            {t('timeWindowLabel')}:
-          </span>
-          <div className="inline-flex rounded-lg border border-border p-1 bg-card">
+          <span className="text-xs font-bold text-text-secondary">{t('timeWindowLabel')}:</span>
+          <div className="inline-flex rounded-full border-2 border-ink p-1 bg-surface-cream/50 shadow-xs">
             {dayOptions.map((opt) => (
               <button
                 key={opt}
                 type="button"
                 onClick={() => onDaysChange(opt)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
                   days === opt
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-[#E8800A] text-white border border-ink shadow-xs'
+                    : 'text-ink hover:text-[#E8800A]'
                 }`}
               >
                 {t('daysOption', { days: opt })}
@@ -55,13 +53,13 @@ export function EarlyWarningsView({
       </div>
 
       {warnings.warnings.length === 0 ? (
-        <Card className="border-dashed p-10 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+        <div className="rounded-card border-2 border-dashed border-ink p-10 text-center bg-surface-white">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-cream border-2 border-ink text-2xl font-black shadow-xs">
             ✓
           </div>
-          <h3 className="mt-4 font-semibold text-lg text-foreground">{t('emptyTitle')}</h3>
-          <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">{t('emptyDesc')}</p>
-        </Card>
+          <h3 className="mt-4 font-black text-lg text-ink">{t('emptyTitle')}</h3>
+          <p className="mt-1 text-xs text-text-secondary max-w-md mx-auto">{t('emptyDesc')}</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {warnings.warnings.map((student: EarlyWarningItem) => {
@@ -69,46 +67,47 @@ export function EarlyWarningsView({
             const isDropped = student.warning_type === 'dropped';
 
             return (
-              <Card
+              <div
                 key={student.student_id}
-                className="border-border hover:border-destructive/40 shadow-xs transition-colors"
+                className="rounded-card border-2 border-ink bg-surface-white dark:bg-card p-5 shadow-card hover:-translate-y-0.5 transition-transform"
               >
-                <CardHeader className="pb-3">
+                <div className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-base font-bold text-foreground">
+                        <h4 className="text-base font-black text-ink dark:text-white">
                           {student.student_name}
-                        </CardTitle>
+                        </h4>
                         {student.roll_number && (
-                          <span className="text-xs text-muted-foreground font-mono">
+                          <span className="text-xs text-text-secondary font-mono font-bold">
                             ({t('rollPrefix')} {student.roll_number})
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                      <p className="text-xs text-text-secondary mt-1 font-bold">
                         {student.message} ({student.days_inactive_or_stalled} days)
                       </p>
                     </div>
 
-                    <Badge
-                      variant={isStalled || isDropped ? 'destructive' : 'outline'}
-                      className="text-xs shrink-0 capitalize"
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border-2 border-ink shadow-xs shrink-0 ${
+                        isStalled || isDropped
+                          ? 'bg-surface-pink text-ink'
+                          : 'bg-surface-cream text-ink'
+                      }`}
                     >
                       {isStalled ? t('stalledBadge') : isDropped ? 'Dropped' : t('inactiveBadge')}
-                    </Badge>
+                    </span>
                   </div>
-                </CardHeader>
+                </div>
 
-                <CardContent className="space-y-3 pt-0 text-xs">
+                <div className="space-y-3 pt-0 text-xs">
                   {student.suggested_action && (
-                    <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/50 p-2.5">
-                      <span className="font-bold text-amber-800 dark:text-amber-300 block mb-0.5">
+                    <div className="rounded-2xl border-2 border-ink bg-surface-cream/50 p-3 shadow-xs">
+                      <span className="font-black text-ink block mb-0.5">
                         {t('recommendedAction')}:
                       </span>
-                      <p className="text-amber-900/90 dark:text-amber-200">
-                        {student.suggested_action}
-                      </p>
+                      <p className="text-text-secondary font-medium">{student.suggested_action}</p>
                     </div>
                   )}
 
@@ -117,14 +116,14 @@ export function EarlyWarningsView({
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="cursor-pointer text-xs"
+                      className="cursor-pointer text-xs font-bold rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream shadow-xs"
                       onClick={() => onSelectStudent(student.student_id)}
                     >
                       View Student Profile →
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

@@ -536,22 +536,16 @@ export function BodhAILogo({
   className?: string;
   showText?: boolean;
 }): React.JSX.Element {
-  const badgeSize =
-    size === 'sm'
-      ? 'h-8 w-8 text-base'
-      : size === 'lg'
-        ? 'h-11 w-11 text-2xl'
-        : 'h-10 w-10 text-xl';
+  const badgeSize = size === 'sm' ? 'h-8 w-8' : size === 'lg' ? 'h-11 w-11' : 'h-10 w-10';
   const textSize = size === 'sm' ? 'text-lg' : size === 'lg' ? 'text-3xl' : 'text-2xl';
 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      <span
-        className={`flex ${badgeSize} items-center justify-center rounded-full bg-primary-orange text-white font-devanagari font-black border-2 border-ink shadow-sm shrink-0 select-none`}
-        aria-hidden="true"
-      >
-        बो
-      </span>
+      <img
+        src="/image.png"
+        alt="BodhAI"
+        className={`${badgeSize} rounded-full object-contain shrink-0 select-none drop-shadow-xs`}
+      />
       {showText && (
         <span
           className={`font-serif font-black ${textSize} tracking-tight text-ink dark:text-white`}

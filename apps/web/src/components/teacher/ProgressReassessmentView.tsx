@@ -15,7 +15,8 @@ export function ProgressReassessmentView({
   const t = useTranslations('teacherDashboard.progressView');
 
   const masteryPct = Math.round(progress.overall_mastery_pct);
-  const growthPct = Math.round(progress.reassessment_growth_pct);
+  const growthPct =
+    progress.reassessment_growth_pct == null ? null : Math.round(progress.reassessment_growth_pct);
 
   return (
     <div className="space-y-6">
@@ -35,7 +36,9 @@ export function ProgressReassessmentView({
             </p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-extrabold text-foreground">{masteryPct}%</span>
-              <span className="text-xs text-muted-foreground">class average</span>
+              <span className="text-xs text-muted-foreground">
+                of all student–skill pairs mastered
+              </span>
             </div>
             <div className="mt-3 h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
@@ -69,7 +72,9 @@ export function ProgressReassessmentView({
               {t('growthRate')}
             </p>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-primary">+{growthPct}%</span>
+              <span className="text-3xl font-extrabold text-primary">
+                {growthPct === null ? 'Not available' : `+${growthPct}%`}
+              </span>
               <Badge
                 variant="outline"
                 className="text-xs bg-primary/10 text-primary border-primary/20"
@@ -173,7 +178,9 @@ export function ProgressReassessmentView({
                 consolidation without regression.
               </p>
               <div className="pt-2 text-xs font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
-                +{growthPct}% net measured competency growth
+                {growthPct === null
+                  ? 'Reassessment data is not available yet'
+                  : `+${growthPct}% net measured competency growth`}
               </div>
             </div>
           </div>

@@ -6,22 +6,33 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 interface MonthlyCalendarCardProps {
   monthName?: string;
   maxStreak?: number;
+  todayDate?: number;
+  attemptedDays?: number[];
 }
 
 export function MonthlyCalendarCard({
-  monthName = 'November',
-  maxStreak = 9,
+  monthName,
+  maxStreak = 0,
+  todayDate: propTodayDate,
+  attemptedDays: propAttemptedDays,
 }: MonthlyCalendarCardProps): React.JSX.Element {
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  // 30 days grid with mock realistic streak history (consecutive days leading to today)
-  // E.g., attempted on days 12-20 (9 continuous days), 20 is today!
-  const todayDate = 20;
-  const attemptedDays = new Set([2, 3, 5, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+  const now = new Date();
+  const currentMonth = monthName || now.toLocaleString('en-US', { month: 'long' });
+  const todayDate = propTodayDate ?? now.getDate();
 
-  // First day offset (e.g., Nov 1 starts on Friday -> index 4)
-  const emptyDaysBefore = 4;
-  const totalDays = 30;
+  // Days in month
+  const totalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+  // First day offset (Monday = 0 ... Sunday = 6)
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const emptyDaysBefore = (firstDay + 6) % 7;
+
+  // Attempted days set
+  const attemptedSet = React.useMemo(() => {
+    return new Set(propAttemptedDays ?? []);
+  }, [propAttemptedDays]);
 
   return (
     <div className="relative overflow-hidden rounded-card border-2 border-ink bg-surface-butter p-5 shadow-card text-ink">
@@ -34,8 +45,8 @@ export function MonthlyCalendarCard({
           <CalendarIcon className="h-5 w-5 text-ink" />
           <h3 className="text-base font-bold text-ink">Monthly Activity</h3>
         </div>
-        <span className="text-xs font-extrabold uppercase tracking-wider text-ink/80 px-2 py-0.5 rounded-full border border-ink/30 bg-surface-yellow">
-          {monthName}
+        <span className="text-xs font-extrabold uppercase tracking-wider text-ink/80 px-2.5 py-0.5 rounded-full border border-ink/30 bg-surface-yellow shadow-xs">
+          {currentMonth}
         </span>
       </div>
 
@@ -60,13 +71,15 @@ export function MonthlyCalendarCard({
           {/* Actual days */}
           {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
             const isToday = day === todayDate;
-            const isAttempted = attemptedDays.has(day);
+            const isAttempted = attemptedSet.has(day);
 
             let cellClass =
               'h-8 w-8 mx-auto flex items-center justify-center rounded-full text-xs font-semibold transition-transform hover:scale-110 select-none';
 
             if (isToday) {
-              cellClass += ' bg-primary-orange text-white font-black ring-2 ring-ink shadow-sm';
+              cellClass += isAttempted
+                ? ' bg-primary-orange text-white font-black ring-2 ring-ink shadow-sm'
+                : ' bg-surface-yellow text-ink font-black ring-2 ring-ink shadow-sm';
             } else if (isAttempted) {
               cellClass += ' bg-primary-orange text-white font-bold';
             } else {

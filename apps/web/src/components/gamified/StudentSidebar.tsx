@@ -14,6 +14,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { clearAuthSession } from '@/lib/api-client';
+import { BrandMark } from '@bodhai/ui';
 import { useRouter } from '@/i18n/routing';
 
 interface StudentSidebarProps {
@@ -58,27 +59,25 @@ export function StudentSidebar({
     >
       <div className="space-y-6">
         {/* Logo */}
-        <div className="flex items-center justify-center lg:justify-start gap-2.5 px-2">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-orange text-white font-devanagari font-black text-xl border-2 border-ink shadow-sm shrink-0 select-none"
-            aria-hidden="true"
-          >
-            बो
-          </span>
-          <span className="font-serif font-black text-2xl tracking-tight text-ink dark:text-white">
-            BodhAI
-          </span>
+        <div className="flex items-center justify-center px-2 lg:justify-start">
+          <BrandMark />
         </div>
 
         {/* Profile Block */}
         <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-surface-cream/50 dark:bg-card border-2 border-ink/10">
           <div className="relative mb-2">
-            <div className="h-16 w-16 rounded-full border-2 border-ink overflow-hidden bg-surface-peach flex items-center justify-center text-2xl font-bold text-ink">
-              {studentName.charAt(0).toUpperCase()}
+            <div
+              suppressHydrationWarning
+              className="h-16 w-16 rounded-full border-2 border-ink overflow-hidden bg-surface-peach flex items-center justify-center text-2xl font-bold text-ink"
+            >
+              {(studentName.charAt(0) || 'S').toUpperCase()}
             </div>
             <span className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-ink" />
           </div>
-          <h2 className="font-bold text-base tracking-wide text-ink dark:text-white">
+          <h2
+            suppressHydrationWarning
+            className="font-bold text-base tracking-wide text-ink dark:text-white"
+          >
             {studentName}
           </h2>
           <span className="text-xs text-text-secondary dark:text-muted-foreground">
