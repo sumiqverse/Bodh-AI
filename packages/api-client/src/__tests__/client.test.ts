@@ -1,7 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BodhaiApiClient } from '../client';
+import { BodhaiApiClient, COOKIE_SESSION_TOKEN } from '../client';
 
 describe('BodhaiApiClient', () => {
+  it('maps the real content import report for both import screens', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        curriculum_code: 'NCERT-MATH-C8',
+        total_mutations: 2,
+        details: ['Created topic'],
+        topics_created: 1,
+        skills_created: 1,
+      }),
+    });
+    const client = new BodhaiApiClient({
+      baseUrl: 'http://localhost:8000',
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+    const result = await client.importContentPack({ curriculum: {} }, true, 'token');
+    expect(result.curriculum_code).toBe('NCERT-MATH-C8');
+    expect(result.diff?.skills_created).toBe(1);
+    expect(result.summary).toBe('2 changes planned.');
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('dry_run=true'),
+      expect.anything(),
+    );
+  });
   it('successfully fetches health status', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -356,4 +381,69 @@ describe('BodhaiApiClient', () => {
     expect(item.question_id).toBe('q-202');
     expect(item.predicted_success).toBe(0.75);
   });
+});
+
+it('exposes HTTP status for recovery from a missing diagnostic session', async () => {
+  const client = new BodhaiApiClient({
+    baseUrl: 'http://localhost:8000',
+    fetchFn: vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ detail: 'No diagnostic session' }),
+    }) as unknown as typeof fetch,
+  });
+  await expect(client.getCurrentDiagnostic('NCERT-MATH-C8')).rejects.toMatchObject({ status: 404 });
+});
+
+it('uses cookie auth without leaking the session sentinel as a bearer token', async () => {
+  const mockFetch = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({ status: 'ok', app: 'BodhAI API', version: '0.1.0' }),
+  });
+  const client = new BodhaiApiClient({
+    baseUrl: 'http://localhost:8000',
+    fetchFn: mockFetch as unknown as typeof fetch,
+    getToken: () => COOKIE_SESSION_TOKEN,
+  });
+
+  await client.getHealth();
+
+  const init = (mockFetch.mock.calls[0]?.[1] ?? {}) as RequestInit;
+  expect((init.headers as Headers).has('Authorization')).toBe(false);
+  expect(init.credentials).toBe('include');
+});
+
+it('refreshes once on 401 and retries with the rotated access token', async () => {
+  let token = 'expired-token';
+  const mockFetch = vi
+    .fn()
+    .mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      json: async () => ({ detail: 'Token has expired.' }),
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'ok', app: 'BodhAI API', version: '0.1.0' }),
+    });
+  const onUnauthorized = vi.fn().mockImplementation(async () => {
+    token = 'rotated-token';
+    return true;
+  });
+  const client = new BodhaiApiClient({
+    baseUrl: 'http://localhost:8000',
+    fetchFn: mockFetch as unknown as typeof fetch,
+    getToken: () => token,
+    onUnauthorized,
+  });
+
+  const response = await client.getHealth();
+
+  expect(response.status).toBe('ok');
+  expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  const retryInit = (mockFetch.mock.calls[1]?.[1] ?? {}) as RequestInit;
+  expect((retryInit.headers as Headers).get('Authorization')).toBe('Bearer rotated-token');
 });

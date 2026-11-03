@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { BrandMark } from './brand-mark';
 import { cn } from './utils';
 
 export interface FooterLinkSection {
@@ -46,48 +47,41 @@ export function Footer({
 
   return (
     <footer
+      suppressHydrationWarning
       className={cn(
-        'w-full border-t border-border bg-card text-card-foreground mt-auto',
+        'w-full border-t-2 border-ink bg-surface-white dark:bg-card text-card-foreground mt-auto',
         className,
       )}
       {...props}
     >
-      <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+      <div className="container mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-10">
           {/* Brand & Purpose */}
-          <div className="lg:col-span-2 flex flex-col gap-4 text-left">
-            <div className="flex items-center gap-2.5">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-sans font-bold text-base shadow-sm"
-                aria-hidden="true"
-              >
-                बो
-              </span>
-              <span className="font-serif font-bold text-xl tracking-tight text-foreground">
-                {brandName}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{tagline}</p>
+          <div className="md:col-span-2 lg:col-span-2 flex flex-col gap-4 text-left">
+            <BrandMark name={brandName} />
+            <p className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground leading-relaxed max-w-sm font-medium">
+              {tagline}
+            </p>
             {citationNotice && (
-              <p className="text-xs text-muted-foreground/80 border-l-2 border-primary/40 pl-3 leading-relaxed">
+              <p className="text-[11px] font-mono text-text-secondary dark:text-muted-foreground border-l-2 border-primary-orange pl-3 leading-relaxed bg-surface-cream/30 dark:bg-muted/20 py-2 pr-2 rounded-r-xl border-y border-r border-ink/10">
                 {citationNotice}
               </p>
             )}
-            {languageSwitcher && <div className="mt-2">{languageSwitcher}</div>}
+            {languageSwitcher && <div className="mt-1">{languageSwitcher}</div>}
           </div>
 
           {/* Nav Sections */}
           {sections.map((section) => (
             <div key={section.title} className="flex flex-col gap-3 text-left">
-              <h4 className="text-sm font-semibold tracking-wider text-foreground">
+              <h4 className="text-xs font-mono font-black uppercase tracking-wider text-ink dark:text-white">
                 {section.title}
               </h4>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-2.5">
                 {section.links.map((link) => (
                   <li key={link.href}>
                     <LinkElement
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                      className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground hover:text-ink dark:hover:text-white transition-colors font-medium hover:underline inline-flex items-center gap-1"
                     >
                       {link.label}
                     </LinkElement>
@@ -99,13 +93,16 @@ export function Footer({
         </div>
 
         {/* Legal Draft Notice & Copyright */}
-        <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+        <div className="mt-12 pt-6 border-t-2 border-ink/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-secondary dark:text-muted-foreground font-medium">
           <p>{copyright ?? `© ${new Date().getFullYear()} BodhAI. All rights reserved.`}</p>
           {legalDraftNotice && (
-            <p className="inline-flex items-center gap-1.5 text-warning font-medium">
-              <span className="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-ink/20 bg-surface-yellow/40 px-3 py-1 text-xs font-bold text-ink dark:text-white shadow-xs">
+              <span
+                className="h-2 w-2 rounded-full bg-primary-orange shrink-0 animate-pulse"
+                aria-hidden="true"
+              />
               <span>{legalDraftNotice}</span>
-            </p>
+            </div>
           )}
         </div>
       </div>

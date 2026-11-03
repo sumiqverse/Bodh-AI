@@ -157,7 +157,7 @@ export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
           className={cn(
-            'relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-floating animate-slide-in-up focus-visible:outline-none',
+            'relative w-full max-w-lg rounded-card border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 text-card-foreground shadow-card animate-slide-in-up focus-visible:outline-none',
             className,
           )}
           {...props}

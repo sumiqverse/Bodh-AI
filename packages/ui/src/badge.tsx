@@ -14,19 +14,15 @@ export function Badge({
   ...props
 }: BadgeProps): React.JSX.Element {
   const baseStyles =
-    'inline-flex items-center font-medium rounded-full transition-colors select-none';
+    'inline-flex items-center font-bold rounded-full transition-colors select-none';
 
   const variants: Record<NonNullable<BadgeProps['variant']>, string> = {
-    default:
-      'bg-primary/10 text-primary border border-primary/20 dark:bg-primary/20 dark:text-primary-foreground',
-    secondary: 'bg-secondary text-secondary-foreground border border-border',
-    outline: 'border border-border text-foreground bg-transparent',
-    success:
-      'bg-success/10 text-success border border-success/20 dark:bg-success/20 dark:text-success',
-    warning:
-      'bg-warning/10 text-warning border border-warning/20 dark:bg-warning/20 dark:text-warning',
-    destructive:
-      'bg-destructive/10 text-destructive border border-destructive/20 dark:bg-destructive/20 dark:text-destructive',
+    default: 'bg-surface-cream text-ink border-2 border-ink shadow-xs',
+    secondary: 'bg-surface-blue text-ink border-2 border-ink shadow-xs',
+    outline: 'border-2 border-ink text-ink bg-surface-white dark:bg-card dark:text-white shadow-xs',
+    success: 'bg-emerald-100 text-emerald-950 border-2 border-ink shadow-xs',
+    warning: 'bg-surface-yellow text-ink border-2 border-ink shadow-xs',
+    destructive: 'bg-surface-pink text-ink border-2 border-ink shadow-xs',
   };
 
   const sizes: Record<NonNullable<BadgeProps['size']>, string> = {

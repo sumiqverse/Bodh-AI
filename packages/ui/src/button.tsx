@@ -25,14 +25,15 @@ export function buttonVariants({
     primary:
       'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90 border-2 border-ink shadow-sm font-bold',
     secondary:
-      'bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70 shadow-sm',
-    outline: 'border border-border bg-background text-foreground hover:bg-muted active:bg-muted/80',
+      'bg-surface-cream text-ink hover:bg-surface-yellow border-2 border-ink shadow-xs font-bold',
+    outline:
+      'border-2 border-ink bg-surface-white dark:bg-card text-foreground hover:bg-surface-cream active:bg-surface-cream/80 font-bold transition-all shadow-xs',
     ghost: 'bg-transparent text-foreground hover:bg-muted hover:text-foreground active:bg-muted/80',
     destructive:
-      'bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80 shadow-sm',
+      'bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80 border-2 border-ink shadow-sm font-bold',
     link: 'text-primary underline-offset-4 hover:underline bg-transparent p-0 h-auto font-normal',
     orange:
-      'bg-[#E8800A] text-white hover:bg-[#C96A00] active:bg-[#B55E00] border-2 border-ink shadow-sm',
+      'bg-[#E8800A] text-white hover:bg-[#C96A00] active:bg-[#B55E00] border-2 border-ink shadow-sm font-bold',
   };
 
   const sizes: Record<NonNullable<ButtonProps['size']>, string> = {

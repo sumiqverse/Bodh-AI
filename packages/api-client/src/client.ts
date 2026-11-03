@@ -169,7 +169,24 @@ export interface QuestionResponse {
   hints?: string[];
 }
 
-export type AttemptSubmitRequest = components['schemas']['AttemptSubmitRequest'];
+export interface EditorialQuestion {
+  id: string;
+  code: string;
+  skill_id: string;
+  difficulty: number;
+  status: string;
+  needs_teacher_review: boolean;
+  prompt: string;
+  options: Array<Record<string, unknown>> | null;
+  verified_answer: string;
+  worked_solution: string;
+  explanation: string | null;
+  hints: string[];
+}
+
+export type AttemptSubmitRequest = components['schemas']['AttemptSubmitRequest'] & {
+  class_id?: string | null;
+};
 export type AttemptResponse = components['schemas']['AttemptResponse'];
 
 export interface MasteryResponse {
@@ -185,6 +202,31 @@ export interface MasteryResponse {
   topic_name?: string | null;
   skill_code?: string | null;
 }
+
+export interface LeaderboardStudentItem {
+  rank: number;
+  student_id: string;
+  name: string;
+  username?: string | null;
+  roll_number?: string | null;
+  xp: number;
+  streak_days: number;
+  avatar_bg?: string;
+  is_current_user?: boolean;
+}
+
+export interface ClassLeaderboardResponse {
+  class_id: string;
+  class_name: string;
+  total_students: number;
+  top_three: LeaderboardStudentItem[];
+  list_learners: LeaderboardStudentItem[];
+  all_rankings: LeaderboardStudentItem[];
+  current_user_row?: LeaderboardStudentItem | null;
+  activity_dates: string[];
+  max_streak: number;
+}
+
 export type ConsentCreateRequest = components['schemas']['GuardianConsentCreateRequest'];
 export type ConsentResponse = components['schemas']['ConsentDetailResponse'];
 export type SyncBatchRequest = components['schemas']['SyncBatchRequest'];
@@ -192,6 +234,7 @@ export type SyncBatchResponse = components['schemas']['SyncBatchResponse'];
 
 // Adaptive & Diagnostic types
 export interface DiagnosticStartRequest {
+  class_id?: string;
   curriculum_code?: string;
   initial_skills?: string[];
 }
@@ -259,7 +302,9 @@ export type TokenResponse = components['schemas']['TokenResponse'];
 export type UserResponse = components['schemas']['UserResponse'];
 
 // Class types
-export type ClassCreateRequest = components['schemas']['ClassCreateRequest'];
+export type ClassCreateRequest = components['schemas']['ClassCreateRequest'] & {
+  subject?: string | null;
+};
 export type ClassResponse = components['schemas']['ClassResponse'];
 export type ClassDetailResponse = components['schemas']['ClassDetailResponse'];
 export type RotateCodeResponse = components['schemas']['RotateCodeResponse'];
@@ -320,6 +365,7 @@ export interface ClassHeatmapResponse {
     mastered: number;
     partial: number;
     not_learned: number;
+    unassessed?: number;
   };
 }
 
@@ -491,7 +537,7 @@ export interface ClassProgressSummaryResponse {
   total_attempts: number;
   overall_mastery_pct: number;
   mastered_skills_avg: number;
-  reassessment_growth_pct: number;
+  reassessment_growth_pct: number | null;
   timeline: Array<{
     label: string;
     mastery_pct: number;
@@ -551,6 +597,9 @@ export interface ImportResponse {
   warnings: string[];
   diff: ImportDiff | null;
   summary: string;
+  curriculum_code: string;
+  total_mutations: number;
+  details: string[];
 }
 
 export interface QuestionTranslationDetail {
@@ -606,12 +655,31 @@ export interface ProblemDetail {
   invalid_params?: Array<{ name: string; reason: string }>;
 }
 
+export const COOKIE_SESSION_TOKEN = '__bodhai_cookie_session__';
+
+const AUTH_NO_REFRESH_PATHS = [
+  '/api/v1/auth/teacher/login',
+  '/api/v1/auth/teacher/signup',
+  '/api/v1/auth/student/login',
+  '/api/v1/auth/student/join',
+  '/api/v1/auth/supabase',
+  '/api/v1/auth/refresh',
+  '/api/v1/auth/reset-password',
+];
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match && match[1] ? decodeURIComponent(match[1]) : null;
+}
+
 export interface ApiClientOptions {
   readonly baseUrl: string;
   readonly fetchFn?: typeof fetch;
   readonly defaultHeaders?: Record<string, string>;
   readonly getToken?: () => string | null;
   readonly getLocale?: () => string | null;
+  readonly onUnauthorized?: () => Promise<boolean> | boolean;
 }
 
 export interface UserProfileResponse<T = Record<string, unknown>> {
@@ -621,6 +689,7 @@ export interface UserProfileResponse<T = Record<string, unknown>> {
 
 export interface ProfileUpdatePayload {
   fullName?: string;
+  employeeId?: string;
   fullNameHi?: string;
   title?: string;
   titleHi?: string;
@@ -634,6 +703,9 @@ export interface ProfileUpdatePayload {
   officeHours?: string;
   specializations?: string[];
   avatarUrl?: string;
+  age?: number;
+  guardianName?: string;
+  guardianRelation?: string;
 }
 
 export interface SetupCohortPayload {
@@ -643,12 +715,32 @@ export interface SetupCohortPayload {
   className?: string;
 }
 
+export interface ClassroomLesson {
+  id: string;
+  skill_id: string;
+  language: string;
+  difficulty: number;
+  title: string;
+  body: string;
+}
+
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
 export class BodhaiApiClient {
   private readonly baseUrl: string;
   private readonly fetchFn: typeof fetch;
   private readonly defaultHeaders: Record<string, string>;
   private readonly getToken?: () => string | null;
   private readonly getLocale?: () => string | null;
+  private readonly onUnauthorized?: () => Promise<boolean> | boolean;
 
   public constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
@@ -657,6 +749,7 @@ export class BodhaiApiClient {
     this.defaultHeaders = options.defaultHeaders ?? {};
     this.getToken = options.getToken;
     this.getLocale = options.getLocale;
+    this.onUnauthorized = options.onUnauthorized;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -670,9 +763,15 @@ export class BodhaiApiClient {
 
     if (!headers.has('Authorization') && this.getToken) {
       const autoToken = this.getToken();
-      if (autoToken) {
+      if (autoToken && autoToken !== COOKIE_SESSION_TOKEN) {
         headers.set('Authorization', `Bearer ${autoToken}`);
       }
+    }
+
+    const method = (options.method ?? 'GET').toUpperCase();
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !headers.has('X-CSRF-Token')) {
+      const csrfToken = readCookie('csrf_token');
+      if (csrfToken) headers.set('X-CSRF-Token', csrfToken);
     }
 
     if (!headers.has('Accept')) {
@@ -701,11 +800,35 @@ export class BodhaiApiClient {
         ? AbortSignal.timeout(45000)
         : undefined);
 
-    const response = await this.fetchFn(url, {
+    let response = await this.fetchFn(url, {
       ...options,
+      credentials: 'include',
       signal,
       headers,
     });
+
+    if (
+      response.status === 401 &&
+      this.onUnauthorized &&
+      !AUTH_NO_REFRESH_PATHS.some((path) => endpoint.startsWith(path))
+    ) {
+      const refreshed = await this.onUnauthorized();
+      if (refreshed) {
+        const retryHeaders = new Headers(headers);
+        const retryToken = this.getToken?.();
+        if (retryToken && retryToken !== COOKIE_SESSION_TOKEN) {
+          retryHeaders.set('Authorization', `Bearer ${retryToken}`);
+        } else {
+          retryHeaders.delete('Authorization');
+        }
+        response = await this.fetchFn(url, {
+          ...options,
+          credentials: 'include',
+          signal,
+          headers: retryHeaders,
+        });
+      }
+    }
 
     if (!response.ok) {
       let problemDetail: ProblemDetail | null = null;
@@ -724,9 +847,15 @@ export class BodhaiApiClient {
           details =
             ': ' + problemDetail.invalid_params.map((p) => `${p.name} (${p.reason})`).join(', ');
         }
-        throw new Error(`API Error [${response.status}]: ${problemDetail.detail}${details}`);
+        throw new ApiRequestError(
+          `API Error [${response.status}]: ${problemDetail.detail}${details}`,
+          response.status,
+        );
       }
-      throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+      throw new ApiRequestError(
+        `HTTP Error ${response.status}: ${response.statusText}`,
+        response.status,
+      );
     }
 
     return (await response.json()) as T;
@@ -735,13 +864,47 @@ export class BodhaiApiClient {
   private authHeaders(token?: string): Record<string, string> {
     const headers: Record<string, string> = {};
     const effectiveToken = token ?? this.getToken?.() ?? undefined;
-    if (effectiveToken) {
+    if (effectiveToken && effectiveToken !== COOKIE_SESSION_TOKEN) {
       headers['Authorization'] = `Bearer ${effectiveToken}`;
     }
     return headers;
   }
 
   // --- Health & Probes ---
+  public async listReviewQuestions(
+    skip: number,
+    token?: string,
+    pendingOnly = true,
+  ): Promise<EditorialQuestion[]> {
+    const reviewFilter = pendingOnly ? '&needs_teacher_review=true' : '';
+    return this.request<EditorialQuestion[]>(
+      `/api/v1/questions/manage?limit=50&skip=${skip}${reviewFilter}`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
+  }
+
+  public async saveReviewQuestion(
+    id: string,
+    payload: Partial<EditorialQuestion>,
+    token?: string,
+  ): Promise<EditorialQuestion> {
+    return this.request<EditorialQuestion>(`/api/v1/questions/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...this.authHeaders(token) },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async publishReviewedQuestion(id: string, token?: string): Promise<EditorialQuestion> {
+    return this.request<EditorialQuestion>(`/api/v1/questions/${encodeURIComponent(id)}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...this.authHeaders(token) },
+      body: JSON.stringify({ status: 'published', needs_teacher_review: false }),
+    });
+  }
+
   public async getHealth(): Promise<HealthResponse> {
     return this.request<HealthResponse>('/health');
   }
@@ -837,6 +1000,18 @@ export class BodhaiApiClient {
     return this.request<ClassDetailResponse>(`/api/v1/classes/${encodeURIComponent(classId)}`, {
       headers: this.authHeaders(token),
     });
+  }
+
+  public async getClassLeaderboard(
+    classId: string,
+    token?: string,
+  ): Promise<ClassLeaderboardResponse> {
+    return this.request<ClassLeaderboardResponse>(
+      `/api/v1/classes/${encodeURIComponent(classId)}/leaderboard`,
+      {
+        headers: this.authHeaders(token),
+      },
+    );
   }
 
   public async rotateClassJoinCode(classId: string, token?: string): Promise<RotateCodeResponse> {
@@ -1006,12 +1181,14 @@ export class BodhaiApiClient {
 
   public async listQuestions(params?: {
     skillId?: string;
+    classId?: string;
     language?: string;
     skip?: number;
     limit?: number;
   }): Promise<QuestionResponse[]> {
     const query = new URLSearchParams();
     if (params?.skillId) query.set('skill_id', params.skillId);
+    if (params?.classId) query.set('class_id', params.classId);
     const effectiveLang =
       params?.language ??
       (this.getLocale ? this.getLocale() : undefined) ??
@@ -1069,11 +1246,119 @@ export class BodhaiApiClient {
     });
   }
 
-  public async listMastery(studentId?: string, token?: string): Promise<MasteryResponse[]> {
+  public async listMastery(
+    studentId?: string,
+    token?: string,
+    classId?: string,
+  ): Promise<MasteryResponse[]> {
     const query = new URLSearchParams();
     if (studentId) query.set('student_id', studentId);
+    if (classId) query.set('class_id', classId);
     const qs = query.toString() ? `?${query.toString()}` : '';
     return this.request<MasteryResponse[]>(`/api/v1/mastery${qs}`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async listClassLessons(classId: string, token?: string): Promise<ClassroomLesson[]> {
+    return this.request(`/api/v1/classes/${encodeURIComponent(classId)}/lessons`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async saveClassLesson(
+    classId: string,
+    lesson: Omit<ClassroomLesson, 'id'>,
+    token?: string,
+  ): Promise<ClassroomLesson> {
+    return this.request(`/api/v1/classes/${encodeURIComponent(classId)}/lessons`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...this.authHeaders(token) },
+      body: JSON.stringify(lesson),
+    });
+  }
+
+  public async getClassLesson(
+    classId: string,
+    skillId: string,
+    language: string,
+    token?: string,
+  ): Promise<ClassroomLesson> {
+    return this.request(
+      `/api/v1/classes/${encodeURIComponent(classId)}/lessons/${encodeURIComponent(skillId)}?language=${encodeURIComponent(language)}`,
+      { headers: this.authHeaders(token) },
+    );
+  }
+
+  public async getMyCertificate(
+    classId: string,
+    certificateId: string,
+    token?: string,
+  ): Promise<{
+    id: string;
+    title: string;
+    class_name: string;
+    student_name: string;
+    earned_at: string;
+  }> {
+    return this.request(
+      `/api/v1/classes/${encodeURIComponent(classId)}/my-achievements/${encodeURIComponent(certificateId)}`,
+      { headers: this.authHeaders(token) },
+    );
+  }
+
+  public async getMyClassAchievements(
+    classId: string,
+    token?: string,
+  ): Promise<
+    Array<{
+      id: string;
+      kind: 'badge' | 'certificate';
+      title: string;
+      earned_at: string;
+    }>
+  > {
+    return this.request(`/api/v1/classes/${encodeURIComponent(classId)}/my-achievements`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async getMyClassAssignments(
+    classId: string,
+    token?: string,
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      skill_ids: string[];
+      due_date: string | null;
+      status: string;
+    }>
+  > {
+    return this.request(`/api/v1/classes/${encodeURIComponent(classId)}/my-assignments`, {
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async skipClassDiagnostic(
+    classId: string,
+    token?: string,
+  ): Promise<{ diagnostic_status: string }> {
+    return this.request(`/api/v1/classes/${encodeURIComponent(classId)}/diagnostic/skip`, {
+      method: 'POST',
+      headers: this.authHeaders(token),
+    });
+  }
+
+  public async getCurrentDiagnostic(
+    curriculumCode: string,
+    token?: string,
+    classId?: string,
+  ): Promise<DiagnosticResponse> {
+    const query = new URLSearchParams({ curriculum_code: curriculumCode });
+    if (classId) query.set('class_id', classId);
+    return this.request<DiagnosticResponse>(`/api/v1/diagnostics/current?${query.toString()}`, {
       headers: this.authHeaders(token),
     });
   }
@@ -1110,9 +1395,13 @@ export class BodhaiApiClient {
     curriculumCode?: string,
     token?: string,
     language?: string,
+    classId?: string,
+    skillId?: string,
   ): Promise<NextItemResponse> {
     const query = new URLSearchParams();
     if (curriculumCode) query.set('curriculum_code', curriculumCode);
+    if (classId) query.set('class_id', classId);
+    if (skillId) query.set('skill_id', skillId);
     const effectiveLang =
       language ??
       (this.getLocale ? this.getLocale() : undefined) ??
@@ -1178,7 +1467,9 @@ export class BodhaiApiClient {
     dryRun: boolean = false,
     token?: string,
   ): Promise<ImportResponse> {
-    return this.request<ImportResponse>(`/api/v1/curricula/import?dry_run=${dryRun}`, {
+    const result = await this.request<
+      ImportDiff & { curriculum_code: string; total_mutations: number; details: string[] }
+    >(`/api/v1/curricula/import?dry_run=${dryRun}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1186,6 +1477,14 @@ export class BodhaiApiClient {
       },
       body: JSON.stringify(packData),
     });
+    return {
+      ...result,
+      is_valid: true,
+      errors: [],
+      warnings: [],
+      diff: result,
+      summary: `${result.total_mutations} changes ${dryRun ? 'planned' : 'applied'}.`,
+    };
   }
 
   public async listManageQuestions(
@@ -1271,9 +1570,7 @@ export class BodhaiApiClient {
     if (
       curriculumCode &&
       !token &&
-      (curriculumCode.startsWith('eyJ') ||
-        curriculumCode.startsWith('mock_token_') ||
-        curriculumCode.length > 50)
+      (curriculumCode.startsWith('eyJ') || curriculumCode.length > 50)
     ) {
       tok = curriculumCode;
       curr = undefined;
@@ -1405,6 +1702,7 @@ export class BodhaiApiClient {
   public async exportClassCsv(classId: string, token?: string): Promise<string> {
     const url = `${this.baseUrl}/api/v1/classes/${encodeURIComponent(classId)}/export/csv`;
     const res = await fetch(url, {
+      credentials: 'include',
       headers: this.authHeaders(token),
     });
     if (!res.ok) {

@@ -69,7 +69,7 @@ export const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
         role="tablist"
         aria-label={ariaLabel}
         className={cn(
-          'inline-flex h-11 items-center justify-start rounded-xl bg-muted p-1 text-muted-foreground border border-border/50 gap-1 overflow-x-auto',
+          'inline-flex h-12 items-center justify-start rounded-xl bg-surface-cream/40 p-1.5 text-muted-foreground border-2 border-ink gap-1.5 overflow-x-auto',
           className,
         )}
         {...props}
@@ -103,10 +103,10 @@ export const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>
         tabIndex={isSelected ? 0 : -1}
         onClick={() => onValueChange(value)}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer',
+          'inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-bold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer',
           isSelected
-            ? 'bg-background text-foreground shadow-sm font-semibold'
-            : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
+            ? 'bg-surface-white text-ink border-2 border-ink shadow-xs dark:bg-card dark:text-white'
+            : 'text-text-secondary hover:bg-surface-cream/80 hover:text-ink dark:text-muted-foreground',
           className,
         )}
         {...props}

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { BrandMark } from './brand-mark';
 import { cn } from './utils';
 
 export interface NavItem {
@@ -48,8 +49,9 @@ export function Navbar({
 
   return (
     <header
+      suppressHydrationWarning
       className={cn(
-        'sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80',
+        'sticky top-0 z-40 w-full border-b-2 border-ink bg-surface-white/95 dark:bg-background/95 backdrop-blur-md',
         className,
       )}
       {...props}
@@ -59,30 +61,22 @@ export function Navbar({
         <div className="flex items-center gap-6">
           <LinkElement
             href={brandHref}
-            className="flex items-center gap-2.5 font-serif font-bold text-xl tracking-tight text-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-1 py-0.5"
+            className="flex items-center gap-2.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-1 py-0.5"
           >
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-devanagari font-black text-xl border-2 border-ink shadow-sm shrink-0 select-none"
-              aria-hidden="true"
-            >
-              बो
-            </span>
-            <span className="font-serif font-black text-2xl tracking-tight text-foreground">
-              {brandName}
-            </span>
+            <BrandMark name={brandName} />
           </LinkElement>
 
           {/* Desktop Nav */}
-          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1">
+          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
             {items.map((item) => (
               <LinkElement
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap shrink-0',
+                  'rounded-full px-3.5 py-1.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap shrink-0',
                   item.isActive
-                    ? 'bg-muted text-foreground font-semibold'
-                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                    ? 'bg-surface-cream text-ink font-bold border-2 border-ink shadow-xs'
+                    : 'text-text-secondary hover:bg-surface-cream/60 hover:text-ink font-semibold',
                 )}
               >
                 {item.label}
