@@ -1,6 +1,7 @@
 """Curriculum and skill graph schemas."""
 
 import uuid
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -143,8 +144,8 @@ class CurriculumSearchResponse(BaseModel):
 class QuestionOptionItem(BaseModel):
     """Single multiple-choice option."""
 
-    id: str
-    text: str
+    id: str = Field(min_length=1, max_length=20)
+    text: str = Field(min_length=1, max_length=2000)
     is_correct: bool = False
     distractor_feedback: str | None = None
 
@@ -170,7 +171,7 @@ class CustomQuestionResponse(BaseModel):
     code: str
     skill_code: str
     prompt: str
-    options: list[dict]
+    options: list[dict[str, Any]]
     explanation: str
     hints: list[str]
     difficulty: int
@@ -183,7 +184,7 @@ class ClassroomQuestionItem(BaseModel):
     id: uuid.UUID
     code: str
     prompt: str
-    options: list[dict]
+    options: list[dict[str, Any]]
     explanation: str
     hints: list[str]
     difficulty: int
@@ -223,5 +224,3 @@ class ClassroomContentResponse(BaseModel):
     curriculum_code: str
     topics: list[ClassroomTopicItem] = Field(default_factory=list)
     custom_questions_count: int = 0
-
-

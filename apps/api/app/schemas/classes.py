@@ -12,6 +12,7 @@ class ClassCreateRequest(BaseModel):
     name: str = Field(min_length=2, max_length=100, description="e.g. Class 8-A Mathematics")
     grade: int = Field(ge=6, le=10, description="Grade level (Classes 6 to 10)")
     section: str = Field(min_length=1, max_length=10, description="e.g. 'A', 'B'")
+    subject: str | None = Field(default=None, min_length=1, max_length=50)
     academic_year: str = Field(
         default="2024-2025", min_length=4, max_length=20, description="Academic session"
     )
@@ -25,6 +26,7 @@ class ClassResponse(BaseModel):
     name: str
     grade: int
     section: str
+    subject: str | None = None
     academic_year: str
     join_code: str
     school_id: uuid.UUID
@@ -50,6 +52,7 @@ class ClassDetailResponse(BaseModel):
     name: str
     grade: int
     section: str
+    subject: str | None = None
     academic_year: str
     join_code: str
     school_id: uuid.UUID
@@ -107,3 +110,39 @@ class AuditLogListResponse(BaseModel):
     items: list[AuditLogItemResponse]
     limit: int
     offset: int
+
+
+class LeaderboardStudentItem(BaseModel):
+    """Ranked student item in classroom leaderboard."""
+
+    rank: int
+    student_id: uuid.UUID
+    name: str
+    username: str | None = None
+    roll_number: str | None = None
+    xp: int
+    streak_days: int = 1
+    avatar_bg: str = "bg-surface-yellow"
+    is_current_user: bool = False
+
+
+class ClassLeaderboardResponse(BaseModel):
+    """Real classroom leaderboard ranking for enrolled cohort."""
+
+    class_id: uuid.UUID
+    class_name: str
+    total_students: int
+    top_three: list[LeaderboardStudentItem]
+    list_learners: list[LeaderboardStudentItem]
+    all_rankings: list[LeaderboardStudentItem]
+    current_user_row: LeaderboardStudentItem | None = None
+    activity_dates: list[str] = Field(default_factory=list)
+    max_streak: int = 0
+
+
+class ClassroomLessonUpsert(BaseModel):
+    skill_id: uuid.UUID
+    language: str = Field(pattern="^(en|hi)$")
+    difficulty: int = Field(ge=1, le=5)
+    title: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=30000)

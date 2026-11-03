@@ -28,6 +28,9 @@ class Question(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "questions"
 
     code: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
+    class_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     skill_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("skills.id", ondelete="CASCADE"),
@@ -168,6 +171,9 @@ class Attempt(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    class_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("classes.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     question_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("questions.id", ondelete="RESTRICT"),
@@ -209,6 +215,9 @@ class Mastery(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    class_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     skill_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("skills.id", ondelete="CASCADE"),
@@ -234,7 +243,23 @@ class Mastery(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     __table_args__ = (
-        UniqueConstraint("student_id", "skill_id", name="uq_mastery_student_skill"),
+        Index(
+            "uq_mastery_unscoped",
+            "student_id",
+            "skill_id",
+            unique=True,
+            postgresql_where=class_id.is_(None),
+            sqlite_where=class_id.is_(None),
+        ),
+        Index(
+            "uq_mastery_class",
+            "student_id",
+            "skill_id",
+            "class_id",
+            unique=True,
+            postgresql_where=class_id.is_not(None),
+            sqlite_where=class_id.is_not(None),
+        ),
         Index("idx_mastery_student_p", "student_id", "p_mastery"),
     )
 
@@ -270,3 +295,14 @@ class Recommendation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     __table_args__ = (Index("idx_recommendations_student_status", "student_id", "status"),)
+
+
+class DiagnosticSession(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Durable diagnostic state, owned by a single student."""
+
+    __tablename__ = "diagnostic_sessions"
+
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)

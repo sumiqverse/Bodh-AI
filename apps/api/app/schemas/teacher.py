@@ -41,7 +41,7 @@ class HeatmapSkill(BaseModel):
 class HeatmapCell(BaseModel):
     student_id: uuid.UUID
     skill_id: uuid.UUID
-    state: str = Field(description="not_learned, partial, mastered")
+    state: str = Field(description="unassessed, not_learned, partial, mastered")
     p_mastery: float
     confidence: float
     attempts_count: int
@@ -57,7 +57,7 @@ class ClassHeatmapResponse(BaseModel):
     matrix: list[HeatmapCell]
     summary: dict[str, int] = Field(
         default_factory=dict,
-        description="Mastery state distribution: {'mastered': X, 'partial': Y, 'not_learned': Z}",
+        description="Mastery state distribution including unassessed student-skill pairs",
     )
 
 
@@ -233,5 +233,5 @@ class ClassProgressSummaryResponse(BaseModel):
     total_attempts: int
     overall_mastery_pct: float
     mastered_skills_avg: float
-    reassessment_growth_pct: float
+    reassessment_growth_pct: float | None = None
     timeline: list[dict[str, Any]] = Field(default_factory=list)

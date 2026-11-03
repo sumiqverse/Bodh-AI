@@ -21,11 +21,13 @@ class MasteryRepository(BaseRepository[Mastery]):
         self,
         student_id: uuid.UUID,
         skill_id: uuid.UUID,
+        class_id: uuid.UUID | None = None,
     ) -> Mastery | None:
         """Fetch mastery record for a specific student and skill pair."""
         statement = select(Mastery).where(
             Mastery.student_id == student_id,
             Mastery.skill_id == skill_id,
+            Mastery.class_id == class_id,
         )
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
@@ -38,15 +40,17 @@ class MasteryRepository(BaseRepository[Mastery]):
         confidence: float,
         is_correct: bool,
         attempted_at: datetime | None = None,
+        class_id: uuid.UUID | None = None,
     ) -> Mastery:
         """Update existing mastery score or create initial state."""
-        mastery = await self.get_by_student_and_skill(student_id, skill_id)
+        mastery = await self.get_by_student_and_skill(student_id, skill_id, class_id)
         timestamp = attempted_at or datetime.now(UTC)
 
         if mastery is None:
             mastery = Mastery(
                 student_id=student_id,
                 skill_id=skill_id,
+                class_id=class_id,
                 p_mastery=p_mastery,
                 confidence=confidence,
                 attempts_count=1,
@@ -65,8 +69,12 @@ class MasteryRepository(BaseRepository[Mastery]):
         await self.session.flush()
         return mastery
 
-    async def list_student_mastery(self, student_id: uuid.UUID) -> Sequence[Mastery]:
+    async def list_student_mastery(
+        self, student_id: uuid.UUID, class_id: uuid.UUID | None = None
+    ) -> Sequence[Mastery]:
         """Fetch all mastery states for a given student."""
-        statement = select(Mastery).where(Mastery.student_id == student_id)
+        statement = select(Mastery).where(
+            Mastery.student_id == student_id, Mastery.class_id == class_id
+        )
         result = await self.session.execute(statement)
         return result.scalars().all()

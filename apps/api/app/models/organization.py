@@ -49,6 +49,7 @@ class SchoolClass(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     )
     grade: Mapped[int] = mapped_column(Integer, nullable=False)
     section: Mapped[str] = mapped_column(String(10), nullable=False)
+    subject: Mapped[str | None] = mapped_column(String(50), nullable=True)
     academic_year: Mapped[str] = mapped_column(String(20), nullable=False)
     join_code: Mapped[str] = mapped_column(String(12), unique=True, nullable=False, index=True)
 
@@ -59,9 +60,6 @@ class SchoolClass(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     )
 
     __table_args__ = (
-        UniqueConstraint(
-            "school_id", "grade", "section", "academic_year", name="uq_school_class_year"
-        ),
         Index("idx_classes_school_grade", "school_id", "grade"),
         Index("idx_classes_teacher", "teacher_id"),
     )
@@ -86,6 +84,9 @@ class Enrollment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     roll_number: Mapped[str | None] = mapped_column(String(30), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    diagnostic_status: Mapped[str] = mapped_column(
+        String(20), default="pending", server_default="pending", nullable=False
+    )
 
     school_class: Mapped["SchoolClass"] = relationship(back_populates="enrollments")
     student: Mapped["User"] = relationship(foreign_keys=[student_id])

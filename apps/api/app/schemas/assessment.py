@@ -74,6 +74,7 @@ class QuestionUpdateRequest(BaseModel):
 class AttemptSubmitRequest(BaseModel):
     """Practice question response submission payload."""
 
+    class_id: uuid.UUID | None = None
     question_id: uuid.UUID
     skill_id: uuid.UUID
     selected_answer: str = Field(description="Answer identifier (e.g. 'B') or numeric string")
@@ -121,6 +122,7 @@ class DiagnosticStartRequest(BaseModel):
     """Payload to start a CAT diagnostic assessment session."""
 
     curriculum_code: str = Field(default="NCERT-MATH-C8", description="Target curriculum code")
+    class_id: uuid.UUID | None = None
     initial_skills: list[str] | None = Field(
         default=None, description="Optional subset of skill codes to assess"
     )

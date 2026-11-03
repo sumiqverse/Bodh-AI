@@ -67,12 +67,19 @@ class TeacherRepository(BaseRepository[SchoolClass]):
         return result.all()
 
     async def get_mastery_matrix(
-        self, student_ids: Sequence[uuid.UUID], skill_ids: Sequence[uuid.UUID]
+        self,
+        student_ids: Sequence[uuid.UUID],
+        skill_ids: Sequence[uuid.UUID],
+        class_id: uuid.UUID | None = None,
     ) -> Sequence[Mastery]:
         """Batch fetch all mastery records for a set of students."""
         if not student_ids or not skill_ids:
             return []
-        statement = select(Mastery).where(Mastery.student_id.in_(student_ids))
+        statement = select(Mastery).where(
+            Mastery.student_id.in_(student_ids),
+            Mastery.skill_id.in_(skill_ids),
+            Mastery.class_id == class_id,
+        )
         result = await self.session.execute(statement)
         return result.scalars().all()
 
@@ -99,12 +106,12 @@ class TeacherRepository(BaseRepository[SchoolClass]):
         await self.session.flush()
 
     async def get_student_attempts(
-        self, student_id: uuid.UUID, limit: int = 100
+        self, student_id: uuid.UUID, limit: int = 100, class_id: uuid.UUID | None = None
     ) -> Sequence[Attempt]:
         """Retrieve student's recent practice and diagnostic attempts with questions."""
         statement = (
             select(Attempt)
-            .where(Attempt.student_id == student_id)
+            .where(Attempt.student_id == student_id, Attempt.class_id == class_id)
             .order_by(desc(Attempt.created_at))
             .limit(limit)
         )
@@ -112,7 +119,7 @@ class TeacherRepository(BaseRepository[SchoolClass]):
         return result.scalars().all()
 
     async def get_class_attempts_since(
-        self, student_ids: Sequence[uuid.UUID], since: datetime
+        self, student_ids: Sequence[uuid.UUID], since: datetime, class_id: uuid.UUID | None = None
     ) -> Sequence[Attempt]:
         """Retrieve all attempts for enrolled students since a given timestamp."""
         if not student_ids:
@@ -121,6 +128,7 @@ class TeacherRepository(BaseRepository[SchoolClass]):
             select(Attempt)
             .where(
                 Attempt.student_id.in_(student_ids),
+                Attempt.class_id == class_id,
                 Attempt.created_at >= since,
             )
             .order_by(Attempt.created_at.desc())

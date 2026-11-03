@@ -1,8 +1,10 @@
 """Package containing all SQLAlchemy ORM models for BodhAI."""
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.models.achievement import Achievement
 from app.models.assessment import (
     Attempt,
+    DiagnosticSession,
     Mastery,
     Question,
     QuestionTranslation,
@@ -11,6 +13,7 @@ from app.models.assessment import (
 )
 from app.models.auth import Role, Session, User
 from app.models.curriculum import Curriculum, GlossaryTerm, Prerequisite, Skill, Topic
+from app.models.lesson import ClassroomLesson
 from app.models.organization import Consent, Enrollment, Guardian, School, SchoolClass
 from app.models.system import AuditLog, Embedding, SyncEvent
 from app.models.teacher import (
@@ -26,15 +29,18 @@ from app.models.tutor import (
 )
 
 __all__ = [
+    "Achievement",
     "Assignment",
     "AssignmentStudent",
     "Attempt",
     "AuditLog",
     "Base",
     "ClassSkillAggregate",
+    "ClassroomLesson",
     "Consent",
     "Curriculum",
     "CurriculumChunkEmbedding",
+    "DiagnosticSession",
     "Embedding",
     "Enrollment",
     "GlossaryTerm",

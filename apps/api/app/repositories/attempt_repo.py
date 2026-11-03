@@ -33,10 +33,12 @@ class AttemptRepository(BaseRepository[Attempt]):
         is_correct: bool,
         time_spent_ms: int,
         client_timestamp: datetime,
+        class_id: uuid.UUID | None = None,
     ) -> Attempt:
         """Create and persist an attempt."""
         attempt = Attempt(
             student_id=student_id,
+            class_id=class_id,
             question_id=question_id,
             skill_id=skill_id,
             idempotency_key=idempotency_key,

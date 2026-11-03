@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -35,6 +35,7 @@ class QuestionRepository(BaseRepository[Question]):
         needs_teacher_review: bool | None = None,
         skip: int = 0,
         limit: int = 20,
+        class_id: uuid.UUID | None = None,
     ) -> Sequence[Question]:
         """Fetch calibrated assessment questions belonging to a competency skill."""
         statement = (
@@ -45,6 +46,11 @@ class QuestionRepository(BaseRepository[Question]):
                 Question.is_deleted == False,  # noqa: E712
             )
             .options(selectinload(Question.translations))
+        )
+        statement = statement.where(
+            or_(Question.class_id.is_(None), Question.class_id == class_id)
+            if class_id
+            else Question.class_id.is_(None)
         )
         if status is not None:
             statement = statement.where(Question.status == status)
@@ -62,6 +68,7 @@ class QuestionRepository(BaseRepository[Question]):
         needs_teacher_review: bool | None = None,
         skip: int = 0,
         limit: int = 50,
+        owner_id: uuid.UUID | None = None,
     ) -> Sequence[Question]:
         """List questions across the bank with optional status and review filters."""
         statement = (
@@ -72,6 +79,13 @@ class QuestionRepository(BaseRepository[Question]):
             )
             .options(selectinload(Question.translations))
         )
+        if owner_id is not None:
+            from app.models.organization import SchoolClass
+
+            owned_classes = select(SchoolClass.id).where(SchoolClass.teacher_id == owner_id)
+            statement = statement.where(
+                or_(Question.class_id.is_(None), Question.class_id.in_(owned_classes))
+            )
         if skill_id is not None:
             statement = statement.where(Question.skill_id == skill_id)
         if status is not None:

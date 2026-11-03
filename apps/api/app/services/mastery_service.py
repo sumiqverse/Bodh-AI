@@ -48,9 +48,10 @@ class MasteryService:
         skill_id: uuid.UUID,
         is_correct: bool,
         attempted_at: datetime | None = None,
+        class_id: uuid.UUID | None = None,
     ) -> Mastery:
         """Compute Bayesian update and persist new mastery state."""
-        existing = await self.repo.get_by_student_and_skill(student_id, skill_id)
+        existing = await self.repo.get_by_student_and_skill(student_id, skill_id, class_id)
         current_p = existing.p_mastery if existing is not None else 0.10
         attempts_count = (existing.attempts_count if existing else 0) + 1
 
@@ -65,4 +66,5 @@ class MasteryService:
             confidence=round(confidence, 4),
             is_correct=is_correct,
             attempted_at=attempted_at,
+            class_id=class_id,
         )

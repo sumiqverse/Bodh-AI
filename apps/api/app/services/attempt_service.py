@@ -5,12 +5,15 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.errors import ConsentRequiredError, NotFoundError
+from app.core.errors import AuthorizationError, ConsentRequiredError, NotFoundError
 from app.repositories.attempt_repo import AttemptRepository
 from app.repositories.consent_repo import ConsentRepository
 from app.repositories.mastery_repo import MasteryRepository
 from app.repositories.question_repo import QuestionRepository
 from app.schemas.assessment import AttemptResponse, AttemptSubmitRequest
+from app.services.achievement_service import award_progress
+from app.services.assignment_progress import update_assignment_progress
+from app.services.attempt_validation import validate_attempt_context
 from app.services.mastery_service import MasteryService
 
 
@@ -46,7 +49,16 @@ class AttemptService:
         # 2. Idempotency Check
         existing_attempt = await self.attempt_repo.get_by_idempotency_key(request.idempotency_key)
         if existing_attempt is not None:
-            mastery = await self.mastery_repo.get_by_student_and_skill(student_id, request.skill_id)
+            if (
+                existing_attempt.student_id != student_id
+                or existing_attempt.question_id != request.question_id
+                or existing_attempt.skill_id != request.skill_id
+                or existing_attempt.class_id != request.class_id
+            ):
+                raise AuthorizationError("This idempotency key belongs to another attempt.")
+            mastery = await self.mastery_repo.get_by_student_and_skill(
+                student_id, request.skill_id, request.class_id
+            )
             p_val = mastery.p_mastery if mastery is not None else 0.50
             return AttemptResponse(
                 attempt_id=existing_attempt.id,
@@ -60,6 +72,9 @@ class AttemptService:
         question = await self.question_repo.get_with_translations(request.question_id)
         if question is None:
             raise NotFoundError("Question", request.question_id)
+        await validate_attempt_context(
+            self.session, student_id, request.class_id, question, request.skill_id
+        )
 
         is_correct = False
         explanation = "Detailed explanation available in review mode."
@@ -87,6 +102,7 @@ class AttemptService:
             is_correct=is_correct,
             time_spent_ms=request.time_spent_ms,
             client_timestamp=request.client_timestamp,
+            class_id=request.class_id,
         )
 
         # 4. Update Bayesian Mastery
@@ -95,7 +111,12 @@ class AttemptService:
             skill_id=request.skill_id,
             is_correct=is_correct,
             attempted_at=request.client_timestamp,
+            class_id=request.class_id,
         )
+
+        if request.class_id is not None:
+            await award_progress(self.session, student_id, request.class_id, request.skill_id)
+            await update_assignment_progress(self.session, student_id, request.class_id)
 
         return AttemptResponse(
             attempt_id=attempt.id,

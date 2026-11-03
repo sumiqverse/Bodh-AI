@@ -112,7 +112,9 @@ class SyncService:
                 )
 
         # Retrieve authoritative canonical mastery states for the student
-        mastery_stmt = select(Mastery).where(Mastery.student_id == student_id)
+        mastery_stmt = select(Mastery).where(
+            Mastery.student_id == student_id, Mastery.class_id.is_(None)
+        )
         mastery_records = (await self.session.execute(mastery_stmt)).scalars().all()
         canonical_mastery = [
             MasteryResponse(
