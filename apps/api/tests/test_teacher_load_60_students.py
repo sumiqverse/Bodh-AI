@@ -60,7 +60,7 @@ async def test_teacher_heatmap_load_60_students(
     curr_repo = CurriculumRepository(db_session)
     topic_repo = BaseRepository[Topic](Topic, db_session)
 
-    curriculum = await curr_repo.create(CurriculumFactory.build(code="NCERT_LOAD_10", grade=10))
+    curriculum = await curr_repo.create(CurriculumFactory.build(code="NCERT-MATH-C10", grade=10))
 
     topics = []
     for t_idx in range(5):

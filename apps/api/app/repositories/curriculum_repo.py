@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.curriculum import normalize_curriculum_code
 from app.models.curriculum import Curriculum, Topic
 from app.repositories.base import BaseRepository
 
@@ -18,10 +19,12 @@ class CurriculumRepository(BaseRepository[Curriculum]):
         super().__init__(Curriculum, session)
 
     async def get_by_code(self, code: str) -> Curriculum | None:
-        """Fetch a curriculum by unique code."""
+        """Fetch a curriculum by unique code, supporting canonical and alias abbreviations."""
+        canonical_code = normalize_curriculum_code(code)
+        codes_to_try = [code] if canonical_code == code else [code, canonical_code]
         statement = (
             select(Curriculum)
-            .where(Curriculum.code == code, Curriculum.is_deleted == False)  # noqa: E712
+            .where(Curriculum.code.in_(codes_to_try), Curriculum.is_deleted == False)  # noqa: E712
             .options(selectinload(Curriculum.topics))
         )
         result = await self.session.execute(statement)

@@ -7,6 +7,7 @@ import structlog
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.deps import verify_csrf
 from app.api.routes.health import router as health_router
 from app.api.v1.router import api_v1_router
 from app.core.config import get_settings
@@ -61,7 +62,7 @@ def create_app() -> FastAPI:
         description="Adaptive learning platform backend for Classes 6-10 in India",
         version="0.1.0",
         lifespan=lifespan,
-        dependencies=[Depends(rate_limiter.check_rate_limit)],
+        dependencies=[Depends(rate_limiter.check_rate_limit), Depends(verify_csrf)],
     )
 
     # 1. Request ID propagation and structured logging context

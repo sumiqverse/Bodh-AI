@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AccountLockedError, AuthenticationError, AuthorizationError
 from app.core.security import decode_token
 from app.db.session import get_db
-from app.models.auth import User
+from app.models.auth import Session, User
 from app.repositories.user_repo import UserRepository
 
 __all__ = [
@@ -69,45 +69,22 @@ async def get_current_user(
         raise AuthenticationError("Authentication credentials were not provided.")
 
     user_repo = UserRepository(session)
-    user: User | None = None
 
-    if token.startswith("mock_token_"):
-        raw_id = token[len("mock_token_") :].strip()
-        try:
-            target_uuid = uuid.UUID(raw_id)
-            user = await user_repo.get_by_id_with_role(target_uuid)
-        except ValueError:
-            cleaned = raw_id.replace("tchr-", "").replace("stu-", "").replace("-", "_")
-            user = await user_repo.get_by_username(cleaned)
-            if not user:
-                from sqlalchemy import select
-                from sqlalchemy.orm import selectinload
+    payload = decode_token(token)
+    token_type = payload.get("type")
+    if token_type != "access":
+        raise AuthenticationError("Invalid token type. An access token is required.")
 
-                stmt = (
-                    select(User)
-                    .options(selectinload(User.role))
-                    .where(
-                        (User.username.ilike(f"%{cleaned}%")) | (User.email.ilike(f"%{cleaned}%"))
-                    )
-                    .limit(1)
-                )
-                user = (await session.execute(stmt)).scalar_one_or_none()
-    else:
-        payload = decode_token(token)
-        token_type = payload.get("type")
-        if token_type != "access":
-            raise AuthenticationError("Invalid token type. An access token is required.")
+    sub = payload.get("sub")
+    if not sub:
+        raise AuthenticationError("Token subject is missing or malformed.")
 
-        sub = payload.get("sub")
-        if not sub:
-            raise AuthenticationError("Token subject is missing or malformed.")
+    try:
+        user_id = uuid.UUID(sub)
+    except ValueError as err:
+        raise AuthenticationError("Invalid token subject format.") from err
 
-        try:
-            user_id = uuid.UUID(sub)
-        except ValueError as err:
-            raise AuthenticationError("Invalid token subject format.") from err
-
-        user = await user_repo.get_by_id_with_role(user_id)
+    user = await user_repo.get_by_id_with_role(user_id)
 
     if user is None:
         raise AuthenticationError("Authenticated user account could not be found.")
@@ -115,9 +92,31 @@ async def get_current_user(
     if user.is_deleted or not user.is_active:
         raise AuthenticationError("User account has been deactivated or removed.")
 
-    if user.locked_until and user.locked_until > datetime.now(UTC):
+    session_id = payload.get("sid")
+    if not session_id:
+        raise AuthenticationError("Session identifier is missing. Please sign in again.")
+
+    try:
+        session_uuid = uuid.UUID(str(session_id))
+    except ValueError as err:
+        raise AuthenticationError("Session identifier is malformed.") from err
+
+    session_record = await session.get(Session, session_uuid)
+    if session_record is None or session_record.is_revoked:
+        raise AuthenticationError("Session has been revoked. Please sign in again.")
+
+    expires_at = session_record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if expires_at <= datetime.now(UTC) or session_record.user_id != user.id:
+        raise AuthenticationError("Session has expired. Please sign in again.")
+
+    locked_until = user.locked_until
+    if locked_until is not None and locked_until.tzinfo is None:
+        locked_until = locked_until.replace(tzinfo=UTC)
+    if locked_until and locked_until > datetime.now(UTC):
         raise AccountLockedError(
-            f"Account is temporarily locked until {user.locked_until.isoformat()} "
+            f"Account is temporarily locked until {locked_until.isoformat()} "
             "due to repeated failed authentication attempts."
         )
 
@@ -184,7 +183,25 @@ def verify_csrf(request: Request) -> None:
     if auth_header and auth_header.startswith("Bearer "):
         return
 
-    # Check state-changing HTTP methods
+    # Public auth endpoints mint a new session and do not authorize via the ambient cookie.
+    path = getattr(getattr(request, "url", None), "path", "")
+    if isinstance(path, str) and path.endswith(
+        (
+            "/auth/teacher/signup",
+            "/auth/teacher/login",
+            "/auth/student/login",
+            "/auth/student/join",
+            "/auth/supabase",
+            "/auth/reset-password",
+            "/auth/refresh",
+        )
+    ):
+        return
+
+    # Only cookie-authenticated state-changing requests need double-submit validation.
+    if request.cookies.get("access_token") is None:
+        return
+
     if request.method in ("POST", "PUT", "PATCH", "DELETE"):
         cookie_csrf = request.cookies.get("csrf_token")
         header_csrf = request.headers.get("X-CSRF-Token")

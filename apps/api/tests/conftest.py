@@ -2,6 +2,7 @@
 
 import uuid
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -24,7 +25,7 @@ from app.core.security import create_access_token
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.auth import Role, User
+from app.models.auth import Role, Session, User
 
 
 # Teach SQLite how to compile PostgreSQL-specific types during tests
@@ -181,7 +182,19 @@ async def create_user_with_role(
     )
     session.add(user)
     await session.flush()
-    token = create_access_token({"sub": str(user.id), "role": role_name})
+
+    session_id = uuid.uuid4()
+    session.add(
+        Session(
+            id=session_id,
+            user_id=user.id,
+            token_hash=f"test_{session_id.hex}",
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+            is_revoked=False,
+        )
+    )
+    await session.flush()
+    token = create_access_token({"sub": str(user.id), "role": role_name, "sid": str(session_id)})
     return user, token
 
 

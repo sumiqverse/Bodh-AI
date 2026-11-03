@@ -250,7 +250,13 @@ async def test_adaptive_service_select_next_item_and_diagnostic(
     skill_repo = SkillRepository(db_session)
     question_repo = QuestionRepository(db_session)
     sfx = uuid.uuid4().hex[:6]
-    sk = await skill_repo.create(SkillFactory.build(code=f"SK-DIAG-{sfx}"))
+    curriculum = await BaseRepository[Curriculum](Curriculum, db_session).create(
+        CurriculumFactory.build(code=f"DIAG-{sfx}")
+    )
+    topic = await BaseRepository[Topic](Topic, db_session).create(
+        TopicFactory.build(curriculum_id=curriculum.id, code=f"TOP-DIAG-{sfx}")
+    )
+    sk = await skill_repo.create(SkillFactory.build(code=f"SK-DIAG-{sfx}", topic_id=topic.id))
     q = await question_repo.create(
         QuestionFactory.build(
             skill_id=sk.id,
@@ -267,17 +273,23 @@ async def test_adaptive_service_select_next_item_and_diagnostic(
         verified_answer="B",
     )
 
+    for _ in range(19):
+        extra = await question_repo.create(QuestionFactory.build(skill_id=sk.id))
+        await question_repo.add_translation(
+            question_id=extra.id, language="en", prompt="Sample", verified_answer="B"
+        )
+
     service = AdaptiveService(db_session)
 
     # 1. Select next item
-    next_item = await service.get_next_item(student.id)
+    next_item = await service.get_next_item(student.id, curriculum_code=curriculum.code)
     assert next_item is not None
     assert next_item.question_id is not None
 
     # 2. Start diagnostic session
     diag_start = await service.start_diagnostic(
         student.id,
-        DiagnosticStartRequest(curriculum_code="NCERT-MATH-C8"),
+        DiagnosticStartRequest(curriculum_code=curriculum.code),
     )
     assert diag_start.session_id is not None
     if diag_start.next_item:

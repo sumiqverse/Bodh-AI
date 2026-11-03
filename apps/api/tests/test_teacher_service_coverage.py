@@ -83,7 +83,7 @@ async def teacher_fixture(db_session: AsyncSession) -> tuple[User, User, SchoolC
     # 5. Curriculum, Topic, Skill
     curriculum = Curriculum(
         id=uuid.uuid4(),
-        code=f"NCERT_G8_{uuid.uuid4().hex[:6]}",
+        code="NCERT-MATH-C8",
         board="NCERT",
         grade=8,
         subject="Mathematics",
@@ -135,11 +135,12 @@ async def test_teacher_dashboard_heatmap_and_aggregates(
         None,
     )
     assert cell is not None
-    assert cell.state == "not_learned"
+    assert cell.state == "unassessed"
 
     # 2. Add partial mastery state (p = 0.65)
     mastery = Mastery(
         student_id=student.id,
+        class_id=school_class.id,
         skill_id=skill.id,
         p_mastery=0.65,
         confidence=0.85,
@@ -162,7 +163,7 @@ async def test_teacher_dashboard_heatmap_and_aggregates(
     assert cell_partial.state == "partial"
 
     # 3. Update to mastered (p = 0.92)
-    mastery.p_mastery = 0.92
+    mastery.p_mastery = 0.97
     await db_session.flush()
 
     heatmap_mastered = await service.get_class_heatmap(school_class)
@@ -187,9 +188,13 @@ async def test_teacher_dashboard_gap_clusters_and_early_warnings(
     _teacher, student, school_class, skill = teacher_fixture
     service = TeacherDashboardService(db_session)
 
+    no_evidence = await service.get_group_gap_clusters(school_class, min_students=1, min_ratio=0.0)
+    assert no_evidence.total_clusters == 0
+
     # Student has low mastery (p = 0.30)
     mastery = Mastery(
         student_id=student.id,
+        class_id=school_class.id,
         skill_id=skill.id,
         p_mastery=0.30,
         confidence=0.70,
@@ -216,6 +221,7 @@ async def test_teacher_dashboard_gap_clusters_and_early_warnings(
     for i in range(4):
         att = Attempt(
             student_id=student.id,
+            class_id=school_class.id,
             question_id=uuid.uuid4(),
             skill_id=skill.id,
             selected_answer="B",
@@ -312,7 +318,8 @@ async def test_teacher_dashboard_assignments_progress_and_csv_export(
     summary = await service.get_progress_summary(school_class)
     assert summary.class_id == school_class.id
     assert summary.total_students == 1
-    assert len(summary.timeline) == 3
+    assert summary.timeline == []
+    assert summary.reassessment_growth_pct is None
 
     # 4. Privacy-aware CSV export
     csv_content = await service.export_privacy_aware_csv(school_class)

@@ -117,6 +117,7 @@ class DiagnosticConfig:
     min_questions: int = 15
     max_questions: int = 20
     uncertainty_threshold: float = 0.15
+    targeted_followup_after: int | None = None
 
 
 @dataclass

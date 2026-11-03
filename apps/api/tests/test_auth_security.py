@@ -158,22 +158,122 @@ async def test_student_join_and_login_flow(
     assert "access_token" in login_data
     assert login_data["user"]["username"] == join_payload["username"]
 
+    # Join must not bypass the PIN lockout after repeated failures.
+    for _ in range(5):
+        bad_join = await client.post(
+            "/api/v1/auth/student/join",
+            json={**join_payload, "pin": "9999"},
+        )
+        assert bad_join.status_code == 401
+    locked_join = await client.post(
+        "/api/v1/auth/student/join",
+        json={**join_payload, "pin": "4321"},
+    )
+    assert locked_join.status_code == 429
+
 
 @pytest.mark.asyncio
-async def test_token_refresh_rotation(
-    client: AsyncClient,
-    student_auth: tuple[User, str, dict[str, str]],
-) -> None:
-    """Verify refresh token rotation returns new access token and new rotated refresh token."""
-    student, _, _ = student_auth
-    refresh_token = create_refresh_token({"sub": str(student.id), "role": "student"})
+async def test_token_refresh_rotation(client: AsyncClient) -> None:
+    """Rotate refresh tokens and revoke every session when a consumed token is replayed."""
+    email = f"rotate_teacher_{uuid.uuid4().hex[:6]}@example.com"
+    signup = await client.post(
+        "/api/v1/auth/teacher/signup",
+        json={
+            "email": email,
+            "password": "SecurePassword123!",
+            "full_name": "Rotation Teacher",
+            "preferred_language": "en",
+        },
+    )
+    assert signup.status_code == 201
+    first = signup.json()
 
-    res = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    res = await client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]})
     assert res.status_code == 200
-    data = res.json()
-    assert "access_token" in data
-    assert "refresh_token" in data
-    assert data["refresh_token"] != refresh_token
+    rotated = res.json()
+    assert "access_token" in rotated
+    assert rotated["refresh_token"] != first["refresh_token"]
+
+    # Replaying the consumed token must fail and revoke the rotated session too.
+    replay = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]}
+    )
+    assert replay.status_code == 401
+
+    revoked = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": rotated["refresh_token"]}
+    )
+    assert revoked.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_cookie_refresh_rotation(client: AsyncClient) -> None:
+    """Refresh with the HttpOnly cookie and no body token, as the web client does."""
+    email = f"cookie_rotate_{uuid.uuid4().hex[:6]}@example.com"
+    signup = await client.post(
+        "/api/v1/auth/teacher/signup",
+        json={
+            "email": email,
+            "password": "SecurePassword123!",
+            "full_name": "Cookie Rotation Teacher",
+            "preferred_language": "en",
+        },
+    )
+    assert signup.status_code == 201
+
+    rotated = await client.post("/api/v1/auth/refresh", json={})
+    assert rotated.status_code == 200
+    assert rotated.json()["access_token"]
+
+
+@pytest.mark.asyncio
+async def test_logout_revokes_access_and_refresh_sessions(client: AsyncClient) -> None:
+    """Logout must invalidate the access token and the refresh token server-side."""
+    email = f"logout_teacher_{uuid.uuid4().hex[:6]}@example.com"
+    signup = await client.post(
+        "/api/v1/auth/teacher/signup",
+        json={
+            "email": email,
+            "password": "SecurePassword123!",
+            "full_name": "Logout Teacher",
+            "preferred_language": "en",
+        },
+    )
+    assert signup.status_code == 201
+    data = signup.json()
+    headers = {"Authorization": f"Bearer {data['access_token']}"}
+
+    assert (await client.get("/api/v1/auth/me", headers=headers)).status_code == 200
+    assert (await client.post("/api/v1/auth/logout", headers=headers)).status_code == 200
+    assert (await client.get("/api/v1/auth/me", headers=headers)).status_code == 401
+
+    refresh = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": data["refresh_token"]}
+    )
+    assert refresh.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_cookie_mutations_require_csrf(client: AsyncClient) -> None:
+    """Cookie-authenticated state changes must present the double-submit token."""
+    email = f"csrf_teacher_{uuid.uuid4().hex[:6]}@example.com"
+    signup = await client.post(
+        "/api/v1/auth/teacher/signup",
+        json={
+            "email": email,
+            "password": "SecurePassword123!",
+            "full_name": "CSRF Teacher",
+            "preferred_language": "en",
+        },
+    )
+    assert signup.status_code == 201
+    data = signup.json()
+
+    blocked = await client.post("/api/v1/auth/logout")
+    assert blocked.status_code == 403
+
+    allowed = await client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": data["csrf_token"]})
+    assert allowed.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -248,6 +348,22 @@ async def test_teacher_signup_flow(
     me_data = me_res.json()
     assert me_data["email"] == email
     assert me_data["role"] == "teacher"
+
+
+@pytest.mark.asyncio
+async def test_mock_tokens_are_rejected(
+    client: AsyncClient,
+    student_auth: tuple[User, str, dict[str, str]],
+) -> None:
+    """Unsigned demo tokens must never authenticate, regardless of environment."""
+    student, _, _ = student_auth
+    for token in (f"mock_token_{student.id}", "mock_token_admin"):
+        res = await client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 401
+        assert "Invalid authentication token" in res.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -542,11 +658,37 @@ async def test_student_pending_enrollment_blocks_diagnostic_until_approved(
     assert app_res.status_code == 200
     assert app_res.json()["status"] == "active"
 
-    # Now student can start diagnostic!
+    # Approval removes the enrollment block; no curriculum was seeded for this test.
     diag_ok = await client.post(
         "/api/v1/diagnostics",
         json={"curriculum_code": "NCERT-MATH-C8"},
         headers=student_h,
     )
-    assert diag_ok.status_code == 200
-    assert "session_id" in diag_ok.json()
+    assert diag_ok.status_code == 404
+    assert "Curriculum" in diag_ok.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_profile_directories_require_admin_and_recovery_is_not_unverified(
+    client: AsyncClient,
+    teacher_auth: tuple[User, str, dict[str, str]],
+    student_auth: tuple[User, str, dict[str, str]],
+) -> None:
+    teacher, _, teacher_headers = teacher_auth
+    student, _, student_headers = student_auth
+    for url in [
+        "/api/v1/profiles/students",
+        f"/api/v1/profiles/students/{student.id}",
+        "/api/v1/profiles/teachers",
+        f"/api/v1/profiles/teachers/{teacher.id}",
+    ]:
+        assert (await client.get(url)).status_code == 401
+        assert (await client.get(url, headers=student_headers)).status_code == 403
+        assert (await client.get(url, headers=teacher_headers)).status_code == 403
+    reset = await client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": teacher.email, "new_password": "AttackerPassword123!"},
+    )
+    assert reset.status_code == 503
+    cohort = await client.post("/api/v1/profiles/setup-cohort", json={}, headers=teacher_headers)
+    assert cohort.status_code == 410

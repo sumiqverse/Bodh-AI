@@ -1,6 +1,7 @@
-"""Seed authentic NCERT student cohort, enrollments, Bayesian mastery, and attempts into PostgreSQL."""
+"""Seed authentic NCERT student cohort, enrollments, mastery, and attempts in PostgreSQL."""
 
 import asyncio
+import os
 import random
 import sys
 import uuid
@@ -51,7 +52,6 @@ async def seed_real_students() -> None:
         print("--> Fetching roles and curriculum...")
         roles = (await session.execute(select(Role))).scalars().all()
         student_role = next((r for r in roles if r.name == "student"), None)
-        teacher_role = next((r for r in roles if r.name == "teacher"), None)
         if not student_role:
             raise RuntimeError("Student role not found in database!")
 
@@ -92,7 +92,12 @@ async def seed_real_students() -> None:
         print(f"--> Target classes: {[(c.name, c.join_code) for c in target_classes]}")
 
         # 3. Create or update 15 real student user records
-        default_pin_hash = hash_secret("1234")
+        seed_student_pin = os.environ.get("BODHAI_SEED_STUDENT_PIN", "")
+        if not seed_student_pin.isdigit() or not (6 <= len(seed_student_pin) <= 8):
+            raise RuntimeError(
+                "Set BODHAI_SEED_STUDENT_PIN to a 6-8 digit PIN before seeding student accounts."
+            )
+        default_pin_hash = hash_secret(seed_student_pin)
         student_users: list[User] = []
 
         now = datetime.now(UTC)
@@ -166,7 +171,7 @@ async def seed_real_students() -> None:
         for idx, student in enumerate(student_users):
             archetype = STUDENT_COHORT[idx]["archetype"]
 
-            for s_idx, sk in enumerate(skills):
+            for _s_idx, sk in enumerate(skills):
                 # Calibrate P(mastery) based on archetype and skill difficulty
                 diff = sk.difficulty or 0.5
 
@@ -207,10 +212,7 @@ async def seed_real_students() -> None:
 
                 else:  # struggling
                     # Struggling student: Multiple gaps across core competencies
-                    if diff < 0.35:
-                        p = random.uniform(0.50, 0.75)
-                    else:
-                        p = random.uniform(0.12, 0.42)
+                    p = random.uniform(0.50, 0.75) if diff < 0.35 else random.uniform(0.12, 0.42)
                     attempts = random.randint(6, 18)
                     correct = int(attempts * random.uniform(0.25, 0.45))
                     last_days_ago = random.randint(2, 9)
@@ -265,7 +267,10 @@ async def seed_real_students() -> None:
                 class_id=target_class.id,
                 teacher_id=target_class.teacher_id,
                 title="Rational Numbers & Operations Revision",
-                description="Mandatory practice set covering representation, ordering, and addition of fractions.",
+                description=(
+                    "Mandatory practice set covering representation, ordering, "
+                    "and addition of fractions."
+                ),
                 skill_ids=[str(sk.id) for sk in skills[:4]],
                 due_date=now + timedelta(days=7),
                 status="active",

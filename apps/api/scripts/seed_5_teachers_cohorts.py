@@ -3,6 +3,7 @@ each with 40-60 real students having distinct diagnostic progress and telemetry.
 """
 
 import asyncio
+import os
 import random
 import sys
 import uuid
@@ -292,8 +293,21 @@ async def seed_cohorts() -> None:
             await session.flush()
 
         now = datetime.now(UTC)
-        default_pwd_hash = hash_secret("Password@123")
-        default_pin_hash = hash_secret("1234")
+
+        seed_teacher_password = os.environ.get("BODHAI_SEED_TEACHER_PASSWORD", "")
+        if len(seed_teacher_password) < 12:
+            raise RuntimeError(
+                "Set BODHAI_SEED_TEACHER_PASSWORD to a unique password of at least 12 characters "
+                "before seeding teacher accounts."
+            )
+        seed_student_pin = os.environ.get("BODHAI_SEED_STUDENT_PIN", "")
+        if not seed_student_pin.isdigit() or not (6 <= len(seed_student_pin) <= 8):
+            raise RuntimeError(
+                "Set BODHAI_SEED_STUDENT_PIN to a 6-8 digit PIN before seeding student accounts."
+            )
+
+        default_pwd_hash = hash_secret(seed_teacher_password)
+        default_pin_hash = hash_secret(seed_student_pin)
 
         total_students_created = 0
         total_masteries_created = 0

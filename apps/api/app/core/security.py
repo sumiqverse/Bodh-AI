@@ -1,5 +1,6 @@
 """Security utilities: Argon2 password/PIN hashing, JWT handling, and join code generation."""
 
+import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -87,6 +88,11 @@ def decode_token(token: str) -> dict[str, Any]:
         raise AuthenticationError("Token has expired. Please authenticate again.") from err
     except jwt.InvalidTokenError as err:
         raise AuthenticationError("Invalid authentication token.") from err
+
+
+def hash_token(token: str) -> str:
+    """Return a stable SHA-256 digest used to store refresh tokens server-side."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def verify_supabase_token(token: str) -> dict[str, Any]:

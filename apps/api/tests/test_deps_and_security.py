@@ -94,14 +94,14 @@ def test_verify_csrf_scenarios() -> None:
     token = generate_csrf_token()
     req_post_valid = MagicMock(spec=Request)
     req_post_valid.headers = {"X-CSRF-Token": token}
-    req_post_valid.cookies = {"csrf_token": token}
+    req_post_valid.cookies = {"csrf_token": token, "access_token": "cookie-token"}
     req_post_valid.method = "POST"
     verify_csrf(req_post_valid)  # No exception
 
     # 4. POST request with missing CSRF header or cookie
     req_post_missing = MagicMock(spec=Request)
     req_post_missing.headers = {}
-    req_post_missing.cookies = {}
+    req_post_missing.cookies = {"access_token": "cookie-token"}
     req_post_missing.method = "POST"
     with pytest.raises(AuthorizationError, match="CSRF verification failed"):
         verify_csrf(req_post_missing)
@@ -109,10 +109,17 @@ def test_verify_csrf_scenarios() -> None:
     # 5. POST request with mismatching CSRF token
     req_post_mismatch = MagicMock(spec=Request)
     req_post_mismatch.headers = {"X-CSRF-Token": "token-A"}
-    req_post_mismatch.cookies = {"csrf_token": "token-B"}
+    req_post_mismatch.cookies = {"csrf_token": "token-B", "access_token": "cookie-token"}
     req_post_mismatch.method = "POST"
     with pytest.raises(AuthorizationError, match="CSRF verification failed"):
         verify_csrf(req_post_mismatch)
+
+    # 6. POST without an access cookie is not cookie-authenticated and bypasses CSRF
+    req_anonymous = MagicMock(spec=Request)
+    req_anonymous.headers = {}
+    req_anonymous.cookies = {}
+    req_anonymous.method = "POST"
+    verify_csrf(req_anonymous)  # No exception
 
 
 @pytest.mark.asyncio
@@ -162,7 +169,9 @@ async def test_get_current_user_error_conditions(db_session: Any) -> None:
         await get_current_user(req_bad_sub, db_session)
 
     # 5. Non-existent user
-    random_user_token = create_access_token({"sub": str(uuid.uuid4()), "type": "access"})
+    random_user_token = create_access_token(
+        {"sub": str(uuid.uuid4()), "type": "access", "sid": str(uuid.uuid4())}
+    )
     req_random = MagicMock(spec=Request)
     req_random.headers = {"Authorization": f"Bearer {random_user_token}"}
     req_random.cookies = {}

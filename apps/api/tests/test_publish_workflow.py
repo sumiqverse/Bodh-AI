@@ -96,11 +96,11 @@ async def test_student_cannot_publish_question(
 async def test_teacher_can_review_and_publish_question(
     client: AsyncClient,
     db_session: AsyncSession,
-    teacher_auth: tuple[User, str, dict[str, str]],
+    admin_auth: tuple[User, str, dict[str, str]],
     sample_question: tuple[Question, Skill],
 ) -> None:
     """Teacher can transition question draft -> reviewed -> published and reviewer is recorded."""
-    teacher, _token, headers = teacher_auth
+    teacher, _token, headers = admin_auth
     question, _ = sample_question
 
     # Step 1: draft -> reviewed

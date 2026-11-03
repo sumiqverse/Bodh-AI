@@ -54,6 +54,22 @@ async def handle_diagnostic(
     )
 
 
+@router.get(
+    "/diagnostics/current",
+    response_model=DiagnosticResponse,
+    summary="Resume the current diagnostic session",
+)
+async def get_current_diagnostic(
+    current_user: Annotated[User, Depends(require_role("student"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    curriculum_code: str,
+    class_id: uuid.UUID | None = None,
+) -> DiagnosticResponse:
+    return await AdaptiveService(session).get_current_diagnostic(
+        current_user.id, curriculum_code, class_id
+    )
+
+
 @router.post(
     "/attempts",
     response_model=AttemptResponse,
@@ -90,6 +106,8 @@ async def get_next_item(
     session: Annotated[AsyncSession, Depends(get_db)],
     raw_request: Request,
     curriculum_code: str = "NCERT-MATH-C8",
+    class_id: uuid.UUID | None = None,
+    skill_id: uuid.UUID | None = None,
     language: Annotated[str | None, Query(description="Preferred language ('en', 'hi')")] = None,
     accept_language: Annotated[str | None, Header(alias="Accept-Language")] = None,
 ) -> NextItemResponse:
@@ -102,6 +120,8 @@ async def get_next_item(
         student_id=current_user.id,
         curriculum_code=curriculum_code,
         language=lang,
+        class_id=class_id,
+        skill_id=skill_id,
     )
 
 

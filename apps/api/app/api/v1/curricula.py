@@ -45,9 +45,7 @@ async def search_curricula_content(
         select(Topic, Curriculum)
         .join(Curriculum, Topic.curriculum_id == Curriculum.id)
         .where(
-            (Topic.name.ilike(term))
-            | (Topic.description.ilike(term))
-            | (Topic.code.ilike(term))
+            (Topic.name.ilike(term)) | (Topic.description.ilike(term)) | (Topic.code.ilike(term))
         )
     )
     if grade is not None:
@@ -78,9 +76,7 @@ async def search_curricula_content(
         .join(Topic, Skill.topic_id == Topic.id)
         .join(Curriculum, Topic.curriculum_id == Curriculum.id)
         .where(
-            (Skill.name.ilike(term))
-            | (Skill.description.ilike(term))
-            | (Skill.code.ilike(term))
+            (Skill.name.ilike(term)) | (Skill.description.ilike(term)) | (Skill.code.ilike(term))
         )
     )
     if grade is not None:
@@ -306,12 +302,12 @@ async def get_curriculum_graph(
 async def import_content_pack(
     pack_data: dict[str, Any],
     session: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[User, Depends(require_role("teacher", "admin"))],
+    _user: Annotated[User, Depends(require_role("admin"))],
     dry_run: Annotated[
         bool, Query(description="Simulate import without persisting changes")
     ] = False,
 ) -> ContentImportResponse:
-    """Import and idempotently upsert a complete curriculum content pack (Admin/Teacher only)."""
+    """Import a shared curriculum content pack (administrators only)."""
     from fastapi import HTTPException, status
 
     from app.core.content_importer import ContentImporter, ContentValidationError

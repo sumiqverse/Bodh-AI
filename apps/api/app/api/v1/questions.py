@@ -7,12 +7,14 @@ from collections.abc import Sequence
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, require_role
-from app.core.errors import NotFoundError
-from app.models.assessment import QuestionTranslation, QuestionVersion
+from app.core.errors import AuthorizationError, NotFoundError
+from app.models.assessment import Question, QuestionTranslation, QuestionVersion
 from app.models.auth import User
+from app.models.organization import Enrollment, SchoolClass
 from app.repositories.question_repo import QuestionRepository
 from app.schemas.assessment import (
     QuestionDetailResponse,
@@ -30,6 +32,32 @@ def _user_is_educator(user: User) -> bool:
     return bool(user.role and user.role.name in {"teacher", "admin"})
 
 
+async def _class_access(session: AsyncSession, user: User, class_id: uuid.UUID) -> bool:
+    if user.role and user.role.name == "admin":
+        return True
+    if user.role and user.role.name == "teacher":
+        statement = select(SchoolClass.id).where(
+            SchoolClass.id == class_id, SchoolClass.teacher_id == user.id
+        )
+    else:
+        statement = select(Enrollment.id).where(
+            Enrollment.class_id == class_id,
+            Enrollment.student_id == user.id,
+            Enrollment.status == "active",
+        )
+    return (await session.execute(statement)).scalar_one_or_none() is not None
+
+
+async def _assert_question_access(session: AsyncSession, user: User, question: Question) -> None:
+    if question.class_id is not None and not await _class_access(session, user, question.class_id):
+        raise NotFoundError("Question", question.id)
+
+
+def _assert_can_edit_shared_question(user: User, question: Question) -> None:
+    if question.class_id is None and (not user.role or user.role.name != "admin"):
+        raise AuthorizationError("Only administrators can modify shared curriculum questions.")
+
+
 @router.get("", response_model=list[QuestionResponse], summary="List Questions for Skill")
 async def list_questions(
     session: Annotated[AsyncSession, Depends(get_db)],
@@ -45,6 +73,7 @@ async def list_questions(
     ] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=50)] = 10,
+    class_id: uuid.UUID | None = None,
 ) -> Sequence[QuestionResponse]:
     """Retrieve calibrated assessment questions belonging to a competency skill.
 
@@ -53,6 +82,8 @@ async def list_questions(
     worked_solution, or correct option flags.
     """
     repo = QuestionRepository(session)
+    if class_id is not None and not await _class_access(session, user, class_id):
+        raise NotFoundError("Class", class_id)
     is_educator = _user_is_educator(user)
 
     # Students can only ever see published questions
@@ -63,6 +94,7 @@ async def list_questions(
         status=effective_status,
         skip=skip,
         limit=limit,
+        class_id=class_id,
     )
 
     results: list[QuestionResponse] = []
@@ -137,6 +169,7 @@ async def list_questions_for_management(
         needs_teacher_review=needs_review,
         skip=skip,
         limit=limit,
+        owner_id=_user.id if _user.role.name != "admin" else None,
     )
 
     results: list[QuestionDetailResponse] = []
@@ -191,6 +224,7 @@ async def get_question(
     question = await repo.get_with_translations(question_id)
     if question is None:
         raise NotFoundError("Question", question_id)
+    await _assert_question_access(session, user, question)
 
     # Students can never access un-published questions
     if not _user_is_educator(user) and question.status != "published":
@@ -243,6 +277,7 @@ async def get_question_detail(
     question = await repo.get_with_translations(question_id)
     if question is None:
         raise NotFoundError("Question", question_id)
+    await _assert_question_access(session, _user, question)
 
     trans = next((t for t in question.translations if t.language == language), None)
     if trans is None and question.translations:
@@ -292,6 +327,8 @@ async def update_question_status(
     question = await repo.get_with_translations(question_id)
     if question is None:
         raise NotFoundError("Question", question_id)
+    await _assert_question_access(session, user, question)
+    _assert_can_edit_shared_question(user, question)
 
     old_status = question.status
     new_status = body.status
@@ -372,7 +409,7 @@ async def update_question_status(
         updated_at=question.updated_at,
     )
 
-    await session.commit()
+    await session.flush()
     return resp
 
 
@@ -392,6 +429,8 @@ async def update_question(
     question = await repo.get_with_translations(question_id)
     if question is None:
         raise NotFoundError("Question", question_id)
+    await _assert_question_access(session, user, question)
+    _assert_can_edit_shared_question(user, question)
 
     if body.difficulty is not None:
         question.difficulty = body.difficulty
@@ -479,5 +518,5 @@ async def update_question(
         updated_at=question.updated_at,
     )
 
-    await session.commit()
+    await session.flush()
     return resp

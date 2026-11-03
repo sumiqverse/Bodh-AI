@@ -49,7 +49,6 @@ async def seed_all_curricula() -> None:
         total_topics_created = 0
         total_skills_created = 0
         total_questions_created = 0
-        total_questions_updated = 0
 
         for grade, subjects_dict in NCERT_DATA.items():
             for subject, topics_list in subjects_dict.items():
@@ -169,8 +168,8 @@ async def seed_all_curricula() -> None:
                                     skill_id=skill.id,
                                     difficulty=q_data["difficulty"],
                                     question_type=q_data["question_type"],
-                                    status="published",
-                                    needs_teacher_review=False,
+                                    status="draft",
+                                    needs_teacher_review=True,
                                     version=1,
                                 )
                                 session.add(q_obj)
@@ -200,60 +199,6 @@ async def seed_all_curricula() -> None:
                                 )
                                 session.add_all([q_trans_en, q_trans_hi])
                                 total_questions_created += 1
-                            else:
-                                # Update existing question translations with authentic content
-                                q_obj.difficulty = q_data["difficulty"]
-                                q_obj.question_type = q_data["question_type"]
-                                q_obj.status = "published"
-
-                                t_stmt = select(QuestionTranslation).where(
-                                    QuestionTranslation.question_id == q_obj.id
-                                )
-                                trans_list = (await session.execute(t_stmt)).scalars().all()
-                                en_found = False
-                                hi_found = False
-                                for tr in trans_list:
-                                    if tr.language == "en":
-                                        tr.prompt = q_data["en_prompt"]
-                                        tr.options = q_data["options"]
-                                        tr.explanation = q_data["explanation"]
-                                        tr.hints = q_data["hints"]
-                                        session.add(tr)
-                                        en_found = True
-                                    elif tr.language == "hi":
-                                        tr.prompt = q_data["hi_prompt"]
-                                        tr.options = q_data["options"]
-                                        tr.explanation = q_data["explanation"]
-                                        tr.hints = q_data["hints"]
-                                        session.add(tr)
-                                        hi_found = True
-
-                                if not en_found:
-                                    session.add(
-                                        QuestionTranslation(
-                                            id=uuid.uuid4(),
-                                            question_id=q_obj.id,
-                                            language="en",
-                                            prompt=q_data["en_prompt"],
-                                            options=q_data["options"],
-                                            explanation=q_data["explanation"],
-                                            hints=q_data["hints"],
-                                        )
-                                    )
-                                if not hi_found:
-                                    session.add(
-                                        QuestionTranslation(
-                                            id=uuid.uuid4(),
-                                            question_id=q_obj.id,
-                                            language="hi",
-                                            prompt=q_data["hi_prompt"],
-                                            options=q_data["options"],
-                                            explanation=q_data["explanation"],
-                                            hints=q_data["hints"],
-                                        )
-                                    )
-                                total_questions_updated += 1
-
                 # Commit per subject to keep transactions responsive and durable
                 await session.commit()
 
@@ -266,7 +211,7 @@ async def seed_all_curricula() -> None:
         print(f"--> Topics (Chapters) Created/Synced: {total_topics_created}", flush=True)
         print(f"--> Competency Skills Created/Synced: {total_skills_created}", flush=True)
         print(
-            f"--> Questions Created: {total_questions_created} | Questions Refreshed with Authentic Content: {total_questions_updated}",
+            f"--> Draft questions created for review: {total_questions_created}",
             flush=True,
         )
         print("========================================================\n", flush=True)

@@ -82,15 +82,15 @@ def configure_telemetry() -> None:
     # Initialize Sentry if DSN is configured
     if settings.sentry_dsn:
         try:
-            import sentry_sdk  # type: ignore[import-not-found]
-            from sentry_sdk.integrations.fastapi import (  # type: ignore[import-not-found]
+            import sentry_sdk
+            from sentry_sdk.integrations.fastapi import (
                 FastApiIntegration,
             )
 
             def sentry_before_send(
-                event: dict[str, Any],
+                event: Any,
                 _hint: dict[str, Any],
-            ) -> dict[str, Any]:
+            ) -> Any:
                 """Scrub request headers and sensitive fields before dispatching to Sentry."""
                 if "request" in event and "headers" in event["request"]:
                     headers = event["request"]["headers"]

@@ -138,3 +138,24 @@ def test_cat_stopping_rules(
     summary = engine_b.generate_summary(session_b)
     assert summary.total_questions == 7
     assert summary.session_id == session_b.session_id
+
+
+def test_final_five_prioritize_weaker_observed_skills(
+    diagnostic_setup: tuple[list[tuple[str, str]], list[DiagnosticQuestionItem]],
+) -> None:
+    edges, questions = diagnostic_setup
+    engine = CATDiagnosticEngine(
+        edges,
+        questions,
+        config=DiagnosticConfig(min_questions=20, max_questions=20, targeted_followup_after=15),
+    )
+    session = engine.start_session("student")
+    session.questions_answered = 15
+    session.skill_states["SKILL-PREREQ"].observations_count = 3
+    session.skill_states["SKILL-PREREQ"].p_mastery = 0.2
+    session.skill_states["SKILL-TARGET"].observations_count = 3
+    session.skill_states["SKILL-TARGET"].p_mastery = 0.8
+    decision = engine.pick_next_item(session)
+    assert decision.item is not None
+    assert decision.item.skill_id == "SKILL-PREREQ"
+    assert "lower mastery" in decision.rationale

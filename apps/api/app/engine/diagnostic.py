@@ -183,6 +183,38 @@ class CATDiagnosticEngine:
                 expected_information_gain=0.0,
             )
 
+        # The optional final diagnostic segment revisits the least-certain/weakest
+        # observed skills with fresh questions, falling back to normal selection if exhausted.
+        followup_start = self.config.targeted_followup_after
+        if followup_start is not None and session.questions_answered >= followup_start:
+            candidates = [
+                (state, question)
+                for skill_id, state in session.skill_states.items()
+                if state.observations_count > 0
+                for question in self.questions_by_skill.get(skill_id, [])
+                if question.question_id not in session.attempted_question_ids
+            ]
+            if candidates:
+                state, question = min(
+                    candidates,
+                    key=lambda pair: (
+                        pair[0].p_mastery,
+                        abs(pair[1].difficulty / 5 - pair[0].p_mastery),
+                        pair[1].question_id,
+                    ),
+                )
+                return DiagnosticDecision(
+                    item=question,
+                    skill_id=question.skill_id,
+                    skill_code=question.skill_code,
+                    is_completed=False,
+                    stop_reason=None,
+                    rationale="Follow-up question for an assessed skill with lower mastery.",
+                    expected_information_gain=expected_information_gain(
+                        state.p_mastery, self.bkt_params
+                    ),
+                )
+
         # Check for backward prerequisite walking
         # If student recently failed, walk backward to find root-cause prerequisite
         walked_item = self._find_backward_walk_item(session)

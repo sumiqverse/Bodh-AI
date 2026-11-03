@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,13 +12,13 @@ from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, require_role
 from app.core.curriculum import resolve_curriculum_code
-from app.core.security import generate_join_code
+from app.models.achievement import Achievement
 from app.models.assessment import Attempt, Mastery
 from app.models.auth import Role, User
-from app.models.curriculum import Curriculum, Skill, Topic
-from app.models.organization import Enrollment, School, SchoolClass
+from app.models.curriculum import Skill
+from app.models.organization import Consent, Enrollment, SchoolClass
 from app.models.teacher import Assignment, TeacherDecision
 
 router = APIRouter(prefix="/profiles", tags=["Educational Profiles"])
@@ -26,6 +26,7 @@ router = APIRouter(prefix="/profiles", tags=["Educational Profiles"])
 
 class ProfileUpdateRequest(BaseModel):
     fullName: str | None = None
+    employeeId: str | None = None
     fullNameHi: str | None = None
     title: str | None = None
     titleHi: str | None = None
@@ -39,6 +40,9 @@ class ProfileUpdateRequest(BaseModel):
     officeHours: str | None = None
     specializations: list[str] | None = None
     avatarUrl: str | None = None
+    age: int | None = None
+    guardianName: str | None = None
+    guardianRelation: str | None = None
 
 
 class SetupCohortRequest(BaseModel):
@@ -78,13 +82,11 @@ async def build_teacher_profile_dict(teacher: User, session: AsyncSession) -> di
             .where(
                 Enrollment.class_id == cls.id,
                 Enrollment.status == "active",
+                Mastery.class_id == cls.id,
             )
         )
         avg_mast_raw = (await session.execute(mastery_stmt)).scalar() or 0.0
         avg_mast_pct = round(float(avg_mast_raw) * 100, 1)
-        if avg_mast_pct == 0.0 and stu_count > 0:
-            avg_mast_pct = 76.5
-
         if avg_mast_pct > 0:
             total_class_mastery_sum += avg_mast_pct
             total_classes_with_mastery += 1
@@ -141,7 +143,7 @@ async def build_teacher_profile_dict(teacher: User, session: AsyncSession) -> di
         cls_name = "Classroom"
         for c in class_items:
             if c["id"] == str(d.class_id):
-                cls_name = c["name"]
+                cls_name = str(c["name"])
                 break
         t_stamp = d.created_at.isoformat() if d.created_at else datetime.now(UTC).isoformat()
         s_title = (d.evidence.get("gap_cluster") if d.evidence else None) or d.suggestion_id
@@ -158,67 +160,41 @@ async def build_teacher_profile_dict(teacher: User, session: AsyncSession) -> di
             }
         )
 
-    schedule = []
-    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    periods = [
-        ("Period 1", "08:30 AM - 09:15 AM"),
-        ("Period 2", "09:30 AM - 10:15 AM"),
-        ("Period 4", "11:15 AM - 12:00 PM"),
-        ("Period 6", "01:30 PM - 02:15 PM"),
-    ]
-    for idx, c in enumerate(class_items[:3]):
-        for p_idx, (p_name, p_time) in enumerate(periods[: len(days)]):
-            day = days[(idx + p_idx) % len(days)]
-            schedule.append(
-                {
-                    "day": day,
-                    "period": p_name,
-                    "timeSlot": p_time,
-                    "className": f"Class {c['grade']}-{c['section']}",
-                    "subject": "Mathematics",
-                    "room": f"Room {200 + idx * 5 + p_idx}",
-                }
-            )
+    schedule: list[dict[str, str]] = []
 
     if total_classes_with_mastery > 0:
         avg_classroom_mastery = round(total_class_mastery_sum / total_classes_with_mastery, 1)
     else:
-        avg_classroom_mastery = 76.5 if total_students_taught > 0 else 0.0
+        avg_classroom_mastery = 0.0
 
     p_data = teacher.profile_data or {}
     clean_name = (teacher.full_name or teacher.username or "educator").lower().replace(" ", "-")
     slug = f"tchr-{clean_name}"
     exp_years = p_data.get("experienceYears")
     if exp_years is None:
-        exp_years = 6
-
-    def_bio = (
-        "Passionate secondary educator mentoring students across "
-        "NCERT mathematics and science competencies."
-    )
-    def_bio_hi = "NCERT गणित और विज्ञान दक्षताओं में छात्रों का मार्गदर्शन करने वाले शिक्षक।"
+        exp_years = 0
 
     return {
         "id": str(teacher.id),
         "slug": slug,
         "fullName": p_data.get("fullName") or teacher.full_name or "Educator",
         "fullNameHi": p_data.get("fullNameHi") or teacher.full_name or "शिक्षक",
-        "title": p_data.get("title") or "Mathematics & Science Educator",
-        "titleHi": p_data.get("titleHi") or "गणित एवं विज्ञान शिक्षक",
-        "employeeId": p_data.get("employeeId") or f"EMP-T{str(teacher.id)[:6].upper()}",
+        "title": p_data.get("title") or "",
+        "titleHi": p_data.get("titleHi") or "",
+        "employeeId": p_data.get("employeeId") or "",
         "email": teacher.email or "",
         "phone": teacher.phone or p_data.get("phone") or "",
-        "schoolName": p_data.get("schoolName") or "Kendriya Vidyalaya No. 1, Delhi",
-        "department": p_data.get("department") or "Secondary Department (Classes 6-10)",
-        "qualifications": p_data.get("qualifications") or "M.Sc., B.Ed, CTET Certified",
+        "schoolName": p_data.get("schoolName") or "",
+        "department": p_data.get("department") or "",
+        "qualifications": p_data.get("qualifications") or "",
         "experienceYears": exp_years,
         "avatarGradient": p_data.get("avatarGradient")
         or ("from-blue-600 via-indigo-600 to-purple-600"),
         "avatarUrl": p_data.get("avatarUrl") or "",
-        "bio": p_data.get("bio") or def_bio,
-        "bioHi": p_data.get("bioHi") or def_bio_hi,
-        "officeHours": p_data.get("officeHours") or "Monday - Friday, 2:00 PM - 4:00 PM",
-        "verifiedEducator": True,
+        "bio": p_data.get("bio") or "",
+        "bioHi": p_data.get("bioHi") or "",
+        "officeHours": p_data.get("officeHours") or "",
+        "verifiedEducator": teacher.is_verified,
         "totalStudentsTaught": total_students_taught,
         "activeClassesCount": len(class_items),
         "avgClassroomMastery": avg_classroom_mastery,
@@ -227,13 +203,7 @@ async def build_teacher_profile_dict(teacher: User, session: AsyncSession) -> di
         "classes": class_items,
         "pedagogicalDecisions": decision_items,
         "schedule": schedule,
-        "specializations": p_data.get("specializations")
-        or [
-            "NCERT Class 6-10 Mathematics",
-            "Linear Equations & Algebraic Identities",
-            "Rational Numbers & Exponents",
-            "Diagnostic & Mastery-based Progression",
-        ],
+        "specializations": p_data.get("specializations") or [],
     }
 
 
@@ -260,7 +230,7 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         t_name = sc.teacher.full_name if sc.teacher else "Educator"
         t_clean = (t_name or "educator").lower().replace(" ", "-")
         t_slug = f"tchr-{t_clean}"
-        c_code = resolve_curriculum_code(sc.grade, sc.name)
+        c_code = resolve_curriculum_code(sc.grade, sc.subject or sc.name)
         student_classes.append(
             {
                 "classId": str(sc.id),
@@ -270,7 +240,8 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
                 "academicYear": sc.academic_year,
                 "curriculumCode": c_code,
                 "status": e.status,
-                "rollNumber": e.roll_number or "101",
+                "diagnosticStatus": e.diagnostic_status,
+                "rollNumber": e.roll_number,
                 "teacherName": t_name,
                 "teacherSlug": t_slug,
                 "joinCode": sc.join_code,
@@ -280,16 +251,16 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
     enr = all_enrs[0] if all_enrs else None
     grade = enr.school_class.grade if (enr and enr.school_class) else 8
     section = enr.school_class.section if (enr and enr.school_class) else "A"
-    roll_num = enr.roll_number if enr else "101"
+    roll_num = enr.roll_number if enr else ""
     class_name = enr.school_class.name if (enr and enr.school_class) else f"Class {grade}-{section}"
     curriculum_code = (
-        resolve_curriculum_code(grade, enr.school_class.name)
+        resolve_curriculum_code(grade, enr.school_class.subject or enr.school_class.name)
         if (enr and enr.school_class)
         else f"NCERT-MATH-C{grade}"
     )
 
-    assigned_teacher_name = "Mr. Rajesh Kumar"
-    assigned_teacher_slug = "tchr-rajesh-kumar"
+    assigned_teacher_name = ""
+    assigned_teacher_slug = ""
     if enr and enr.school_class and enr.school_class.teacher:
         assigned_teacher_name = enr.school_class.teacher.full_name or "Educator"
         t_clean = (assigned_teacher_name).lower().replace(" ", "-")
@@ -311,7 +282,9 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         topic_name = sk.topic.name if (sk and sk.topic) else "General Curriculum"
         topic_code = sk.topic.code if (sk and sk.topic) else "CH01"
         def_state = (
-            "mastered" if p_mast >= 0.85 else ("partial" if p_mast >= 0.50 else "not_learned")
+            "mastered"
+            if p_mast >= 0.95 and m.attempts_count >= 3
+            else ("partial" if p_mast >= 0.4 else "not_learned")
         )
         skills_list.append(
             {
@@ -323,63 +296,67 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
                 "difficulty": sk.difficulty if sk else 3,
                 "pMastery": round(p_mast, 2),
                 "state": def_state,
-                "attemptsCount": m.attempts_count or 12,
+                "attemptsCount": m.attempts_count,
                 "lastAttemptedAt": (
                     m.updated_at.isoformat() if m.updated_at else datetime.now(UTC).isoformat()
                 ),
             }
         )
 
-    if not skills_list:
-        curric_res = await session.execute(
-            select(Curriculum).where(Curriculum.code == curriculum_code)
+    overall_mastery = round((p_sum / len(skills_list)) * 100) if skills_list else 0
+    attempts_result = await session.execute(select(Attempt).where(Attempt.student_id == student.id))
+    attempts = list(attempts_result.scalars().all())
+    total_solved = len(attempts)
+    india_tz = timezone(timedelta(hours=5, minutes=30))
+    active_days = {
+        (a.created_at.replace(tzinfo=UTC) if a.created_at.tzinfo is None else a.created_at)
+        .astimezone(india_tz)
+        .date()
+        for a in attempts
+    }
+    today = datetime.now(india_tz).date()
+    day = today if today in active_days else today - timedelta(days=1)
+    streak = 0
+    while day in active_days:
+        streak += 1
+        day -= timedelta(days=1)
+    accuracy_rate = (
+        round(sum(attempt.is_correct for attempt in attempts) / total_solved * 100)
+        if total_solved
+        else 0
+    )
+    practice_hours = round(sum(attempt.time_spent_ms for attempt in attempts) / 3600000, 1)
+    awards_result = await session.execute(
+        select(Achievement).where(Achievement.student_id == student.id, Achievement.kind == "badge")
+    )
+    awards = awards_result.scalars().all()
+    badges = [
+        {
+            "id": str(award.id),
+            "title": award.title,
+            "titleHi": award.title,
+            "description": "Skill mastery",
+            "icon": "Award",
+            "unlockedAt": award.created_at.isoformat(),
+            "category": "mastery",
+            "color": "from-amber-500 to-orange-500",
+        }
+        for award in awards
+    ]
+
+    consent_result = await session.execute(
+        select(Consent.id)
+        .where(
+            Consent.student_id == student.id,
+            Consent.is_granted.is_(True),
+            Consent.revoked_at.is_(None),
         )
-        curric = curric_res.scalar_one_or_none()
-        skills_query = select(Skill).options(selectinload(Skill.topic))
-        if curric:
-            skills_query = skills_query.join(Topic, Skill.topic_id == Topic.id).where(
-                Topic.curriculum_id == curric.id
-            )
-        skills_raw = (await session.execute(skills_query.limit(6))).scalars().all()
-
-        for idx, sk in enumerate(skills_raw):
-            topic_name = sk.topic.name if sk.topic else "Curriculum"
-            p_mast = 0.92 if idx < 2 else (0.64 if idx < 4 else 0.35)
-            skills_list.append(
-                {
-                    "skillId": str(sk.id),
-                    "skillCode": sk.code,
-                    "skillName": sk.name,
-                    "topicName": topic_name,
-                    "topicCode": sk.topic.code if sk.topic else "CH01",
-                    "difficulty": sk.difficulty,
-                    "pMastery": p_mast,
-                    "state": (
-                        "mastered"
-                        if p_mast >= 0.85
-                        else ("partial" if p_mast >= 0.50 else "not_learned")
-                    ),
-                    "attemptsCount": 15 + idx * 4,
-                    "lastAttemptedAt": datetime.now(UTC).isoformat(),
-                }
-            )
-
-    overall_mastery = round((p_sum / len(skills_list)) * 100) if p_sum > 0 else 78
-
-    att_stmt = select(func.count(Attempt.id)).where(Attempt.student_id == student.id)
-    att_count = (await session.execute(att_stmt)).scalar() or 0
-    total_solved = att_count if att_count > 0 else 248
-    accuracy_rate = 83
-
+        .limit(1)
+    )
+    has_consent = consent_result.scalar_one_or_none() is not None
     p_data = student.profile_data or {}
     s_clean = (student.full_name or student.username or "student").lower().replace(" ", "-")
     slug = f"stu-{s_clean}"
-
-    stu_bio = (
-        "Enthusiastic NCERT learner focusing on developing conceptual "
-        "clarity across class competencies."
-    )
-    stu_bio_hi = "NCERT कक्षा दक्षताओं में वैचारिक स्पष्टता विकसित करने वाले विद्यार्थी।"
 
     return {
         "id": str(student.id),
@@ -393,75 +370,40 @@ async def build_student_profile_dict(student: User, session: AsyncSession) -> di
         "curriculumCode": curriculum_code,
         "classId": str(enr.school_class.id) if (enr and enr.school_class) else None,
         "classes": student_classes,
-        "academicYear": "2024-2025",
-        "schoolName": p_data.get("schoolName") or "Govt. Model Senior Secondary School, Delhi",
-        "schoolUdise": "07010100101",
-        "age": 12 + grade - 6,
+        "academicYear": enr.school_class.academic_year if enr and enr.school_class else "",
+        "schoolName": p_data.get("schoolName") or "",
+        "schoolUdise": "",
+        "age": p_data.get("age", 0),
         "avatarGradient": "from-emerald-500 to-teal-700",
         "avatarUrl": p_data.get("avatarUrl") or "",
-        "bio": p_data.get("bio") or stu_bio,
-        "bioHi": p_data.get("bioHi") or stu_bio_hi,
+        "bio": p_data.get("bio") or "",
+        "bioHi": p_data.get("bioHi") or "",
         "preferredLanguage": student.preferred_language or "en",
-        "dpdpConsentGranted": True,
-        "guardianName": p_data.get("guardianName") or "Parent / Guardian",
-        "guardianRelation": "Parent (अभिभावक)",
+        "dpdpConsentGranted": has_consent,
+        "guardianName": p_data.get("guardianName") or "",
+        "guardianRelation": p_data.get("guardianRelation") or "",
         "overallMastery": overall_mastery,
-        "learningStreakDays": 14,
+        "learningStreakDays": streak,
         "accuracyRate": accuracy_rate,
         "totalQuestionsSolved": total_solved,
-        "practiceHours": round(total_solved * 0.08, 1),
-        "attendanceRate": 96,
+        "practiceHours": practice_hours,
+        "attendanceRate": 0,
         "assignedTeacherName": assigned_teacher_name,
         "assignedTeacherSlug": assigned_teacher_slug,
         "skills": skills_list,
-        "errorPatterns": [
-            {
-                "questionCode": "ERR-SIGN-DISTRIB",
-                "promptExcerpt": "Simplify -3(2x - 5) + 4x",
-                "distractorChosen": "-6x - 15 + 4x",
-                "count": 5,
-                "misconception": "Distributive negative sign error: missed -3 * -5 = +15.",
-                "remedyAction": "Assigned 2-step color-coded bracket expansion module.",
-                "severity": "medium",
-            }
-        ],
+        "errorPatterns": [],
         "hintUsage": {
-            "totalHintsRequested": 42,
-            "hint1Count": 26,
-            "hint2Count": 12,
-            "hint3Count": 4,
-            "independentAttemptsCount": total_solved - 20,
-            "independenceRatio": 78.4,
+            "totalHintsRequested": 0,
+            "hint1Count": 0,
+            "hint2Count": 0,
+            "hint3Count": 0,
+            "independentAttemptsCount": 0,
+            "independenceRatio": 0,
         },
-        "trend": [
-            {"date": "2026-10-23", "pMastery": 0.68, "attempts": 18, "accuracy": 75},
-            {"date": "2026-10-25", "pMastery": 0.74, "attempts": 24, "accuracy": 82},
-            {"date": "2026-10-27", "pMastery": 0.79, "attempts": 30, "accuracy": 85},
-        ],
+        "trend": [],
         "recentActivities": [],
-        "badges": [
-            {
-                "id": "badge-1",
-                "title": "Streak Master",
-                "titleHi": "सतत अभ्यासी",
-                "description": "Practiced 14 consecutive days",
-                "icon": "Flame",
-                "unlockedAt": "2026-10-26T10:00:00Z",
-                "category": "streak",
-                "color": "from-amber-500 to-orange-500",
-            }
-        ],
-        "recommendedSteps": [
-            {
-                "id": "step-1",
-                "skillCode": "MATH-8-CH02-S01",
-                "skillName": "Linear Equations with Variables on Both Sides",
-                "topicName": "Linear Equations",
-                "type": "practice",
-                "reason": "Reinforce algebra balance techniques",
-                "estimatedMinutes": 15,
-            }
-        ],
+        "badges": badges,
+        "recommendedSteps": [],
     }
 
 
@@ -495,6 +437,8 @@ async def update_my_profile(
     p_data = dict(current_user.profile_data or {})
     if payload.fullName is not None:
         p_data["fullName"] = payload.fullName.strip()
+    if payload.employeeId is not None:
+        p_data["employeeId"] = payload.employeeId.strip()
     if payload.fullNameHi is not None:
         p_data["fullNameHi"] = payload.fullNameHi.strip()
     if payload.title is not None:
@@ -520,6 +464,13 @@ async def update_my_profile(
     if payload.avatarUrl is not None:
         p_data["avatarUrl"] = payload.avatarUrl
 
+    if payload.age is not None:
+        p_data["age"] = payload.age
+    if payload.guardianName is not None:
+        p_data["guardianName"] = payload.guardianName.strip()
+    if payload.guardianRelation is not None:
+        p_data["guardianRelation"] = payload.guardianRelation.strip()
+
     current_user.profile_data = p_data
     await session.commit()
     await session.refresh(current_user)
@@ -535,117 +486,20 @@ async def update_my_profile(
 
 @router.post("/setup-cohort", summary="Setup a live classroom cohort with enrolled students")
 async def setup_cohort(
-    payload: SetupCohortRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[AsyncSession, Depends(get_db)],
+    _payload: SetupCohortRequest,
+    _current_user: Annotated[User, Depends(require_role("teacher"))],
 ) -> dict[str, Any]:
-    """Helper for educators to instantly instantiate an active class with enrolled students."""
-    school_res = await session.execute(select(School).limit(1))
-    school = school_res.scalar_one_or_none()
-    school_id = school.id if school else None
-
-    section = payload.section.upper()
-    existing_chk = (
-        await session.execute(
-            select(SchoolClass).where(
-                SchoolClass.school_id == school_id,
-                SchoolClass.grade == payload.grade,
-                SchoolClass.section == section,
-                SchoolClass.academic_year == "2024-2025",
-                SchoolClass.is_deleted.is_(False),
-            )
-        )
-    ).scalar_one_or_none()
-
-    if existing_chk:
-        for alt_sec in ["B", "C", "D", "E", "X"]:
-            chk = (
-                await session.execute(
-                    select(SchoolClass).where(
-                        SchoolClass.school_id == school_id,
-                        SchoolClass.grade == payload.grade,
-                        SchoolClass.section == alt_sec,
-                        SchoolClass.academic_year == "2024-2025",
-                        SchoolClass.is_deleted.is_(False),
-                    )
-                )
-            ).scalar_one_or_none()
-            if not chk:
-                section = alt_sec
-                break
-
-    class_name = payload.className or f"Class {payload.grade}-{section} {payload.subject}"
-    join_code = generate_join_code()
-
-    new_class = SchoolClass(
-        id=uuid.uuid4(),
-        name=class_name,
-        grade=payload.grade,
-        section=section,
-        academic_year="2024-2025",
-        school_id=school_id,
-        teacher_id=current_user.id,
-        join_code=join_code,
+    """Automatic enrollment of unrelated students is no longer supported."""
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Create a classroom and approve student join requests instead.",
     )
-    session.add(new_class)
-    await session.flush()
-
-    stu_role = (
-        await session.execute(select(Role).where(Role.name == "student"))
-    ).scalar_one_or_none()
-    students = []
-    if stu_role:
-        students = (
-            (await session.execute(select(User).where(User.role_id == stu_role.id).limit(16)))
-            .scalars()
-            .all()
-        )
-
-    for idx, stu in enumerate(students):
-        enr = Enrollment(
-            id=uuid.uuid4(),
-            class_id=new_class.id,
-            student_id=stu.id,
-            roll_number=str(101 + idx),
-            status="active",
-        )
-        session.add(enr)
-
-    skills_res = (await session.execute(select(Skill).limit(4))).scalars().all()
-    skill_ids = [str(sk.id) for sk in skills_res]
-
-    asgn1 = Assignment(
-        id=uuid.uuid4(),
-        class_id=new_class.id,
-        teacher_id=current_user.id,
-        title=f"NCERT Class {payload.grade} Foundational Practice Set 1",
-        description="Comprehensive diagnostic drill for core curriculum competencies.",
-        skill_ids=skill_ids[:2],
-        due_date=datetime.now(UTC) + timedelta(days=7),
-        status="active",
-    )
-    asgn2 = Assignment(
-        id=uuid.uuid4(),
-        class_id=new_class.id,
-        teacher_id=current_user.id,
-        title=f"NCERT Class {payload.grade} Mastery Assessment 2",
-        description="Hint-free formative evaluation.",
-        skill_ids=skill_ids[2:],
-        due_date=datetime.now(UTC) + timedelta(days=14),
-        status="active",
-    )
-    session.add_all([asgn1, asgn2])
-
-    await session.commit()
-    await session.refresh(current_user)
-
-    profile = await build_teacher_profile_dict(current_user, session)
-    return {"type": "teacher", "profile": profile}
 
 
 @router.get("/teachers", summary="List all educator profiles")
 async def list_teacher_profiles(
     session: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_role("admin"))],
 ) -> list[dict[str, Any]]:
     """Retrieve list of distinct educator profiles from database."""
     role_res = await session.execute(select(Role).where(Role.name == "teacher"))
@@ -667,7 +521,9 @@ async def list_teacher_profiles(
 
 @router.get("/teachers/{id_or_slug}", summary="Get teacher profile by ID or slug")
 async def get_teacher_profile(
-    id_or_slug: str, session: Annotated[AsyncSession, Depends(get_db)]
+    id_or_slug: str,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_role("admin"))],
 ) -> dict[str, Any]:
     """Retrieve individual teacher profile from database."""
     query = id_or_slug.strip().lower()
@@ -685,12 +541,14 @@ async def get_teacher_profile(
 
     role_res = await session.execute(select(Role).where(Role.name == "teacher"))
     teacher_role = role_res.scalar_one_or_none()
+    if teacher_role is None:
+        raise HTTPException(status_code=404, detail="Teacher profile not found")
 
     stmt = (
         select(User)
         .options(selectinload(User.role))
         .where(
-            User.role_id == teacher_role.id if teacher_role else True,
+            User.role_id == teacher_role.id,
             (User.email.ilike(f"%{query}%"))
             | (User.username.ilike(f"%{query}%"))
             | (User.full_name.ilike(f"%{query}%")),
@@ -701,22 +559,13 @@ async def get_teacher_profile(
     if user:
         return await build_teacher_profile_dict(user, session)
 
-    first_t_stmt = (
-        select(User)
-        .options(selectinload(User.role))
-        .where(User.role_id == teacher_role.id)
-        .limit(1)
-    )
-    first_t = (await session.execute(first_t_stmt)).scalar_one_or_none()
-    if first_t:
-        return await build_teacher_profile_dict(first_t, session)
-
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher profile not found")
 
 
 @router.get("/students", summary="List all student profiles")
 async def list_student_profiles(
     session: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_role("admin"))],
 ) -> list[dict[str, Any]]:
     """Retrieve list of student telemetry profiles from database."""
     role_res = await session.execute(select(Role).where(Role.name == "student"))
@@ -739,7 +588,9 @@ async def list_student_profiles(
 
 @router.get("/students/{id_or_slug}", summary="Get distinct student profile")
 async def get_student_profile(
-    id_or_slug: str, session: Annotated[AsyncSession, Depends(get_db)]
+    id_or_slug: str,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_role("admin"))],
 ) -> dict[str, Any]:
     """Retrieve individual student profile with distinct mastery, error patterns, and hint usage."""
     query = id_or_slug.strip().lower()
@@ -757,13 +608,15 @@ async def get_student_profile(
 
     role_res = await session.execute(select(Role).where(Role.name == "student"))
     student_role = role_res.scalar_one_or_none()
+    if student_role is None:
+        raise HTTPException(status_code=404, detail="Student profile not found")
 
     cleaned = query.replace("stu-", "").replace("-", "_")
     stmt = (
         select(User)
         .options(selectinload(User.role))
         .where(
-            User.role_id == student_role.id if student_role else True,
+            User.role_id == student_role.id,
             (User.username.ilike(f"%{cleaned}%")) | (User.full_name.ilike(f"%{query}%")),
         )
         .limit(1)
@@ -771,15 +624,5 @@ async def get_student_profile(
     user = (await session.execute(stmt)).scalar_one_or_none()
     if user:
         return await build_student_profile_dict(user, session)
-
-    first_s_stmt = (
-        select(User)
-        .options(selectinload(User.role))
-        .where(User.role_id == student_role.id)
-        .limit(1)
-    )
-    first_s = (await session.execute(first_s_stmt)).scalar_one_or_none()
-    if first_s:
-        return await build_student_profile_dict(first_s, session)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student profile not found")

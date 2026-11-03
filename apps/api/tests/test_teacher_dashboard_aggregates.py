@@ -54,8 +54,8 @@ async def test_teacher_dashboard_comprehensive(
     school_class = await class_repo.create_class(
         teacher_id=teacher.id,
         school_id=school.id,
-        name="Grade 11 Mathematics",
-        grade=11,
+        name="Grade 8 Mathematics",
+        grade=8,
         section="A",
         academic_year="2024-2025",
     )
@@ -65,7 +65,7 @@ async def test_teacher_dashboard_comprehensive(
     skill_repo = SkillRepository(db_session)
     question_repo = QuestionRepository(db_session)
 
-    curriculum = await curr_repo.create(CurriculumFactory.build(code="NCERT_TEACHER_11", grade=11))
+    curriculum = await curr_repo.create(CurriculumFactory.build(code="NCERT-MATH-C8", grade=8))
     topic = await topic_repo.create(
         TopicFactory.build(curriculum_id=curriculum.id, name="Number Systems")
     )
@@ -134,12 +134,14 @@ async def test_teacher_dashboard_comprehensive(
     await mastery_repo.upsert_mastery(
         student_id=s1.id,
         skill_id=skill_a.id,
+        class_id=school_class.id,
         p_mastery=0.85,
         confidence=0.9,
         is_correct=True,
     )
     await attempt_repo.record_attempt(
         student_id=s1.id,
+        class_id=school_class.id,
         question_id=q1.id,
         skill_id=skill_a.id,
         idempotency_key=f"att-{uuid.uuid4()}",
@@ -153,6 +155,7 @@ async def test_teacher_dashboard_comprehensive(
     await mastery_repo.upsert_mastery(
         student_id=s2.id,
         skill_id=skill_a.id,
+        class_id=school_class.id,
         p_mastery=0.45,
         confidence=0.5,
         is_correct=False,
@@ -160,6 +163,7 @@ async def test_teacher_dashboard_comprehensive(
     for i in range(4):
         await attempt_repo.record_attempt(
             student_id=s2.id,
+            class_id=school_class.id,
             question_id=q1.id,
             skill_id=skill_a.id,
             idempotency_key=f"att-{uuid.uuid4()}",
@@ -179,6 +183,13 @@ async def test_teacher_dashboard_comprehensive(
     assert heat_data["total_students"] == 3
     assert heat_data["total_skills"] == 2
     assert len(heat_data["matrix"]) == 6  # 3 students x 2 skills
+    assert heat_data["summary"]["unassessed"] == 4
+    unassessed_cell = next(
+        cell
+        for cell in heat_data["matrix"]
+        if cell["student_id"] == str(s3.id) and cell["skill_id"] == str(skill_a.id)
+    )
+    assert unassessed_cell["state"] == "unassessed"
 
     # Verify ETag caching header & 304 response
     etag = resp_heat.headers.get("etag")
@@ -201,7 +212,8 @@ async def test_teacher_dashboard_comprehensive(
     assert clusters_data["total_clusters"] >= 1
     top_cluster = clusters_data["clusters"][0]
     assert "suggested_revision_plan" in top_cluster
-    assert top_cluster["student_count"] >= 2
+    assert top_cluster["student_count"] == 1
+    assert str(s3.id) not in top_cluster["student_ids"]
 
     # 6. Test GET Early Warnings
     resp_warnings = await client.get(
@@ -222,7 +234,7 @@ async def test_teacher_dashboard_comprehensive(
     assert resp_profile.status_code == 200
     profile_data = resp_profile.json()
     assert profile_data["student_id"] == str(s2.id)
-    assert len(profile_data["error_patterns"]) >= 1
+    assert profile_data["error_patterns"] == []
     assert "hint_usage" in profile_data
     assert "trend" in profile_data
 
@@ -298,7 +310,8 @@ async def test_teacher_dashboard_comprehensive(
     assert "Roll Number" in csv_text
     assert "Skill Code" in csv_text
     assert "SKILL_INT_OPS" in csv_text
-    assert "Grade 11 Mathematics" in csv_text
+    assert "Grade 8 Mathematics" in csv_text
+    assert "Not Assessed,,0" in csv_text
 
     # 12. Direct TeacherRepository edge case coverage
     teacher_repo = TeacherRepository(db_session)

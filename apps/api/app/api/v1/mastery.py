@@ -13,6 +13,7 @@ from app.core.errors import AuthorizationError, NotFoundError
 from app.models.assessment import Mastery
 from app.models.auth import User
 from app.models.curriculum import Skill, Topic
+from app.models.organization import Enrollment, SchoolClass
 from app.repositories.mastery_repo import MasteryRepository
 from app.schemas.assessment import MasteryResponse
 
@@ -25,14 +26,39 @@ def _assert_student_access(target_student_id: uuid.UUID, current_user: User) -> 
         raise AuthorizationError("Students may only inspect their own competency mastery levels.")
 
 
+async def _assert_class_access(
+    session: AsyncSession, user: User, student_id: uuid.UUID, class_id: uuid.UUID
+) -> None:
+    membership = await session.execute(
+        select(Enrollment.id).where(
+            Enrollment.student_id == student_id,
+            Enrollment.class_id == class_id,
+            Enrollment.status == "active",
+        )
+    )
+    if membership.scalar_one_or_none() is None:
+        raise AuthorizationError("An active classroom enrollment is required.")
+    if user.id != student_id and user.role.name != "admin":
+        owner = await session.execute(
+            select(SchoolClass.id).where(
+                SchoolClass.id == class_id, SchoolClass.teacher_id == user.id
+            )
+        )
+        if owner.scalar_one_or_none() is None:
+            raise AuthorizationError("You do not have access to this classroom.")
+
+
 @router.get("", response_model=list[MasteryResponse], summary="List Student Mastery States")
 async def list_student_mastery(
     student_id: Annotated[uuid.UUID, Query(description="Student UUID")],
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
+    class_id: uuid.UUID | None = None,
 ) -> Sequence[MasteryResponse]:
     """Retrieve all competency mastery levels tracked with enriched skill and topic metadata."""
     _assert_student_access(student_id, current_user)
+    if class_id is not None:
+        await _assert_class_access(session, current_user, student_id, class_id)
 
     stmt = (
         select(
@@ -43,7 +69,7 @@ async def list_student_mastery(
         )
         .join(Skill, Mastery.skill_id == Skill.id)
         .outerjoin(Topic, Skill.topic_id == Topic.id)
-        .where(Mastery.student_id == student_id)
+        .where(Mastery.student_id == student_id, Mastery.class_id == class_id)
         .order_by(Mastery.last_attempted_at.desc().nullslast())
     )
     result = await session.execute(stmt)
@@ -53,8 +79,8 @@ async def list_student_mastery(
     for m, skill_name, skill_code, topic_name in records:
         state = (
             "mastered"
-            if m.p_mastery >= 0.85
-            else ("partial" if m.p_mastery >= 0.35 or m.attempts_count > 0 else "not_learned")
+            if m.p_mastery >= 0.95 and m.attempts_count >= 3
+            else ("partial" if m.p_mastery >= 0.4 else "not_learned")
         )
         pct = round(m.p_mastery * 100)
         responses.append(

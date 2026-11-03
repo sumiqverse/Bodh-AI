@@ -1,27 +1,36 @@
 import contextlib
 import hashlib
 import uuid
+from datetime import UTC, date, datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, require_role
+from app.api.deps import get_current_user, get_db, require_role
+from app.core.curriculum import resolve_curriculum_code
 from app.core.errors import AuthorizationError, NotFoundError
 from app.core.security import generate_join_code
-from app.models.assessment import Question, QuestionTranslation
+from app.models.achievement import Achievement
+from app.models.assessment import Attempt, Mastery, Question, QuestionTranslation
 from app.models.auth import User
 from app.models.curriculum import Curriculum, Skill, Topic
+from app.models.lesson import ClassroomLesson
 from app.models.organization import School, SchoolClass
+from app.models.teacher import Assignment, AssignmentStudent
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.class_repo import ClassRepository
 from app.schemas.classes import (
     ClassCreateRequest,
     ClassDetailResponse,
+    ClassLeaderboardResponse,
     ClassResponse,
+    ClassroomLessonUpsert,
     EnrollmentActionResponse,
+    LeaderboardStudentItem,
     RotateCodeResponse,
     StudentRosterItem,
 )
@@ -57,6 +66,7 @@ def _format_class_response(school_class: SchoolClass) -> ClassResponse:
         name=school_class.name,
         grade=school_class.grade,
         section=school_class.section,
+        subject=school_class.subject,
         academic_year=school_class.academic_year,
         join_code=school_class.join_code,
         school_id=school_class.school_id,
@@ -122,6 +132,7 @@ async def create_class(
         name=payload.name.strip(),
         grade=payload.grade,
         section=payload.section.strip().upper(),
+        subject=payload.subject.strip() if payload.subject else None,
         academic_year=payload.academic_year.strip(),
         school_id=school_id,
         teacher_id=current_user.id,
@@ -200,6 +211,7 @@ async def get_class_details(
         name=school_class.name,
         grade=school_class.grade,
         section=school_class.section,
+        subject=school_class.subject,
         academic_year=school_class.academic_year,
         join_code=school_class.join_code,
         school_id=school_class.school_id,
@@ -207,6 +219,120 @@ async def get_class_details(
         students=students,
         total_students=len(students),
         created_at=school_class.created_at,
+    )
+
+
+@router.get(
+    "/{class_id}/leaderboard",
+    response_model=ClassLeaderboardResponse,
+    summary="Get real-time classroom leaderboard for enrolled students",
+)
+async def get_class_leaderboard(
+    class_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ClassLeaderboardResponse:
+    """Retrieve real-time classroom leaderboard ranking for all enrolled students."""
+    class_repo = ClassRepository(session)
+    school_class = await class_repo.get_by_id(class_id)
+    if school_class is None:
+        raise NotFoundError("Class", class_id)
+
+    enrollments = [
+        enrollment
+        for enrollment in await class_repo.get_enrollments(class_id)
+        if enrollment.status == "active" and enrollment.student is not None
+    ]
+    if school_class.teacher_id != current_user.id and not any(
+        enrollment.student_id == current_user.id for enrollment in enrollments
+    ):
+        raise AuthorizationError(
+            "Only the class teacher and enrolled students can view this leaderboard."
+        )
+
+    # XP is derived from persisted answers attributed to this classroom.
+    # Streaks remain student-wide and use all persisted activity.
+    student_ids = [enrollment.student_id for enrollment in enrollments]
+    attempts_by_student: dict[uuid.UUID, list[Attempt]] = {sid: [] for sid in student_ids}
+    if student_ids:
+        result = await session.execute(select(Attempt).where(Attempt.student_id.in_(student_ids)))
+        for attempt in result.scalars().all():
+            attempts_by_student[attempt.student_id].append(attempt)
+
+    india_tz = timezone(timedelta(hours=5, minutes=30))
+    today = datetime.now(india_tz).date()
+    colors = ["bg-surface-yellow", "bg-surface-blue", "bg-surface-peach"]
+    entries: list[tuple[Any, int, int, str]] = []
+    current_dates: set[date] = set()
+    for index, enrollment in enumerate(enrollments):
+        attempts = attempts_by_student[enrollment.student_id]
+        xp = sum(
+            15 if attempt.is_correct else 5 for attempt in attempts if attempt.class_id == class_id
+        )
+        days = {
+            (
+                attempt.created_at.replace(tzinfo=UTC)
+                if attempt.created_at.tzinfo is None
+                else attempt.created_at
+            )
+            .astimezone(india_tz)
+            .date()
+            for attempt in attempts
+        }
+        if enrollment.student_id == current_user.id:
+            current_dates = days
+        day = today if today in days else today - timedelta(days=1)
+        streak = 0
+        while day in days:
+            streak += 1
+            day -= timedelta(days=1)
+        entries.append((enrollment, xp, streak, colors[index % len(colors)]))
+
+    entries.sort(key=lambda entry: (-entry[1], str(entry[0].student_id)))
+    ranked_items: list[LeaderboardStudentItem] = []
+    current_user_row: LeaderboardStudentItem | None = None
+    for rank, (enrollment, xp, streak, color) in enumerate(entries, 1):
+        student = enrollment.student
+        is_current = student.id == current_user.id
+        item = LeaderboardStudentItem(
+            rank=rank,
+            student_id=student.id,
+            name=student.full_name or student.username or "Student",
+            username=student.username,
+            roll_number=enrollment.roll_number,
+            xp=xp,
+            streak_days=streak,
+            avatar_bg="bg-primary-orange" if is_current else color,
+            is_current_user=is_current,
+        )
+        ranked_items.append(item)
+        if is_current:
+            current_user_row = item
+
+    p1 = next((r for r in ranked_items if r.rank == 1), None)
+    p2 = next((r for r in ranked_items if r.rank == 2), None)
+    p3 = next((r for r in ranked_items if r.rank == 3), None)
+
+    top_three = [p for p in [p2, p1, p3] if p is not None]
+    list_learners = [r for r in ranked_items if 4 <= r.rank <= 6]
+
+    longest_streak = run = 0
+    previous_day = None
+    for activity_day in sorted(current_dates):
+        run = run + 1 if previous_day and activity_day == previous_day + timedelta(days=1) else 1
+        longest_streak = max(longest_streak, run)
+        previous_day = activity_day
+
+    return ClassLeaderboardResponse(
+        class_id=school_class.id,
+        class_name=school_class.name,
+        total_students=len(ranked_items),
+        top_three=top_three,
+        list_learners=list_learners,
+        all_rankings=ranked_items,
+        current_user_row=current_user_row,
+        activity_dates=[day.isoformat() for day in sorted(current_dates)],
+        max_streak=longest_streak,
     )
 
 
@@ -341,6 +467,248 @@ async def remove_student(
         status="removed",
         message="Student successfully removed from class roster.",
     )
+
+
+@router.get("/{class_id}/lessons", summary="List this classroom's teacher-authored lessons")
+async def list_class_lessons(
+    class_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("teacher"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[dict[str, Any]]:
+    school_class = await ClassRepository(session).get_by_id(class_id)
+    if school_class is None:
+        raise NotFoundError("Class", class_id)
+    await _assert_class_ownership(school_class, current_user)
+    result = await session.execute(
+        select(ClassroomLesson)
+        .where(ClassroomLesson.class_id == class_id)
+        .order_by(ClassroomLesson.created_at)
+    )
+    return [
+        {
+            "id": str(row.id),
+            "skill_id": str(row.skill_id),
+            "language": row.language,
+            "difficulty": row.difficulty,
+            "title": row.title,
+            "body": row.body,
+        }
+        for row in result.scalars().all()
+    ]
+
+
+@router.put("/{class_id}/lessons", summary="Create or update a classroom lesson")
+async def upsert_class_lesson(
+    class_id: uuid.UUID,
+    payload: ClassroomLessonUpsert,
+    current_user: Annotated[User, Depends(require_role("teacher"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    school_class = await ClassRepository(session).get_by_id(class_id)
+    if school_class is None:
+        raise NotFoundError("Class", class_id)
+    await _assert_class_ownership(school_class, current_user)
+    curriculum_code = resolve_curriculum_code(
+        school_class.grade, school_class.subject or school_class.name
+    )
+    skill = await session.execute(
+        select(Skill.id)
+        .join(Topic, Skill.topic_id == Topic.id)
+        .join(Curriculum, Topic.curriculum_id == Curriculum.id)
+        .where(
+            Skill.id == payload.skill_id,
+            Curriculum.code == curriculum_code,
+            Skill.is_deleted.is_(False),
+        )
+    )
+    if skill.scalar_one_or_none() is None:
+        raise NotFoundError("Skill in classroom curriculum", payload.skill_id)
+    result = await session.execute(
+        select(ClassroomLesson).where(
+            ClassroomLesson.class_id == class_id,
+            ClassroomLesson.skill_id == payload.skill_id,
+            ClassroomLesson.language == payload.language,
+            ClassroomLesson.difficulty == payload.difficulty,
+        )
+    )
+    lesson = result.scalar_one_or_none()
+    if lesson is None:
+        lesson = ClassroomLesson(class_id=class_id, **payload.model_dump())
+        session.add(lesson)
+    else:
+        lesson.title, lesson.body = payload.title, payload.body
+    await session.flush()
+    return {
+        "id": str(lesson.id),
+        "skill_id": str(lesson.skill_id),
+        "language": lesson.language,
+        "difficulty": lesson.difficulty,
+        "title": lesson.title,
+        "body": lesson.body,
+    }
+
+
+@router.get("/{class_id}/lessons/{skill_id}", summary="Get an adaptive lesson for this student")
+async def get_class_lesson(
+    class_id: uuid.UUID,
+    skill_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("student"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    language: str = "en",
+) -> dict[str, Any]:
+    enrollment = await ClassRepository(session).get_enrollment(class_id, current_user.id)
+    if enrollment is None or enrollment.status != "active":
+        raise AuthorizationError("An active classroom enrollment is required.")
+    result = await session.execute(
+        select(ClassroomLesson).where(
+            ClassroomLesson.class_id == class_id,
+            ClassroomLesson.skill_id == skill_id,
+            ClassroomLesson.language == language,
+        )
+    )
+    lessons = result.scalars().all()
+    if not lessons:
+        raise NotFoundError("ClassroomLesson", skill_id)
+    mastery_result = await session.execute(
+        select(Mastery).where(
+            Mastery.class_id == class_id,
+            Mastery.skill_id == skill_id,
+            Mastery.student_id == current_user.id,
+        )
+    )
+    mastery = mastery_result.scalar_one_or_none()
+    probability = mastery.p_mastery if mastery else 0.0
+    target = (
+        1
+        if probability < 0.4
+        else 2
+        if probability < 0.6
+        else 3
+        if probability < 0.8
+        else 4
+        if probability < 0.95
+        else 5
+    )
+    eligible = [lesson for lesson in lessons if lesson.difficulty <= target]
+    if not eligible:
+        raise NotFoundError("Lesson at student's current level", skill_id)
+    chosen = max(eligible, key=lambda lesson: lesson.difficulty)
+    return {
+        "id": str(chosen.id),
+        "skill_id": str(chosen.skill_id),
+        "language": chosen.language,
+        "difficulty": chosen.difficulty,
+        "title": chosen.title,
+        "body": chosen.body,
+    }
+
+
+@router.get("/{class_id}/my-achievements", summary="List earned badges and certificates")
+async def get_my_achievements(
+    class_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("student"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[dict[str, Any]]:
+    enrollment = await ClassRepository(session).get_enrollment(class_id, current_user.id)
+    if enrollment is None or enrollment.status != "active":
+        raise AuthorizationError("An active classroom enrollment is required.")
+    result = await session.execute(
+        select(Achievement)
+        .where(Achievement.class_id == class_id, Achievement.student_id == current_user.id)
+        .order_by(Achievement.created_at.desc())
+    )
+    return [
+        {"id": str(a.id), "kind": a.kind, "title": a.title, "earned_at": a.created_at.isoformat()}
+        for a in result.scalars().all()
+    ]
+
+
+@router.get(
+    "/{class_id}/my-achievements/{achievement_id}", summary="View an earned classroom certificate"
+)
+async def get_my_achievement(
+    class_id: uuid.UUID,
+    achievement_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("student"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    enrollment = await ClassRepository(session).get_enrollment(class_id, current_user.id)
+    if enrollment is None or enrollment.status != "active":
+        raise AuthorizationError("An active classroom enrollment is required.")
+    result = await session.execute(
+        select(Achievement, SchoolClass.name)
+        .join(SchoolClass, SchoolClass.id == Achievement.class_id)
+        .where(
+            Achievement.id == achievement_id,
+            Achievement.class_id == class_id,
+            Achievement.student_id == current_user.id,
+            Achievement.kind == "certificate",
+        )
+    )
+    row = result.one_or_none()
+    if row is None:
+        raise NotFoundError("Certificate", achievement_id)
+    achievement, class_name = row
+    return {
+        "id": str(achievement.id),
+        "title": achievement.title,
+        "class_name": class_name,
+        "student_name": current_user.full_name or current_user.username or "Student",
+        "earned_at": achievement.created_at.isoformat(),
+    }
+
+
+@router.get(
+    "/{class_id}/my-assignments",
+    summary="List assignments sent to the current student",
+)
+async def get_my_assignments(
+    class_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("student"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[dict[str, Any]]:
+    enrollment = await ClassRepository(session).get_enrollment(class_id, current_user.id)
+    if enrollment is None or enrollment.status != "active":
+        raise AuthorizationError("An active classroom enrollment is required.")
+    result = await session.execute(
+        select(Assignment, AssignmentStudent)
+        .join(AssignmentStudent, AssignmentStudent.assignment_id == Assignment.id)
+        .where(
+            Assignment.class_id == class_id,
+            Assignment.status == "active",
+            AssignmentStudent.student_id == current_user.id,
+        )
+        .order_by(Assignment.created_at.desc())
+    )
+    return [
+        {
+            "id": str(assignment.id),
+            "title": assignment.title,
+            "description": assignment.description,
+            "skill_ids": assignment.skill_ids,
+            "due_date": assignment.due_date.isoformat() if assignment.due_date else None,
+            "status": link.status,
+        }
+        for assignment, link in result.all()
+    ]
+
+
+@router.post(
+    "/{class_id}/diagnostic/skip",
+    summary="Skip the initial classroom diagnostic for now",
+)
+async def skip_class_diagnostic(
+    class_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_role("student"))],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, str]:
+    enrollment = await ClassRepository(session).get_enrollment(class_id, current_user.id)
+    if enrollment is None or enrollment.status != "active":
+        raise AuthorizationError("An active classroom enrollment is required.")
+    if enrollment.diagnostic_status == "pending":
+        enrollment.diagnostic_status = "skipped"
+        await session.flush()
+    return {"diagnostic_status": enrollment.diagnostic_status}
 
 
 # =============================================================================
@@ -638,10 +1006,10 @@ async def export_class_csv(
 def _detect_subject_from_class_name(name: str) -> str:
     """Infer subject from class section name."""
     n = name.lower()
-    if "sci" in n:
-        return "science"
     if "soc" in n or "sst" in n or "hist" in n or "geo" in n:
         return "social_science"
+    if "sci" in n:
+        return "science"
     if "eng" in n:
         return "english"
     if "hin" in n:
@@ -669,20 +1037,12 @@ async def get_classroom_content(
     if school_class.teacher_id != current_user.id:
         await _assert_class_ownership(school_class, current_user)
 
-    selected_subject = subject or _detect_subject_from_class_name(school_class.name)
-
-    # 1. Fetch Curriculum for grade and subject
-    curr_stmt = select(Curriculum).where(
-        Curriculum.grade == school_class.grade,
-        Curriculum.subject.ilike(f"%{selected_subject}%"),
+    selected_subject = (
+        subject or school_class.subject or _detect_subject_from_class_name(school_class.name)
     )
-    curr_res = await session.execute(curr_stmt)
-    curriculum = curr_res.scalar_one_or_none()
-
-    if curriculum is None:
-        curr_stmt = select(Curriculum).where(Curriculum.grade == school_class.grade).limit(1)
-        curr_res = await session.execute(curr_stmt)
-        curriculum = curr_res.scalar_one_or_none()
+    curriculum_code = resolve_curriculum_code(school_class.grade, selected_subject)
+    curr_stmt = select(Curriculum).where(Curriculum.code == curriculum_code)
+    curriculum = (await session.execute(curr_stmt)).scalar_one_or_none()
 
     if curriculum is None:
         return ClassroomContentResponse(
@@ -690,16 +1050,14 @@ async def get_classroom_content(
             class_name=school_class.name,
             grade=school_class.grade,
             subject=selected_subject,
-            curriculum_code=f"NCERT-{selected_subject.upper()}-C{school_class.grade}",
+            curriculum_code=curriculum_code,
             topics=[],
             custom_questions_count=0,
         )
 
     # 2. Fetch Topics for curriculum
     top_stmt = (
-        select(Topic)
-        .where(Topic.curriculum_id == curriculum.id)
-        .order_by(Topic.sequence_order)
+        select(Topic).where(Topic.curriculum_id == curriculum.id).order_by(Topic.sequence_order)
     )
     top_res = await session.execute(top_stmt)
     topics = list(top_res.scalars().all())
@@ -720,7 +1078,10 @@ async def get_classroom_content(
     if all_skill_ids:
         q_stmt = (
             select(Question)
-            .where(Question.skill_id.in_(all_skill_ids))
+            .where(
+                Question.skill_id.in_(all_skill_ids),
+                (Question.class_id.is_(None) | (Question.class_id == class_id)),
+            )
             .options(selectinload(Question.translations))
             .order_by(Question.created_at)
         )
@@ -817,11 +1178,24 @@ async def create_classroom_question(
     await _assert_class_ownership(school_class, current_user)
 
     # 1. Resolve skill by code
-    sk_stmt = select(Skill).where(Skill.code == payload.skill_code)
+    curriculum_code = resolve_curriculum_code(
+        school_class.grade, school_class.subject or school_class.name
+    )
+    sk_stmt = (
+        select(Skill)
+        .join(Topic, Skill.topic_id == Topic.id)
+        .join(Curriculum, Topic.curriculum_id == Curriculum.id)
+        .where(Skill.code == payload.skill_code, Curriculum.code == curriculum_code)
+    )
     sk_res = await session.execute(sk_stmt)
     skill = sk_res.scalar_one_or_none()
     if skill is None:
         raise NotFoundError("Skill", payload.skill_code)
+
+    if sum(option.is_correct for option in payload.options) != 1:
+        raise HTTPException(status_code=422, detail="Exactly one correct option is required.")
+    if len({option.id.strip().upper() for option in payload.options}) != len(payload.options):
+        raise HTTPException(status_code=422, detail="Option identifiers must be unique.")
 
     # 2. Create Question
     q_code = f"Q-CUSTOM-{uuid.uuid4().hex[:8].upper()}"
@@ -829,6 +1203,7 @@ async def create_classroom_question(
     question = Question(
         id=q_id,
         code=q_code,
+        class_id=class_id,
         skill_id=skill.id,
         difficulty=payload.difficulty,
         question_type="mcq",
@@ -865,11 +1240,11 @@ async def create_classroom_question(
         )
         session.add(trans_hi)
 
-    await session.commit()
+    await session.flush()
 
     return CustomQuestionResponse(
         id=question.id,
-        code=question.code,
+        code=question.code or q_code,
         skill_code=skill.code,
         prompt=payload.prompt_en,
         options=options_dict,
@@ -905,30 +1280,47 @@ async def upload_classroom_content(
             detail="Payload must contain a non-empty 'questions' array.",
         )
 
-    all_skills_stmt = select(Skill)
-    all_skills = {s.code: s for s in (await session.execute(all_skills_stmt)).scalars().all()}
-
-    fallback_skill = next(iter(all_skills.values())) if all_skills else None
-    if not fallback_skill:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No curriculum skills configured in the system.",
-        )
+    curriculum_code = resolve_curriculum_code(
+        school_class.grade, school_class.subject or school_class.name
+    )
+    all_skills_stmt = (
+        select(Skill)
+        .join(Topic, Skill.topic_id == Topic.id)
+        .join(Curriculum, Topic.curriculum_id == Curriculum.id)
+        .where(Curriculum.code == curriculum_code)
+    )
+    all_skills = {
+        skill.code: skill for skill in (await session.execute(all_skills_stmt)).scalars().all()
+    }
+    validated: list[CustomQuestionCreateRequest] = []
+    for item in questions_list:
+        if not isinstance(item, dict):
+            raise HTTPException(status_code=422, detail="Each question must be an object.")
+        try:
+            prepared = CustomQuestionCreateRequest.model_validate(
+                {**item, "prompt_en": item.get("prompt_en", item.get("prompt"))}
+            )
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail="Invalid question in upload.") from exc
+        if prepared.skill_code not in all_skills:
+            raise HTTPException(
+                status_code=422, detail="Question skill does not belong to this classroom."
+            )
+        if sum(option.is_correct for option in prepared.options) != 1:
+            raise HTTPException(status_code=422, detail="Exactly one correct option is required.")
+        if len({option.id.strip().upper() for option in prepared.options}) != len(prepared.options):
+            raise HTTPException(status_code=422, detail="Option identifiers must be unique.")
+        validated.append(prepared)
 
     created_count = 0
-    for q_item in questions_list:
-        target_code = q_item.get("skill_code", "")
-        skill = all_skills.get(target_code, fallback_skill)
-
-        q_id = uuid.uuid4()
-        q_code = f"Q-CUSTOM-{uuid.uuid4().hex[:8].upper()}"
-        difficulty = int(q_item.get("difficulty", 3))
-
+    for q_item in validated:
+        skill = all_skills[q_item.skill_code]
         question = Question(
-            id=q_id,
-            code=q_code,
+            id=uuid.uuid4(),
+            code=f"Q-CUSTOM-{uuid.uuid4().hex[:8].upper()}",
+            class_id=class_id,
             skill_id=skill.id,
-            difficulty=difficulty,
+            difficulty=q_item.difficulty,
             question_type="mcq",
             status="published",
             needs_teacher_review=False,
@@ -937,37 +1329,20 @@ async def upload_classroom_content(
         )
         session.add(question)
         await session.flush()
-
-        options = q_item.get(
-            "options",
-            [
-                {"id": "A", "text": "Option A", "is_correct": True},
-                {"id": "B", "text": "Option B", "is_correct": False},
-            ],
+        session.add(
+            QuestionTranslation(
+                id=uuid.uuid4(),
+                question_id=question.id,
+                language="en",
+                prompt=q_item.prompt_en,
+                options=[option.model_dump() for option in q_item.options],
+                explanation=q_item.explanation,
+                hints=q_item.hints,
+            )
         )
-        hints = q_item.get(
-            "hints",
-            [
-                "Review the key definitions.",
-                "Verify intermediate calculations carefully.",
-                "Choose the option adhering to NCERT standards.",
-            ],
-        )
-        explanation = q_item.get("explanation", "Standard NCERT curriculum competency explanation.")
-
-        trans = QuestionTranslation(
-            id=uuid.uuid4(),
-            question_id=q_id,
-            language="en",
-            prompt=q_item.get("prompt", "Assessment question"),
-            options=options,
-            explanation=explanation,
-            hints=hints,
-        )
-        session.add(trans)
         created_count += 1
 
-    await session.commit()
+    await session.flush()
     return {
         "status": "success",
         "class_id": str(class_id),

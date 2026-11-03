@@ -92,10 +92,12 @@ async def test_bulk_import_endpoint_permissions(
     client: AsyncClient,
     student_auth: tuple[User, str, dict[str, str]],
     teacher_auth: tuple[User, str, dict[str, str]],
+    admin_auth: tuple[User, str, dict[str, str]],
 ) -> None:
-    """Students cannot import content packs (403), teachers can import with dry-run."""
+    """Only administrators can import shared curriculum content."""
     _s_user, _s_token, s_headers = student_auth
     _t_user, _t_token, t_headers = teacher_auth
+    _a_user, _a_token, a_headers = admin_auth
 
     uid = uuid.uuid4().hex[:8]
     payload = {
@@ -126,12 +128,16 @@ async def test_bulk_import_endpoint_permissions(
     resp_student = await client.post("/api/v1/curricula/import", json=payload, headers=s_headers)
     assert resp_student.status_code == 403
 
-    # Teacher receives 200 OK
+    # Teachers manage classroom-specific content, not the shared curriculum.
     resp_teacher = await client.post(
         "/api/v1/curricula/import?dry_run=true", json=payload, headers=t_headers
     )
-    assert resp_teacher.status_code == 200
-    data = resp_teacher.json()
+    assert resp_teacher.status_code == 403
+    resp_admin = await client.post(
+        "/api/v1/curricula/import?dry_run=true", json=payload, headers=a_headers
+    )
+    assert resp_admin.status_code == 200
+    data = resp_admin.json()
     assert data["curriculum_code"] == f"IMPORT-TEST-{uid}"
     assert data["curriculum_created"] == 1
     assert data["topics_created"] == 1
@@ -165,3 +171,33 @@ async def test_curricula_filters_and_not_found(
         "/api/v1/curricula/NON-EXISTENT-CODE-123/topics", headers=headers
     )
     assert resp_topics_404.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_curriculum_code_alias_resolution(
+    db_session: AsyncSession,
+) -> None:
+    """Verify alias normalization resolves short and alternate codes."""
+    from app.core.curriculum import normalize_curriculum_code
+    from app.repositories.curriculum_repo import CurriculumRepository
+
+    assert normalize_curriculum_code("NCERT-SCI-C8") == "NCERT-SCIE-C8"
+    assert normalize_curriculum_code("NCERT-SST-C9") == "NCERT-SOCI-C9"
+    assert normalize_curriculum_code("NCERT-ENG-C7") == "NCERT-ENGL-C7"
+    assert normalize_curriculum_code("NCERT-HIN-C6") == "NCERT-HIND-C6"
+    assert normalize_curriculum_code("NCERT-MATH-C8") == "NCERT-MATH-C8"
+
+    curr = Curriculum(
+        code="NCERT-SCIE-C8",
+        board="NCERT",
+        grade=8,
+        subject="science",
+        version="2024-2025",
+    )
+    db_session.add(curr)
+    await db_session.flush()
+
+    repo = CurriculumRepository(db_session)
+    fetched = await repo.get_by_code("NCERT-SCI-C8")
+    assert fetched is not None
+    assert fetched.code == "NCERT-SCIE-C8"

@@ -5,16 +5,20 @@ from __future__ import annotations
 import logging
 import math
 import uuid
+from dataclasses import asdict
 from datetime import UTC, datetime
-from typing import Any, ClassVar
+from types import SimpleNamespace
+from typing import Any
 
+from fastapi.encoders import jsonable_encoder
+from pydantic import TypeAdapter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.curriculum import resolve_curriculum_code
-from app.core.errors import AuthorizationError, ConsentRequiredError, NotFoundError
+from app.core.errors import AuthorizationError, ConflictError, ConsentRequiredError, NotFoundError
 from app.engine.diagnostic import (
     CATDiagnosticEngine,
     DiagnosticQuestionItem,
@@ -33,7 +37,7 @@ from app.engine.models import (
     SkillState,
 )
 from app.engine.ranker import CandidateItem, RecommendationRanker
-from app.models.assessment import Attempt, Mastery, Question
+from app.models.assessment import Attempt, DiagnosticSession, Mastery, Question
 from app.models.curriculum import Curriculum, Prerequisite, Skill, Topic
 from app.models.organization import Enrollment
 from app.repositories.attempt_repo import AttemptRepository
@@ -51,17 +55,15 @@ from app.schemas.assessment import (
     MasteryResponse,
     NextItemResponse,
 )
+from app.services.achievement_service import award_progress
+from app.services.assignment_progress import update_assignment_progress
+from app.services.attempt_validation import validate_attempt_context
 
 logger = logging.getLogger(__name__)
 
 
 class AdaptiveService:
     """Orchestrates Bayesian Knowledge Tracing, CAT diagnostics, and item recommendation."""
-
-    # In-memory storage for active CAT diagnostic sessions
-    _diagnostic_sessions: ClassVar[
-        dict[str, tuple[CATDiagnosticEngine, DiagnosticSessionState, dict[str, Any]]]
-    ] = {}
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -102,7 +104,16 @@ class AdaptiveService:
         # 2. Idempotency Check via idempotency_key
         existing = await self.attempt_repo.get_by_idempotency_key(request.idempotency_key)
         if existing is not None:
-            mastery = await self.mastery_repo.get_by_student_and_skill(student_id, request.skill_id)
+            if (
+                existing.student_id != student_id
+                or existing.question_id != request.question_id
+                or existing.skill_id != request.skill_id
+                or existing.class_id != request.class_id
+            ):
+                raise AuthorizationError("This idempotency key belongs to another attempt.")
+            mastery = await self.mastery_repo.get_by_student_and_skill(
+                student_id, request.skill_id, request.class_id
+            )
             p_val = mastery.p_mastery if mastery is not None else self.bkt_params.p_init
             return AttemptResponse(
                 attempt_id=existing.id,
@@ -117,6 +128,9 @@ class AdaptiveService:
         question = await self.question_repo.get_with_translations(request.question_id)
         if question is None:
             raise NotFoundError("Question", request.question_id)
+        await validate_attempt_context(
+            self.session, student_id, request.class_id, question, request.skill_id
+        )
 
         is_correct = False
         explanation = (
@@ -155,7 +169,7 @@ class AdaptiveService:
 
         # 4. Bayesian Knowledge Tracing Update
         current_mastery = await self.mastery_repo.get_by_student_and_skill(
-            student_id, request.skill_id
+            student_id, request.skill_id, request.class_id
         )
         current_p = current_mastery.p_mastery if current_mastery else self.bkt_params.p_init
         obs_count = current_mastery.attempts_count if current_mastery else 0
@@ -188,6 +202,7 @@ class AdaptiveService:
             is_correct=is_correct,
             time_spent_ms=request.time_spent_ms,
             client_timestamp=request.client_timestamp,
+            class_id=request.class_id,
         )
 
         # 6. Persist Updated Mastery
@@ -202,7 +217,12 @@ class AdaptiveService:
             confidence=round(confidence, 4),
             is_correct=is_correct,
             attempted_at=request.client_timestamp,
+            class_id=request.class_id,
         )
+
+        if request.class_id is not None:
+            await award_progress(self.session, student_id, request.class_id, request.skill_id)
+            await update_assignment_progress(self.session, student_id, request.class_id)
 
         return AttemptResponse(
             attempt_id=attempt.id,
@@ -218,6 +238,8 @@ class AdaptiveService:
         student_id: uuid.UUID,
         curriculum_code: str = "NCERT-MATH-C8",
         language: str = "en",
+        class_id: uuid.UUID | None = None,
+        skill_id: uuid.UUID | None = None,
     ) -> NextItemResponse:
         """Select next optimal practice item using RecommendationRanker."""
         # Check student enrollment approval status and resolve target curriculum
@@ -230,11 +252,13 @@ class AdaptiveService:
         )
         enr_res = await self.session.execute(enr_stmt)
         all_enrs = enr_res.scalars().all()
-        if all_enrs:
+        if all_enrs and class_id is None:
             matching_enr = None
             for e in all_enrs:
                 if e.school_class:
-                    c_code = resolve_curriculum_code(e.school_class.grade, e.school_class.name)
+                    c_code = resolve_curriculum_code(
+                        e.school_class.grade, e.school_class.subject or e.school_class.name
+                    )
                     if curriculum_code and c_code == curriculum_code:
                         matching_enr = e
                         break
@@ -247,7 +271,8 @@ class AdaptiveService:
                         "Classroom content and practice unlock once approved by your teacher."
                     )
                 target_curriculum_code = resolve_curriculum_code(
-                    matching_enr.school_class.grade, matching_enr.school_class.name
+                    matching_enr.school_class.grade,
+                    matching_enr.school_class.subject or matching_enr.school_class.name,
                 )
             else:
                 active_enrs = [e for e in all_enrs if e.status == "active"]
@@ -256,7 +281,8 @@ class AdaptiveService:
                         first_active = active_enrs[0]
                         if first_active.school_class:
                             target_curriculum_code = resolve_curriculum_code(
-                                first_active.school_class.grade, first_active.school_class.name
+                                first_active.school_class.grade,
+                                first_active.school_class.subject or first_active.school_class.name,
                             )
                 else:
                     first_pending = all_enrs[0]
@@ -268,8 +294,10 @@ class AdaptiveService:
                     )
 
         # 1. Fetch student's attempt history to avoid repetition
-        attempt_stmt = select(Attempt.question_id, Attempt.skill_id).where(
-            Attempt.student_id == student_id
+        attempt_stmt = (
+            select(Attempt.question_id, Attempt.skill_id)
+            .where(Attempt.student_id == student_id, Attempt.class_id == class_id)
+            .order_by(Attempt.created_at)
         )
         attempt_res = await self.session.execute(attempt_stmt)
         attempts_rows = attempt_res.all()
@@ -277,7 +305,7 @@ class AdaptiveService:
         recent_history = [str(r[1]) for r in attempts_rows[-10:]]
 
         # 2. Fetch student's current mastery states
-        masteries = await self.mastery_repo.list_student_mastery(student_id)
+        masteries = await self.mastery_repo.list_student_mastery(student_id, class_id)
         skill_states: dict[str, SkillState] = {}
         for m in masteries:
             sid = str(m.skill_id)
@@ -288,6 +316,24 @@ class AdaptiveService:
                 observations_count=m.attempts_count,
                 correct_count=m.correct_count,
                 last_attempt_at=m.last_attempted_at,
+            )
+
+        if class_id is not None:
+            class_result = await self.session.execute(
+                select(Enrollment)
+                .options(selectinload(Enrollment.school_class))
+                .where(
+                    Enrollment.class_id == class_id,
+                    Enrollment.student_id == student_id,
+                    Enrollment.status == "active",
+                )
+            )
+            selected = class_result.scalar_one_or_none()
+            if selected is None or selected.school_class is None:
+                raise AuthorizationError("An active classroom enrollment is required.")
+            target_curriculum_code = resolve_curriculum_code(
+                selected.school_class.grade,
+                selected.school_class.subject or selected.school_class.name,
             )
 
         # 3. Load active questions from DB scoped to target curriculum
@@ -320,31 +366,20 @@ class AdaptiveService:
                         select(Question)
                         .where(
                             Question.is_active == True,  # noqa: E712
+                            Question.status == "published",
+                            (Question.class_id.is_(None) | (Question.class_id == class_id))
+                            if class_id
+                            else Question.class_id.is_(None),
                             Question.is_deleted == False,  # noqa: E712
                             Question.skill_id.in_(skill_ids),
                         )
                         .options(selectinload(Question.translations))
                     )
                     q_res = await self.session.execute(q_stmt)
-                    questions = q_res.scalars().all()
+                    questions = list(q_res.scalars().all())
 
-        if not questions:
-            # Fallback if specific curriculum row not found or has no questions
-            q_stmt = (
-                select(Question)
-                .where(
-                    Question.is_active == True,  # noqa: E712
-                    Question.is_deleted == False,  # noqa: E712
-                )
-                .options(selectinload(Question.translations))
-            )
-            q_res = await self.session.execute(q_stmt)
-            questions = q_res.scalars().all()
-
-            s_stmt = select(Skill).where(Skill.is_deleted == False)  # noqa: E712
-            s_res = await self.session.execute(s_stmt)
-            skills_by_id = {str(s.id): s for s in s_res.scalars().all()}
-
+        if skill_id is not None:
+            questions = [question for question in questions if question.skill_id == skill_id]
         if not questions:
             raise NotFoundError("Questions", "No active questions found in curriculum bank.")
 
@@ -417,7 +452,9 @@ class AdaptiveService:
             difficulty=selected_q.difficulty,
             question_type=selected_q.question_type,
             prompt=prompt,
-            options=options,
+            options=[{k: v for k, v in option.items() if k != "is_correct"} for option in options]
+            if options
+            else options,
             hints=hints,
             predicted_success=decision.predicted_success,
             score=decision.score,
@@ -474,11 +511,13 @@ class AdaptiveService:
         enr_res = await self.session.execute(enr_stmt)
         all_enrs = enr_res.scalars().all()
 
-        if all_enrs:
+        if all_enrs and request.class_id is None:
             matching_enr = None
             for e in all_enrs:
                 if e.school_class:
-                    c_code = resolve_curriculum_code(e.school_class.grade, e.school_class.name)
+                    c_code = resolve_curriculum_code(
+                        e.school_class.grade, e.school_class.subject or e.school_class.name
+                    )
                     if request.curriculum_code and c_code == request.curriculum_code:
                         matching_enr = e
                         break
@@ -492,7 +531,8 @@ class AdaptiveService:
                         "Classroom content and diagnostic tests unlock once approved."
                     )
                 target_curriculum_code = resolve_curriculum_code(
-                    matching_enr.school_class.grade, matching_enr.school_class.name
+                    matching_enr.school_class.grade,
+                    matching_enr.school_class.subject or matching_enr.school_class.name,
                 )
             else:
                 active_enrs = [e for e in all_enrs if e.status == "active"]
@@ -501,7 +541,8 @@ class AdaptiveService:
                         first_active = active_enrs[0]
                         if first_active.school_class:
                             target_curriculum_code = resolve_curriculum_code(
-                                first_active.school_class.grade, first_active.school_class.name
+                                first_active.school_class.grade,
+                                first_active.school_class.subject or first_active.school_class.name,
                             )
                 else:
                     first_pending = all_enrs[0]
@@ -511,6 +552,25 @@ class AdaptiveService:
                         f"Your enrollment in '{class_name}' is pending educator approval. "
                         "Classroom content and diagnostic tests unlock once approved."
                     )
+
+        enrollment = None
+        if request.class_id is not None:
+            result = await self.session.execute(
+                select(Enrollment)
+                .options(selectinload(Enrollment.school_class))
+                .where(
+                    Enrollment.class_id == request.class_id,
+                    Enrollment.student_id == student_id,
+                    Enrollment.status == "active",
+                )
+            )
+            enrollment = result.scalar_one_or_none()
+            if enrollment is None or enrollment.school_class is None:
+                raise AuthorizationError("An active classroom enrollment is required.")
+            target_curriculum_code = resolve_curriculum_code(
+                enrollment.school_class.grade,
+                enrollment.school_class.subject or enrollment.school_class.name,
+            )
 
         # 2. Scope skills, topics, and questions to target curriculum
         curric_stmt = select(Curriculum).where(Curriculum.code == target_curriculum_code)
@@ -539,6 +599,10 @@ class AdaptiveService:
                 select(Question)
                 .where(
                     Question.is_active == True,  # noqa: E712
+                    Question.status == "published",
+                    (Question.class_id.is_(None) | (Question.class_id == request.class_id))
+                    if request.class_id
+                    else Question.class_id.is_(None),
                     Question.is_deleted == False,  # noqa: E712
                     Question.skill_id.in_(skill_ids),
                 )
@@ -554,28 +618,20 @@ class AdaptiveService:
             p_res = await self.session.execute(p_stmt)
             prereqs = p_res.scalars().all()
         else:
-            # Fallback if specific curriculum row not found
-            s_stmt = select(Skill).where(Skill.is_deleted == False)  # noqa: E712
-            s_res = await self.session.execute(s_stmt)
-            skills_by_id = {str(s.id): s for s in s_res.scalars().all()}
-
-            t_stmt = select(Topic).where(Topic.is_deleted == False)  # noqa: E712
-            t_res = await self.session.execute(t_stmt)
-            topics_by_id = {str(t.id): t for t in t_res.scalars().all()}
-
-            q_stmt = (
-                select(Question)
-                .where(Question.is_active == True, Question.is_deleted == False)  # noqa: E712
-                .options(selectinload(Question.translations))
-            )
-            q_res = await self.session.execute(q_stmt)
-            questions = q_res.scalars().all()
-
-            p_stmt = select(Prerequisite)
-            p_res = await self.session.execute(p_stmt)
-            prereqs = p_res.scalars().all()
+            raise NotFoundError("Curriculum", target_curriculum_code)
 
         edges = [(str(p.parent_skill_id), str(p.child_skill_id)) for p in prereqs]
+
+        questions = [
+            q
+            for q in questions
+            if any(t.prompt and (t.options or t.verified_answer) for t in q.translations)
+        ]
+        if len(questions) < 20:
+            raise ConflictError(
+                "This curriculum needs at least 20 published questions "
+                "before the diagnostic can start."
+            )
 
         diagnostic_items: list[DiagnosticQuestionItem] = []
         raw_items_dict: dict[str, dict[str, Any]] = {}
@@ -610,14 +666,15 @@ class AdaptiveService:
                 "translations": {t.language: t for t in q.translations},
             }
 
-        min_q = min(15, max(3, len(questions)))
-        max_q = min(20, max(5, len(questions)))
+        min_q = 20
+        max_q = 20
         engine = CATDiagnosticEngine(
             edges=edges,
             questions=diagnostic_items,
             config=DiagnosticConfig(
                 min_questions=min_q,
                 max_questions=max_q,
+                targeted_followup_after=15,
             ),
             bkt_params=self.bkt_params,
             thresholds=self.thresholds,
@@ -627,14 +684,6 @@ class AdaptiveService:
             student_id=str(student_id),
             curriculum_code=target_curriculum_code,
             initial_skills=list(skills_by_id.keys()),
-        )
-
-        # Store session in memory cache
-        self._diagnostic_sessions[session_state.session_id] = (
-            engine,
-            session_state,
-            raw_items_dict,
-            skills_by_id,
         )
 
         # Pick first item
@@ -658,12 +707,39 @@ class AdaptiveService:
                 skill_code=decision.item.skill_code,
                 difficulty=decision.item.difficulty,
                 prompt=prompt,
-                options=options,
+                options=[
+                    {k: v for k, v in option.items() if k != "is_correct"} for option in options
+                ]
+                if options
+                else options,
                 question_type=decision.item.question_type or "mcq",
                 topic_name=getattr(decision.item, "topic_name", None) or raw.get("topic_name"),
             )
 
-        return DiagnosticResponse(
+        snapshot = {
+            "state": jsonable_encoder(asdict(session_state)),
+            "edges": edges,
+            "questions": [asdict(item) for item in diagnostic_items],
+            "config": asdict(engine.config),
+            "items": {
+                key: {
+                    **{k: v for k, v in raw.items() if k != "translations"},
+                    "translations": {
+                        lang: {"prompt": trans.prompt, "options": trans.options}
+                        for lang, trans in raw["translations"].items()
+                    },
+                }
+                for key, raw in raw_items_dict.items()
+            },
+            "skills": {
+                key: {"name": skill.name, "code": skill.code} for key, skill in skills_by_id.items()
+            },
+            "current_question_id": decision.item.question_id if decision.item else None,
+            "class_id": str(request.class_id) if request.class_id else None,
+        }
+        if enrollment is not None:
+            enrollment.diagnostic_status = "in_progress"
+        initial_response = DiagnosticResponse(
             session_id=session_state.session_id,
             is_completed=decision.is_completed,
             questions_answered=session_state.questions_answered,
@@ -671,6 +747,45 @@ class AdaptiveService:
             rationale=decision.rationale,
             stop_reason=decision.stop_reason,
         )
+        snapshot["last_response"] = initial_response.model_dump(mode="json")
+        self.session.add(
+            DiagnosticSession(
+                id=uuid.UUID(session_state.session_id), student_id=student_id, snapshot=snapshot
+            )
+        )
+        await self.session.flush()
+        return initial_response
+
+    async def get_current_diagnostic(
+        self, student_id: uuid.UUID, curriculum_code: str, class_id: uuid.UUID | None = None
+    ) -> DiagnosticResponse:
+        """Resume the latest unfinished diagnostic for this student and curriculum."""
+        if class_id is not None:
+            enrollment = await self.session.execute(
+                select(Enrollment.id).where(
+                    Enrollment.class_id == class_id,
+                    Enrollment.student_id == student_id,
+                    Enrollment.status == "active",
+                )
+            )
+            if enrollment.scalar_one_or_none() is None:
+                raise AuthorizationError("An active classroom enrollment is required.")
+        result = await self.session.execute(
+            select(DiagnosticSession)
+            .where(DiagnosticSession.student_id == student_id)
+            .order_by(DiagnosticSession.created_at.desc())
+        )
+        for record in result.scalars().all():
+            state = record.snapshot.get("state", {})
+            response = record.snapshot.get("last_response")
+            if (
+                state.get("curriculum_code") == curriculum_code
+                and record.snapshot.get("class_id") == (str(class_id) if class_id else None)
+                and not state.get("is_completed")
+                and response
+            ):
+                return DiagnosticResponse.model_validate(response)
+        raise NotFoundError("DiagnosticSession", curriculum_code)
 
     async def progress_diagnostic(
         self,
@@ -679,18 +794,63 @@ class AdaptiveService:
         language: str = "en",
     ) -> DiagnosticResponse:
         """Submit answer and advance CAT diagnostic session."""
-        _ = student_id
-        session_entry = self._diagnostic_sessions.get(request.session_id)
-        if session_entry is None:
+        try:
+            session_id = uuid.UUID(request.session_id)
+        except ValueError:
+            raise NotFoundError("DiagnosticSession", request.session_id) from None
+        result = await self.session.execute(
+            select(DiagnosticSession).where(DiagnosticSession.id == session_id).with_for_update()
+        )
+        stored = result.scalar_one_or_none()
+        if stored is None:
             raise NotFoundError("DiagnosticSession", request.session_id)
+        if stored.student_id != student_id:
+            raise AuthorizationError("This diagnostic session belongs to another student.")
+        snapshot = stored.snapshot
+        class_id = snapshot.get("class_id")
+        enrollment: Enrollment | None = None
+        if class_id:
+            enrollment_result = await self.session.execute(
+                select(Enrollment).where(
+                    Enrollment.class_id == uuid.UUID(class_id),
+                    Enrollment.student_id == student_id,
+                    Enrollment.status == "active",
+                )
+            )
+            enrollment = enrollment_result.scalar_one_or_none()
+            if enrollment is None:
+                raise AuthorizationError("An active classroom enrollment is required.")
+        if snapshot.get("last_question_id") == request.question_id and snapshot.get(
+            "last_response"
+        ):
+            return DiagnosticResponse.model_validate(snapshot["last_response"])
+        if snapshot.get("current_question_id") != request.question_id:
+            raise ConflictError("The submitted question is not the current diagnostic question.")
+        session_state = TypeAdapter(DiagnosticSessionState).validate_python(snapshot["state"])
+        engine = CATDiagnosticEngine(
+            edges=[tuple(edge) for edge in snapshot["edges"]],
+            questions=[DiagnosticQuestionItem(**item) for item in snapshot["questions"]],
+            config=DiagnosticConfig(**snapshot["config"]),
+            bkt_params=self.bkt_params,
+            thresholds=self.thresholds,
+        )
+        raw_items_dict = {
+            key: {
+                **raw,
+                "translations": {
+                    lang: SimpleNamespace(**trans) for lang, trans in raw["translations"].items()
+                },
+            }
+            for key, raw in snapshot["items"].items()
+        }
+        skills_by_id = {key: SimpleNamespace(**skill) for key, skill in snapshot["skills"].items()}
 
-        engine = session_entry[0]
-        session_state = session_entry[1]
-        raw_items_dict = session_entry[2]
-        skills_by_id = session_entry[3] if len(session_entry) > 3 else {}
+        # Reject questions outside this diagnostic bank.
+        if request.question_id not in raw_items_dict:
+            raise NotFoundError("DiagnosticQuestion", request.question_id)
 
         # Evaluate correctness
-        raw = raw_items_dict.get(request.question_id, {})
+        raw = raw_items_dict[request.question_id]
         is_correct = False
         correct_answer_id: str | None = None
         options = raw.get("options")
@@ -729,6 +889,22 @@ class AdaptiveService:
                 hint_level=hint_level,
             )
 
+        # Persist the actual answer immediately, in the same transaction as the session state.
+        question = engine.question_by_id[request.question_id]
+        self.session.add(
+            Attempt(
+                student_id=student_id,
+                class_id=uuid.UUID(class_id) if class_id else None,
+                question_id=uuid.UUID(request.question_id),
+                skill_id=uuid.UUID(question.skill_id),
+                idempotency_key=f"dg_{session_id.hex}_{uuid.UUID(request.question_id).hex[:20]}",
+                selected_answer=request.selected_answer,
+                is_correct=is_correct,
+                time_spent_ms=request.time_spent_ms,
+                client_timestamp=datetime.now(UTC),
+            )
+        )
+
         # Check next item or termination
         decision = engine.pick_next_item(session_state)
 
@@ -741,7 +917,7 @@ class AdaptiveService:
             def get_skill_name_or_code(sid: str) -> str:
                 s = skills_by_id.get(str(sid))
                 if s:
-                    return s.name or s.code
+                    return str(s.name or s.code)
                 return sid
 
             skill_states_list = [
@@ -776,12 +952,17 @@ class AdaptiveService:
 
             try:
                 # 1. Batch fetch all existing masteries for this student in ONE query
-                existing_m_stmt = select(Mastery).where(Mastery.student_id == student_id)
+                existing_m_stmt = select(Mastery).where(
+                    Mastery.student_id == student_id,
+                    Mastery.class_id == (uuid.UUID(class_id) if class_id else None),
+                )
                 existing_m_res = await self.session.execute(existing_m_stmt)
                 existing_masteries = {m.skill_id: m for m in existing_m_res.scalars().all()}
 
                 # Persist each calibrated skill's Bayesian mastery in memory
                 for skill_id_str, skill_state in session_state.skill_states.items():
+                    if skill_state.observations_count == 0:
+                        continue
                     try:
                         sk_uuid = uuid.UUID(skill_id_str)
                         if (
@@ -805,6 +986,7 @@ class AdaptiveService:
                         if mastery_obj is None:
                             new_m = Mastery(
                                 student_id=student_id,
+                                class_id=uuid.UUID(class_id) if class_id else None,
                                 skill_id=sk_uuid,
                                 p_mastery=round(skill_state.p_mastery, 4),
                                 confidence=round(confidence, 4),
@@ -817,53 +999,18 @@ class AdaptiveService:
                         else:
                             mastery_obj.p_mastery = round(skill_state.p_mastery, 4)
                             mastery_obj.confidence = round(confidence, 4)
-                            mastery_obj.attempts_count = max(
-                                mastery_obj.attempts_count + 1, obs_count
-                            )
-                            if is_corr:
-                                mastery_obj.correct_count += 1
+                            mastery_obj.attempts_count += obs_count
+                            mastery_obj.correct_count += corr_cnt
                             mastery_obj.last_attempted_at = now_utc
                     except Exception as sk_err:
                         logger.warning("Failed preparing mastery for %s: %s", skill_id_str, sk_err)
 
-                # 2. Batch fetch existing diagnostic attempt keys in ONE query
-                sess_short = session_state.session_id.replace("-", "")[:12]
-                diag_prefix = f"dg_{sess_short}_"
-                existing_keys_stmt = select(Attempt.idempotency_key).where(
-                    Attempt.student_id == student_id,
-                    Attempt.idempotency_key.like(f"{diag_prefix}%"),
-                )
-                existing_keys_res = await self.session.execute(existing_keys_stmt)
-                existing_keys = set(existing_keys_res.scalars().all())
-
-                for q_id_str, sk_id_str, was_correct in session_state.question_history:
-                    try:
-                        q_uuid = uuid.UUID(q_id_str)
-                        sk_uuid = uuid.UUID(sk_id_str)
-                        q_short = q_uuid.hex[:12]
-                        # Fits comfortably in VARCHAR(64): 3 + 12 + 12 = 27 characters
-                        diag_key = f"{diag_prefix}{q_short}"
-                        if diag_key not in existing_keys:
-                            new_att = Attempt(
-                                student_id=student_id,
-                                question_id=q_uuid,
-                                skill_id=sk_uuid,
-                                idempotency_key=diag_key,
-                                selected_answer="verified",
-                                is_correct=was_correct,
-                                time_spent_ms=int(time_spent_s * 1000),
-                                client_timestamp=now_utc,
-                            )
-                            self.session.add(new_att)
-                            existing_keys.add(diag_key)
-                    except Exception as att_err:
-                        logger.warning("Failed preparing attempt: %s", att_err)
-
-                # Single commit for all rows
-                await self.session.commit()
+                # Keep mastery, attempts, and session state in one transaction.
+                await self.session.flush()
             except Exception as commit_err:
                 logger.error("Error committing diagnostic results: %s", commit_err)
                 await self.session.rollback()
+                raise
         elif decision.item:
             raw_next = raw_items_dict.get(decision.item.question_id, {})
             trans_map = raw_next.get("translations", {})
@@ -881,7 +1028,11 @@ class AdaptiveService:
                 skill_code=decision.item.skill_code,
                 difficulty=decision.item.difficulty,
                 prompt=prompt,
-                options=options,
+                options=[
+                    {k: v for k, v in option.items() if k != "is_correct"} for option in options
+                ]
+                if options
+                else options,
                 question_type=decision.item.question_type or "mcq",
                 topic_name=getattr(decision.item, "topic_name", None) or raw_next.get("topic_name"),
             )
@@ -890,7 +1041,7 @@ class AdaptiveService:
             decision.item and ("backward walk" in decision.rationale.lower() or not is_correct)
         )
 
-        return DiagnosticResponse(
+        response = DiagnosticResponse(
             session_id=session_state.session_id,
             is_completed=decision.is_completed,
             questions_answered=session_state.questions_answered,
@@ -903,3 +1054,21 @@ class AdaptiveService:
             explanation=raw.get("explanation"),
             is_weakness_review=is_weakness_review,
         )
+        if enrollment is not None:
+            await update_assignment_progress(self.session, student_id, enrollment.class_id)
+        if decision.is_completed and enrollment is not None:
+            enrollment.diagnostic_status = "completed"
+            for skill_id, skill_state in session_state.skill_states.items():
+                if skill_state.observations_count:
+                    await award_progress(
+                        self.session, student_id, enrollment.class_id, uuid.UUID(skill_id)
+                    )
+        stored.snapshot = {
+            **snapshot,
+            "state": jsonable_encoder(asdict(session_state)),
+            "current_question_id": decision.item.question_id if decision.item else None,
+            "last_question_id": request.question_id,
+            "last_response": response.model_dump(mode="json"),
+        }
+        await self.session.flush()
+        return response

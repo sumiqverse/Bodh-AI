@@ -11,7 +11,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.curriculum import resolve_curriculum_code
-from app.core.errors import NotFoundError
+from app.core.errors import ConflictError, NotFoundError
 from app.models.auth import User
 from app.models.organization import SchoolClass
 from app.models.teacher import ClassSkillAggregate
@@ -26,13 +26,11 @@ from app.schemas.teacher import (
     ClassProgressSummaryResponse,
     ClassSuggestionsResponse,
     EarlyWarningItem,
-    ErrorPatternItem,
     GapClusterItem,
     HeatmapCell,
     HeatmapSkill,
     HeatmapStudent,
     HintUsageSummary,
-    MasteryTrendPoint,
     StudentProfileResponse,
     StudentProfileSkillItem,
     SuggestionItem,
@@ -55,12 +53,10 @@ class TeacherDashboardService:
     ) -> ClassHeatmapResponse:
         """Construct the student x skill mastery matrix with sub-300ms precomputed retrieval."""
         effective_curriculum = curriculum_code or resolve_curriculum_code(
-            school_class.grade, school_class.name
+            school_class.grade, school_class.subject or school_class.name
         )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
-        if not skills_raw and effective_curriculum != curriculum_code:
-            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         students = [
             HeatmapStudent(
@@ -87,7 +83,9 @@ class TeacherDashboardService:
         skill_ids = [sk.skill_id for sk in skills]
 
         # Batch fetch all mastery states for students and skills
-        mastery_records = await self.repo.get_mastery_matrix(student_ids, skill_ids)
+        mastery_records = await self.repo.get_mastery_matrix(
+            student_ids, skill_ids, school_class.id
+        )
         mastery_map: dict[tuple[uuid.UUID, uuid.UUID], Any] = {
             (m.student_id, m.skill_id): m for m in mastery_records
         }
@@ -96,6 +94,7 @@ class TeacherDashboardService:
         mastered_count = 0
         partial_count = 0
         not_learned_count = 0
+        unassessed_count = 0
 
         # Also collect skill aggregates for background caching
         aggregates_to_save: list[ClassSkillAggregate] = []
@@ -105,16 +104,18 @@ class TeacherDashboardService:
             sk_partial = 0
             sk_not_learned = 0
             sk_p_sum = 0.0
+            sk_assessed = 0
 
             for st in students:
                 m = mastery_map.get((st.student_id, sk.skill_id))
-                if m is not None:
+                if m is not None and m.attempts_count > 0:
+                    sk_assessed += 1
                     p = float(m.p_mastery)
                     conf = float(m.confidence)
                     att = int(m.attempts_count)
                     last_at = m.last_attempted_at
 
-                    if p >= 0.8:
+                    if p >= 0.95 and att >= 3:
                         state = "mastered"
                         mastered_count += 1
                         sk_mastered += 1
@@ -129,13 +130,12 @@ class TeacherDashboardService:
 
                     sk_p_sum += p
                 else:
-                    state = "not_learned"
+                    state = "unassessed"
                     p = 0.0
                     conf = 0.0
                     att = 0
                     last_at = None
-                    not_learned_count += 1
-                    sk_not_learned += 1
+                    unassessed_count += 1
 
                 matrix.append(
                     HeatmapCell.model_construct(
@@ -151,7 +151,7 @@ class TeacherDashboardService:
 
             # Build precomputed aggregate row per skill
             total_st = len(students)
-            avg_p = (sk_p_sum / total_st) if total_st > 0 else 0.0
+            avg_p = (sk_p_sum / sk_assessed) if sk_assessed > 0 else 0.0
             aggregates_to_save.append(
                 ClassSkillAggregate(
                     id=uuid.uuid4(),
@@ -180,6 +180,7 @@ class TeacherDashboardService:
                 "mastered": mastered_count,
                 "partial": partial_count,
                 "not_learned": not_learned_count,
+                "unassessed": unassessed_count,
             },
         )
 
@@ -192,17 +193,17 @@ class TeacherDashboardService:
     ) -> ClassGapClustersResponse:
         """Cluster students sharing an identified conceptual gap with a suggested plan."""
         effective_curriculum = curriculum_code or resolve_curriculum_code(
-            school_class.grade, school_class.name
+            school_class.grade, school_class.subject or school_class.name
         )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
-        if not skills_raw and effective_curriculum != curriculum_code:
-            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         student_ids = [s.id for s, _ in students_raw]
         skill_ids = [sk.id for sk, _ in skills_raw]
 
-        mastery_records = await self.repo.get_mastery_matrix(student_ids, skill_ids)
+        mastery_records = await self.repo.get_mastery_matrix(
+            student_ids, skill_ids, school_class.id
+        )
         mastery_map = {(m.student_id, m.skill_id): m for m in mastery_records}
 
         student_dict: dict[uuid.UUID, str] = {
@@ -217,7 +218,9 @@ class TeacherDashboardService:
 
             for s_id in student_ids:
                 m = mastery_map.get((s_id, sk.id))
-                p = float(m.p_mastery) if m is not None else 0.0
+                if m is None or m.attempts_count <= 0:
+                    continue
+                p = float(m.p_mastery)
                 if p < 0.75:
                     gap_students.append(s_id)
                     p_scores.append(p)
@@ -225,7 +228,7 @@ class TeacherDashboardService:
             count = len(gap_students)
             ratio = count / total_students if total_students > 0 else 0.0
 
-            if count >= min_students or ratio >= min_ratio:
+            if count > 0 and (count >= min_students or ratio >= min_ratio):
                 avg_p = sum(p_scores) / count if count > 0 else 0.0
                 cluster_id = f"gap-{sk.code.lower()}"
                 plan = {
@@ -271,7 +274,9 @@ class TeacherDashboardService:
         student_ids = [s.id for s, _ in students_raw]
         cutoff = datetime.now(UTC) - timedelta(days=days_threshold)
 
-        recent_attempts = await self.repo.get_class_attempts_since(student_ids, cutoff)
+        recent_attempts = await self.repo.get_class_attempts_since(
+            student_ids, cutoff, school_class.id
+        )
         student_attempts_map: dict[uuid.UUID, list[Any]] = {sid: [] for sid in student_ids}
         for att in recent_attempts:
             student_attempts_map[att.student_id].append(att)
@@ -337,7 +342,7 @@ class TeacherDashboardService:
     ) -> StudentProfileResponse:
         """Assemble deep profile: mastery per skill, recurring errors, hint usage, and trend."""
         effective_curriculum = curriculum_code or resolve_curriculum_code(
-            school_class.grade, school_class.name
+            school_class.grade, school_class.subject or school_class.name
         )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         target_student_entry = next(
@@ -348,24 +353,28 @@ class TeacherDashboardService:
 
         target_student, roll = target_student_entry
         skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
-        if not skills_raw and effective_curriculum != curriculum_code:
-            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
         skill_ids = [sk.id for sk, _ in skills_raw]
 
-        mastery_records = await self.repo.get_mastery_matrix([student_id], skill_ids)
+        mastery_records = await self.repo.get_mastery_matrix(
+            [student_id], skill_ids, school_class.id
+        )
         mastery_map = {m.skill_id: m for m in mastery_records}
 
         skills_profile: list[StudentProfileSkillItem] = []
         for sk, _ in skills_raw:
             m = mastery_map.get(sk.id)
-            if m is not None:
+            if m is not None and m.attempts_count > 0:
                 p = float(m.p_mastery)
-                state = "mastered" if p >= 0.8 else ("partial" if p >= 0.4 else "not_learned")
                 att = m.attempts_count
+                state = (
+                    "mastered"
+                    if p >= 0.95 and att >= 3
+                    else ("partial" if p >= 0.4 else "not_learned")
+                )
                 last_at = m.last_attempted_at
             else:
                 p = 0.0
-                state = "not_learned"
+                state = "unassessed"
                 att = 0
                 last_at = None
 
@@ -382,65 +391,27 @@ class TeacherDashboardService:
             )
 
         # Inspect attempt history for error patterns & hint usage
-        attempts = await self.repo.get_student_attempts(student_id, limit=100)
-
-        # Distractor error patterns
-        error_counts: dict[str, int] = {}
-        hint_1 = 0
-        hint_2 = 0
-        hint_3 = 0
-        independent = 0
-
-        timeline_map: dict[str, list[float]] = {}
-
-        for a in attempts:
-            day_str = a.created_at.strftime("%Y-%m-%d") if a.created_at else "recent"
-            if day_str not in timeline_map:
-                timeline_map[day_str] = []
-            timeline_map[day_str].append(1.0 if a.is_correct else 0.0)
-
-            if not a.is_correct:
-                ans_key = f"Option {a.selected_answer}"
-                error_counts[ans_key] = error_counts.get(ans_key, 0) + 1
-            else:
-                independent += 1
-
-        error_patterns = [
-            ErrorPatternItem(
-                question_code=f"ERR-{k.replace(' ', '')}",
-                prompt_excerpt="Sign or algebraic distractor chosen repeatedly",
-                distractor_chosen=k,
-                count=count,
-                misconception="Operational sign confusion on negative integers.",
-            )
-            for k, count in sorted(error_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-        ]
-
-        hint_usage = HintUsageSummary(
-            total_hints_requested=hint_1 + hint_2 + hint_3,
-            hint_1_count=hint_1,
-            hint_2_count=hint_2,
-            hint_3_count=hint_3,
-            independent_attempts_count=independent,
+        attempts = await self.repo.get_student_attempts(
+            student_id, limit=100, class_id=school_class.id
         )
 
-        trend = [
-            MasteryTrendPoint(
-                date=d,
-                p_mastery=round(sum(scores) / len(scores), 2),
-                attempts=len(scores),
-            )
-            for d, scores in sorted(timeline_map.items())
-        ]
+        # Attempts do not yet store hint use or enough evidence to infer misconceptions.
+        hint_usage = HintUsageSummary(
+            total_hints_requested=0,
+            hint_1_count=0,
+            hint_2_count=0,
+            hint_3_count=0,
+            independent_attempts_count=0,
+        )
 
         return StudentProfileResponse(
             student_id=student_id,
             student_name=target_student.full_name or target_student.username or "Student",
             roll_number=roll,
             skills=skills_profile,
-            error_patterns=error_patterns,
+            error_patterns=[],
             hint_usage=hint_usage,
-            trend=trend,
+            trend=[],
             summary={
                 "total_attempts": len(attempts),
                 "mastered_skills": sum(1 for sp in skills_profile if sp.state == "mastered"),
@@ -458,11 +429,9 @@ class TeacherDashboardService:
         decision_map = {d.suggestion_id: d.action for d in decisions}
 
         effective_curriculum = curriculum_code or resolve_curriculum_code(
-            school_class.grade, school_class.name
+            school_class.grade, school_class.subject or school_class.name
         )
         skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
-        if not skills_raw and effective_curriculum != curriculum_code:
-            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
         skills = [sk for sk, _ in skills_raw]
 
         suggestions: list[SuggestionItem] = []
@@ -535,7 +504,17 @@ class TeacherDashboardService:
         """Push a skill set to a student group or entire class."""
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         all_student_ids = [s.id for s, _ in students_raw]
+        curriculum_code = resolve_curriculum_code(
+            school_class.grade, school_class.subject or school_class.name
+        )
+        class_skills = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
+        lookup = {key: skill.id for skill, _ in class_skills for key in (str(skill.id), skill.code)}
+        if any(skill_id not in lookup for skill_id in payload.skill_ids):
+            raise ConflictError("Every assigned skill must belong to this classroom's curriculum.")
+        skill_ids = list(dict.fromkeys(str(lookup[skill_id]) for skill_id in payload.skill_ids))
 
+        if payload.student_ids and not set(payload.student_ids).issubset(all_student_ids):
+            raise ConflictError("Assignments can only target active students in this classroom.")
         target_ids = (
             [sid for sid in payload.student_ids if sid in all_student_ids]
             if payload.student_ids
@@ -546,7 +525,7 @@ class TeacherDashboardService:
             class_id=school_class.id,
             teacher_id=teacher.id,
             title=payload.title,
-            skill_ids=payload.skill_ids,
+            skill_ids=skill_ids,
             student_ids=target_ids,
             description=payload.description,
             due_date=payload.due_date,
@@ -620,21 +599,23 @@ class TeacherDashboardService:
     ) -> ClassProgressSummaryResponse:
         """Class-level longitudinal progress and reassessment growth metrics."""
         effective_curriculum = curriculum_code or resolve_curriculum_code(
-            school_class.grade, school_class.name
+            school_class.grade, school_class.subject or school_class.name
         )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
-        if not skills_raw and effective_curriculum != curriculum_code:
-            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         student_ids = [s.id for s, _ in students_raw]
         skill_ids = [sk.id for sk, _ in skills_raw]
 
-        mastery_records = await self.repo.get_mastery_matrix(student_ids, skill_ids)
+        mastery_records = await self.repo.get_mastery_matrix(
+            student_ids, skill_ids, school_class.id
+        )
         total_st = len(students_raw)
         total_skills = len(skills_raw)
 
-        mastered_cells = sum(1 for m in mastery_records if m.p_mastery >= 0.8)
+        mastered_cells = sum(
+            1 for m in mastery_records if m.p_mastery >= 0.95 and m.attempts_count >= 3
+        )
         total_possible = total_st * total_skills if (total_st * total_skills) > 0 else 1
         overall_pct = (mastered_cells / total_possible) * 100.0
 
@@ -646,12 +627,8 @@ class TeacherDashboardService:
             total_attempts=sum(m.attempts_count for m in mastery_records),
             overall_mastery_pct=round(overall_pct, 1),
             mastered_skills_avg=round(avg_mastered, 1),
-            reassessment_growth_pct=round(min(100.0, overall_pct * 1.25), 1),
-            timeline=[
-                {"label": "Baseline Diagnostic", "mastery_pct": round(overall_pct * 0.6, 1)},
-                {"label": "Intervention & Practice", "mastery_pct": round(overall_pct * 0.85, 1)},
-                {"label": "Current Competency", "mastery_pct": round(overall_pct, 1)},
-            ],
+            reassessment_growth_pct=None,
+            timeline=[],
         )
 
     async def export_privacy_aware_csv(
@@ -661,17 +638,17 @@ class TeacherDashboardService:
     ) -> str:
         """Generate privacy-compliant CSV export without sensitive PII or grades."""
         effective_curriculum = curriculum_code or resolve_curriculum_code(
-            school_class.grade, school_class.name
+            school_class.grade, school_class.subject or school_class.name
         )
         students_raw = await self.repo.get_enrolled_students(school_class.id)
         skills_raw = await self.repo.get_skills_for_class(school_class.grade, effective_curriculum)
-        if not skills_raw and effective_curriculum != curriculum_code:
-            skills_raw = await self.repo.get_skills_for_class(school_class.grade, curriculum_code)
 
         student_ids = [s.id for s, _ in students_raw]
         skill_ids = [sk.id for sk, _ in skills_raw]
 
-        mastery_records = await self.repo.get_mastery_matrix(student_ids, skill_ids)
+        mastery_records = await self.repo.get_mastery_matrix(
+            student_ids, skill_ids, school_class.id
+        )
         mastery_map = {(m.student_id, m.skill_id): m for m in mastery_records}
 
         output = io.StringIO()
@@ -697,15 +674,17 @@ class TeacherDashboardService:
             display_name = s.full_name.split()[0] if s.full_name else f"Student-{roll or 'X'}"
             for sk, topic_name in skills_raw:
                 m = mastery_map.get((s.id, sk.id))
-                if m is not None:
+                if m is not None and m.attempts_count > 0:
                     p = float(m.p_mastery)
                     state = (
-                        "Mastered" if p >= 0.8 else ("In Progress" if p >= 0.4 else "Not Started")
+                        "Mastered"
+                        if p >= 0.95 and m.attempts_count >= 3
+                        else ("In Progress" if p >= 0.4 else "Needs Support")
                     )
                     att = m.attempts_count
                 else:
                     p = 0.0
-                    state = "Not Started"
+                    state = "Not Assessed"
                     att = 0
 
                 writer.writerow(
@@ -717,7 +696,7 @@ class TeacherDashboardService:
                         sk.name,
                         topic_name,
                         state,
-                        f"{p:.2f}",
+                        "" if state == "Not Assessed" else f"{p:.2f}",
                         att,
                     ]
                 )

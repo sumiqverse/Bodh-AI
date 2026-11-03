@@ -3,12 +3,13 @@
 and refresh token rotation.
 """
 
+import hmac
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Request, Response, status
-from sqlalchemy import select
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
@@ -20,10 +21,11 @@ from app.core.security import (
     decode_token,
     generate_csrf_token,
     hash_secret,
+    hash_token,
     verify_secret,
     verify_supabase_token,
 )
-from app.models.auth import User
+from app.models.auth import Session, User
 from app.models.organization import Enrollment
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.class_repo import ClassRepository
@@ -96,6 +98,85 @@ def _set_auth_cookies(
     )
 
 
+def _as_utc(value: datetime) -> datetime:
+    """Normalize SQLite-returned naive timestamps to UTC."""
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value
+
+
+async def _issue_session(
+    session: AsyncSession,
+    user: User,
+    request: Request,
+    response: Response,
+    role_name: str,
+) -> tuple[str, str, str]:
+    """Create a revocable server-side session and attach its cookies."""
+    session_id = uuid.uuid4()
+    refresh_token = create_refresh_token({"sub": str(user.id), "jti": str(session_id)})
+    session.add(
+        Session(
+            id=session_id,
+            user_id=user.id,
+            token_hash=hash_token(refresh_token),
+            ip_address=request.client.host if request.client else None,
+            user_agent=(request.headers.get("user-agent") or "")[:500] or None,
+            expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days),
+            is_revoked=False,
+        )
+    )
+    await session.flush()
+
+    access_token = create_access_token(
+        {"sub": str(user.id), "role": role_name, "sid": str(session_id)}
+    )
+    csrf_token = generate_csrf_token()
+    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    return access_token, refresh_token, csrf_token
+
+
+async def _delete_session(session: AsyncSession, session_id: uuid.UUID) -> None:
+    """Delete one session so a logged-out token cannot be replayed."""
+    record = await session.get(Session, session_id)
+    if record is not None:
+        await session.delete(record)
+        await session.flush()
+
+
+async def _revoke_all_sessions(session: AsyncSession, user_id: uuid.UUID) -> None:
+    """Revoke every session for a user after refresh-token reuse."""
+    await session.execute(
+        update(Session)
+        .where(Session.user_id == user_id, Session.is_revoked == False)  # noqa: E712
+        .values(is_revoked=True)
+    )
+    await session.flush()
+
+
+async def _delete_from_token(
+    session: AsyncSession,
+    token: str | None,
+    expected_type: str,
+) -> None:
+    """Best-effort session deletion from a signed access or refresh token."""
+    if not token:
+        return
+    try:
+        decoded = decode_token(token)
+    except AuthenticationError:
+        return
+    if decoded.get("type") != expected_type:
+        return
+    claim = "sid" if expected_type == "access" else "jti"
+    raw_id = decoded.get(claim)
+    if not raw_id:
+        return
+    try:
+        session_id = uuid.UUID(str(raw_id))
+    except ValueError:
+        return
+    await _delete_session(session, session_id)
+
+
 @router.post(
     "/teacher/signup",
     response_model=TokenResponse,
@@ -141,11 +222,9 @@ async def teacher_signup(
         ip_address=client_ip,
     )
 
-    access_token = create_access_token({"sub": str(user.id), "role": "teacher"})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    csrf_token = generate_csrf_token()
-
-    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    access_token, refresh_token, csrf_token = await _issue_session(
+        session, user, request, response, role_name="teacher"
+    )
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -218,11 +297,9 @@ async def teacher_login(
     )
 
     role_name = user.role.name if user.role else "teacher"
-    access_token = create_access_token({"sub": str(user.id), "role": role_name})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    csrf_token = generate_csrf_token()
-
-    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    access_token, refresh_token, csrf_token = await _issue_session(
+        session, user, request, response, role_name=role_name
+    )
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -239,52 +316,12 @@ async def teacher_login(
     status_code=status.HTTP_200_OK,
 )
 async def reset_password(
-    payload: ResetPasswordRequest,
-    response: Response,
-    request: Request,
-    session: Annotated[AsyncSession, Depends(get_db)],
+    _payload: ResetPasswordRequest,
 ) -> TokenResponse:
-    """Reset password securely and authenticate user."""
-    user_repo = UserRepository(session)
-    user = await user_repo.get_by_email(payload.email.lower().strip())
-    if not user:
-        raise NotFoundError(
-            f"No BodhAI account registered with email '{payload.email}'. "
-            "Please verify your address or create an account.",
-            resource_type="User",
-            resource_id=payload.email,
-        )
-
-    user.hashed_password = hash_secret(payload.new_password)
-    user.failed_login_attempts = 0
-    user.locked_until = None
-    session.add(user)
-    await session.flush()
-    await session.refresh(user, ["role"])
-
-    audit_repo = AuditRepository(session)
-    client_ip = request.client.host if request.client else None
-    await audit_repo.log_action(
-        action="reset_password",
-        resource_type="user",
-        resource_id=str(user.id),
-        changes={"email": user.email},
-        user_id=user.id,
-        ip_address=client_ip,
-    )
-
-    role_name = user.role.name if user.role else "teacher"
-    access_token = create_access_token({"sub": str(user.id), "role": role_name})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    csrf_token = generate_csrf_token()
-
-    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-        csrf_token=csrf_token,
-        user=_build_user_response(user),
+    """Recovery requires a verified reset token, which is not configured yet."""
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Password recovery is unavailable until verified reset is configured.",
     )
 
 
@@ -363,11 +400,10 @@ async def student_login(
         ip_address=client_ip,
     )
 
-    access_token = create_access_token({"sub": str(student.id), "role": "student"})
-    refresh_token = create_refresh_token({"sub": str(student.id)})
-    csrf_token = generate_csrf_token()
-
-    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    await user_repo.record_login_success(student)
+    access_token, refresh_token, csrf_token = await _issue_session(
+        session, student, request, response, role_name="student"
+    )
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -404,11 +440,20 @@ async def student_join(
     # 2. Check if student already exists
     existing = await user_repo.get_by_username(payload.username.strip())
     if existing is not None:
+        if _is_locked(existing.locked_until):
+            s_until = existing.locked_until.isoformat() if existing.locked_until else ""
+            raise AccountLockedError(f"Account is temporarily locked until {s_until}.")
         # Verify PIN against existing student credentials
         if not existing.pin_hash or not verify_secret(existing.pin_hash, payload.pin.strip()):
-            raise ConflictError(
-                f"Username '{payload.username}' is already in use with a different PIN."
+            await user_repo.record_login_failure(existing)
+            await audit_repo.log_action(
+                action="student_join_failed",
+                resource_type="user",
+                resource_id=str(existing.id),
+                user_id=existing.id,
+                ip_address=client_ip,
             )
+            raise AuthenticationError("Invalid username or PIN.")
         student = existing
         # Check enrollment in target class
         existing_enr = await class_repo.get_enrollment(school_class.id, student.id)
@@ -463,11 +508,10 @@ async def student_join(
             ip_address=client_ip,
         )
 
-    access_token = create_access_token({"sub": str(student.id), "role": "student"})
-    refresh_token = create_refresh_token({"sub": str(student.id)})
-    csrf_token = generate_csrf_token()
-
-    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    await user_repo.record_login_success(student)
+    access_token, refresh_token, csrf_token = await _issue_session(
+        session, student, request, response, role_name="student"
+    )
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -526,11 +570,9 @@ async def supabase_auth_callback(
     )
 
     role_name = user.role.name if user.role else "teacher"
-    access_token = create_access_token({"sub": str(user.id), "role": role_name})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    csrf_token = generate_csrf_token()
-
-    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    access_token, refresh_token, csrf_token = await _issue_session(
+        session, user, request, response, role_name=role_name
+    )
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -546,12 +588,13 @@ async def supabase_auth_callback(
     summary="Rotate refresh token and issue new 15-minute access token",
 )
 async def refresh_token(
+    request: Request,
     response: Response,
     payload: RefreshTokenRequest | None = None,
     refresh_token_cookie: Annotated[str | None, Cookie(alias="refresh_token")] = None,
     session: Annotated[AsyncSession, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> TokenResponse:
-    """Rotate tokens using refresh token rotation."""
+    """Rotate a single-use refresh token and revoke all sessions on reuse."""
     raw_token = (
         payload.refresh_token if payload and payload.refresh_token else None
     ) or refresh_token_cookie
@@ -563,20 +606,44 @@ async def refresh_token(
         raise AuthenticationError("Invalid token type. A refresh token is required.")
 
     sub = decoded.get("sub")
-    if not sub:
-        raise AuthenticationError("Token subject is missing.")
+    jti = decoded.get("jti")
+    if not sub or not jti:
+        raise AuthenticationError("Refresh token is missing required claims.")
+
+    try:
+        user_id = uuid.UUID(str(sub))
+        session_id = uuid.UUID(str(jti))
+    except ValueError as err:
+        raise AuthenticationError("Refresh token contains malformed claims.") from err
 
     user_repo = UserRepository(session)
-    user = await user_repo.get_by_id_with_role(uuid.UUID(sub))
+    user = await user_repo.get_by_id_with_role(user_id)
     if user is None or user.is_deleted or not user.is_active:
         raise AuthenticationError("Associated user account is no longer active.")
 
-    role_name = user.role.name if user.role else "student"
-    new_access_token = create_access_token({"sub": str(user.id), "role": role_name})
-    new_refresh_token = create_refresh_token({"sub": str(user.id)})
-    new_csrf_token = generate_csrf_token()
+    session_record = await session.get(Session, session_id)
+    if (
+        session_record is None
+        or session_record.user_id != user.id
+        or _as_utc(session_record.expires_at) <= datetime.now(UTC)
+    ):
+        raise AuthenticationError("Refresh token is invalid or expired.")
 
-    _set_auth_cookies(response, new_access_token, new_refresh_token, new_csrf_token)
+    if session_record.is_revoked:
+        await _revoke_all_sessions(session, user.id)
+        raise AuthenticationError("Refresh token has been revoked. Please sign in again.")
+
+    if not hmac.compare_digest(session_record.token_hash, hash_token(raw_token)):
+        await _revoke_all_sessions(session, user.id)
+        raise AuthenticationError("Refresh token reuse detected. All sessions revoked.")
+
+    session_record.is_revoked = True
+    await session.flush()
+
+    role_name = user.role.name if user.role else "student"
+    new_access_token, new_refresh_token, new_csrf_token = await _issue_session(
+        session, user, request, response, role_name=role_name
+    )
     return TokenResponse(
         access_token=new_access_token,
         refresh_token=new_refresh_token,
@@ -591,8 +658,22 @@ async def refresh_token(
     status_code=status.HTTP_200_OK,
     summary="Clear session cookies and terminate active authentication",
 )
-async def logout(response: Response) -> dict[str, str]:
-    """Clear access, refresh, and CSRF cookies."""
+async def logout(
+    request: Request,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    refresh_token_cookie: Annotated[str | None, Cookie(alias="refresh_token")] = None,
+) -> dict[str, str]:
+    """Revoke the active session before clearing browser cookies."""
+    auth_header = request.headers.get("Authorization")
+    access_token = (
+        auth_header[7:].strip()
+        if auth_header and auth_header.startswith("Bearer ")
+        else request.cookies.get("access_token")
+    )
+    await _delete_from_token(session, access_token, "access")
+    await _delete_from_token(session, refresh_token_cookie, "refresh")
+
     response.delete_cookie(key="access_token")
     response.delete_cookie(key="refresh_token")
     response.delete_cookie(key="csrf_token")

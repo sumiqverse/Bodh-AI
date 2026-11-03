@@ -19,7 +19,7 @@ def test_alembic_config_and_revisions() -> None:
     # Verify head revision
     heads = script_dir.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "0003_content_engine"
+    assert heads[0] == "0012_review_generated"
 
     # Verify script 0001 can be retrieved and has upgrade / downgrade functions
     rev1 = script_dir.get_revision("0001_initial_schema")

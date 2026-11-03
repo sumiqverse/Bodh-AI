@@ -156,12 +156,12 @@ async def test_get_question_detail(
 @pytest.mark.asyncio
 async def test_update_question_content(
     client: AsyncClient,
-    teacher_auth: tuple[User, str, dict[str, str]],
+    admin_auth: tuple[User, str, dict[str, str]],
     student_auth: tuple[User, str, dict[str, str]],
     sample_mgmt_data: tuple[Question, Skill],
 ) -> None:
     """Teacher can update question content, incrementing version and saving snapshot."""
-    _t_user, _t_token, t_headers = teacher_auth
+    _t_user, _t_token, t_headers = admin_auth
     _s_user, _s_token, s_headers = student_auth
     question, _ = sample_mgmt_data
 
@@ -223,10 +223,10 @@ async def test_curriculum_graph_not_found(
 @pytest.mark.asyncio
 async def test_bulk_import_schema_validation_error(
     client: AsyncClient,
-    teacher_auth: tuple[User, str, dict[str, str]],
+    admin_auth: tuple[User, str, dict[str, str]],
 ) -> None:
     """Invalid content pack in POST /api/v1/curricula/import returns 422 with validation errors."""
-    _t_user, _t_token, t_headers = teacher_auth
+    _t_user, _t_token, t_headers = admin_auth
     # Missing required 'board', 'grade', etc.
     invalid_payload = {
         "curriculum": {"code": "INVALID"},
@@ -245,12 +245,12 @@ async def test_bulk_import_schema_validation_error(
 async def test_student_and_educator_question_views(
     client: AsyncClient,
     db_session: AsyncSession,
-    teacher_auth: tuple[User, str, dict[str, str]],
+    admin_auth: tuple[User, str, dict[str, str]],
     student_auth: tuple[User, str, dict[str, str]],
     sample_mgmt_data: tuple[Question, Skill],
 ) -> None:
     """Test student listing published questions, single retrieval, fallback, and 404."""
-    _t_user, _t_token, t_headers = teacher_auth
+    _t_user, _t_token, t_headers = admin_auth
     _s_user, _s_token, s_headers = student_auth
     question, skill = sample_mgmt_data
 
