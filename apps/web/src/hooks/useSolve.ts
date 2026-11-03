@@ -4,11 +4,8 @@ import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { z } from 'zod';
-import { MasteryStateMachine, type SkillState } from '@bodhai/engine-ts';
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
-import { enqueueOutboxAttempt, getOfflineDB, saveOfflineMastery } from '@/lib/offline/db';
-import { syncManager } from '@/lib/offline/sync';
-import type { AttemptResponse, QuestionResponse } from '@bodhai/api-client';
+import type { AttemptResponse } from '@bodhai/api-client';
 
 export const solveSubmissionSchema = z.object({
   selectedAnswer: z.string().min(1, { message: 'validationAnswerRequired' }),
@@ -53,25 +50,13 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const [hintLevel, setHintLevel] = React.useState<number>(0);
   const [submissionResult, setSubmissionResult] = React.useState<AttemptResponse | null>(null);
   const [hasSubmitted, setHasSubmitted] = React.useState<boolean>(false);
-  const [startTime] = React.useState<number>(() => Date.now());
+  const startTime = React.useRef(Date.now());
 
   // Fetch authentic practice question by questionId or skillId
   const questionQuery = useQuery({
     queryKey: ['solve-question', options?.questionId ?? options?.skillId ?? 'none', locale],
     queryFn: async (): Promise<SolveQuestionData> => {
       const isHindi = locale === 'hi';
-      const defaultHints = isHindi
-        ? [
-            'स्तर 1 (संकल्पना): प्रश्न के संदर्भ, मुख्य विषय और दी गई जानकारी को ध्यानपूर्वक समझें।',
-            'स्तर 2 (चरणबद्ध विधि): मुख्य नियमों और विश्लेषणात्मक उपागम का प्रयोग करें।',
-            'स्तर 3 (समाधान सत्यापन): विकल्पों का तार्किक मूल्यांकन करके सही उत्तर का चयन करें।',
-          ]
-        : [
-            'Level 1 (Concept): Analyze the given context, key terminology, and required principles.',
-            'Level 2 (Step Guidance): Apply systematic analytical steps and standard pedagogical rules.',
-            'Level 3 (Worked Scaffold): Evaluate each option logically to confirm the accurate choice.',
-          ];
-
       if (options?.questionId) {
         try {
           const token = getAuthToken() ?? undefined;
@@ -84,7 +69,7 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
               difficulty: q.difficulty,
               prompt: q.prompt,
               options: (q.options as Array<{ id: string; text: string }>) ?? [],
-              hints: q.hints && q.hints.length >= 3 ? q.hints : defaultHints,
+              hints: q.hints ?? [],
             };
           }
         } catch {
@@ -94,24 +79,22 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
 
       const targetSkillId =
         options?.skillId && options.skillId !== 'default' ? options.skillId : undefined;
-      const list = await apiClient.listQuestions({
-        skillId: targetSkillId,
-        language: locale,
-        limit: 1,
-      });
-      if (list && list.length > 0 && list[0]) {
-        const q: QuestionResponse = list[0];
+      if (targetSkillId) {
+        const recommendation = await apiClient.getNextItem(
+          localStorage.getItem('bodhai_student_curriculum') || undefined,
+          getAuthToken() || undefined,
+          locale,
+          localStorage.getItem('bodhai_selected_class_id') || undefined,
+          targetSkillId,
+        );
         return {
-          id: q.id,
-          code: q.code ?? 'NCERT-PRACTICE',
-          skillId: q.skill_id,
-          difficulty: q.difficulty,
-          prompt: q.prompt,
-          options: (q.options as Array<{ id: string; text: string }>) ?? [
-            { id: 'A', text: isHindi ? 'विकल्प A' : 'Option A' },
-            { id: 'B', text: isHindi ? 'विकल्प B' : 'Option B' },
-          ],
-          hints: q.hints && q.hints.length >= 3 ? q.hints : defaultHints,
+          id: recommendation.question_id,
+          code: recommendation.code,
+          skillId: recommendation.skill_id,
+          difficulty: recommendation.difficulty,
+          prompt: recommendation.prompt,
+          options: (recommendation.options as Array<{ id: string; text: string }>) ?? [],
+          hints: recommendation.hints ?? [],
         };
       }
 
@@ -124,111 +107,54 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
     staleTime: 60 * 1000,
   });
 
-  const question: SolveQuestionData = questionQuery.data as SolveQuestionData;
+  const question = questionQuery.data ?? null;
+  React.useEffect(() => {
+    startTime.current = Date.now();
+  }, [question?.id]);
 
   const submitMutation = useMutation({
     mutationFn: async (selectedOption: string): Promise<AttemptResponse> => {
       const token = getAuthToken() ?? undefined;
       const user = getCurrentUser();
-      const timeSpent = Math.max(1000, Date.now() - startTime);
+      const timeSpent = Math.max(1000, Date.now() - startTime.current);
       // Strictly generate client-side idempotency key to prevent double submits
       const idempotencyKey =
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
           : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-
-      const executeOfflineAttempt = async (): Promise<AttemptResponse> => {
-        const isCorrect =
-          selectedOption === 'B' || selectedOption === '2' || selectedOption === 'true';
-        const studentId = user?.id ?? 'offline-student';
-        const db = getOfflineDB();
-        const existingMastery = await db.offlineMastery.get([question.skillId, studentId]);
-
-        const currentSkillState: SkillState = {
-          skillId: question.skillId,
-          pMastery: existingMastery?.pMastery ?? 0.1,
-          state: existingMastery?.state ?? 'not_learned',
-          observationsCount: existingMastery?.observationsCount ?? 0,
-          correctCount: existingMastery?.hintFreeCorrectCount ?? 0,
-          consecutiveCorrect: existingMastery?.hintFreeCorrectCount ?? 0,
-          hintFreeCorrectCount: existingMastery?.hintFreeCorrectCount ?? 0,
-        };
-
-        const sm = new MasteryStateMachine();
-        const nextState = sm.processObservation(currentSkillState, {
-          skillId: question.skillId,
-          isCorrect,
-          hintLevel,
-          timeSpentS: timeSpent / 1000,
-        });
-
-        await saveOfflineMastery({
-          skillId: question.skillId,
-          studentId,
-          pMastery: nextState.pMastery,
-          state: nextState.state,
-          observationsCount: nextState.observationsCount,
-          hintFreeCorrectCount: nextState.hintFreeCorrectCount,
-          updatedAt: new Date().toISOString(),
-        });
-
-        await enqueueOutboxAttempt({
+      if (!question) throw new Error('No question is loaded.');
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw new Error('Connect to the internet to submit your answer.');
+      }
+      return apiClient.submitAttempt(
+        {
+          class_id: localStorage.getItem('bodhai_selected_class_id') || undefined,
           question_id: question.id,
           skill_id: question.skillId,
           selected_answer: selectedOption,
           idempotency_key: idempotencyKey,
           time_spent_ms: timeSpent,
           client_timestamp: new Date().toISOString(),
-          hints_used: hintLevel,
-        });
-
-        syncManager.notifyListeners();
-
-        return {
-          attempt_id: idempotencyKey,
-          is_correct: isCorrect,
-          p_mastery_after: nextState.pMastery,
-          explanation: isCorrect
-            ? 'Great job! Your answer is correct.'
-            : 'Review the steps and try another question.',
-          is_duplicate: false,
-        };
-      };
-
-      if (isOffline) {
-        return executeOfflineAttempt();
-      }
-
-      try {
-        return await apiClient.submitAttempt(
-          {
-            question_id: question.id,
-            skill_id: question.skillId,
-            selected_answer: selectedOption,
-            idempotency_key: idempotencyKey,
-            time_spent_ms: timeSpent,
-            client_timestamp: new Date().toISOString(),
-          },
-          token,
-          user?.id,
-        );
-      } catch (err: unknown) {
-        // Fall back to offline attempt if network request fails
-        if (typeof navigator !== 'undefined' && !navigator.onLine) {
-          return executeOfflineAttempt();
-        }
-        if (err instanceof TypeError || (err instanceof Error && err.message.includes('fetch'))) {
-          return executeOfflineAttempt();
-        }
-        throw err;
-      }
+        },
+        token,
+        user?.id,
+      );
     },
     onSuccess: (data: AttemptResponse) => {
       setSubmissionResult(data);
       setHasSubmitted(true);
       void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+      void queryClient.invalidateQueries({ queryKey: ['class-leaderboard'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-assignments'] });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('bodhai_attempt_submitted', {
+            detail: { isCorrect: Boolean(data.is_correct) },
+          }),
+        );
+      }
     },
   });
 

@@ -8,6 +8,7 @@ import type { DiagnosticItemResponse, DiagnosticResponse } from '@bodhai/api-cli
 
 export interface UseDiagnosticOptions {
   curriculumCode?: string;
+  classId?: string;
   totalTarget?: number;
 }
 
@@ -42,6 +43,7 @@ export interface UseDiagnosticReturn {
 
 export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticReturn {
   const curriculumCode = options?.curriculumCode;
+  const classId = options?.classId;
   const totalQuestions = options?.totalTarget ?? 15;
   const locale = useLocale();
 
@@ -53,17 +55,31 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
     null,
   );
   const [feedback, setFeedback] = React.useState<DiagnosticFeedback | null>(null);
-  const [sessionKey, setSessionKey] = React.useState<number>(() => Date.now());
+  const [sessionKey, setSessionKey] = React.useState<number>(0);
 
   // TanStack Query for initial diagnostic session calibration
   const initialSessionQuery = useQuery({
-    queryKey: ['diagnostic-session-init', curriculumCode, sessionKey, locale],
+    queryKey: ['diagnostic-session-init', curriculumCode, classId, sessionKey, locale],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
       const payload = {
         ...(curriculumCode ? { curriculum_code: curriculumCode } : {}),
         language: locale,
+        ...(classId ? { class_id: classId } : {}),
       };
+      if (curriculumCode && sessionKey === 0) {
+        try {
+          return await apiClient.getCurrentDiagnostic(curriculumCode, token, classId);
+        } catch (err) {
+          if (!(
+            err &&
+            typeof err === 'object' &&
+            'status' in err &&
+            (err as { status: number }).status === 404
+          ))
+            throw err;
+        }
+      }
       return apiClient.startDiagnostic(payload, token);
     },
     staleTime: 0,
@@ -87,29 +103,15 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
         throw new Error('No active diagnostic session.');
       }
       const token = getAuthToken() ?? undefined;
-      try {
-        return await apiClient.progressDiagnostic(
-          {
-            session_id: sessionId,
-            question_id: currentItem.question_id,
-            selected_answer: payload.selectedOption,
-            time_spent_ms: payload.timeSpentMs,
-          },
-          token,
-        );
-      } catch (err: unknown) {
-        // If session was lost on backend (404), seamlessly recover with a fresh session
-        if (
-          err &&
-          typeof err === 'object' &&
-          'status' in err &&
-          (err as { status: number }).status === 404
-        ) {
-          const payload = curriculumCode ? { curriculum_code: curriculumCode } : {};
-          return await apiClient.startDiagnostic(payload, token);
-        }
-        throw err;
-      }
+      return apiClient.progressDiagnostic(
+        {
+          session_id: sessionId,
+          question_id: currentItem.question_id,
+          selected_answer: payload.selectedOption,
+          time_spent_ms: payload.timeSpentMs,
+        },
+        token,
+      );
     },
     onSuccess: (data: DiagnosticResponse) => {
       if (typeof data.last_is_correct === 'boolean') {
@@ -131,6 +133,10 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
             }
           }
           void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+          void queryClient.invalidateQueries({ queryKey: ['student-profile-me'] });
+          void queryClient.invalidateQueries({ queryKey: ['class-leaderboard'] });
+          void queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+          void queryClient.invalidateQueries({ queryKey: ['student-assignments'] });
           void queryClient.invalidateQueries({ queryKey: ['next-item'] });
         }
       }
@@ -155,6 +161,10 @@ export function useDiagnostic(options?: UseDiagnosticOptions): UseDiagnosticRetu
           }
         }
         void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+        void queryClient.invalidateQueries({ queryKey: ['student-profile-me'] });
+        void queryClient.invalidateQueries({ queryKey: ['class-leaderboard'] });
+        void queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+        void queryClient.invalidateQueries({ queryKey: ['student-assignments'] });
         void queryClient.invalidateQueries({ queryKey: ['next-item'] });
       }
     }

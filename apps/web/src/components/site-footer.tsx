@@ -15,8 +15,8 @@ export function SiteFooter(): React.JSX.Element {
     {
       title: tFooter('sections.platform'),
       links: [
-        { label: tNav('howItWorks'), href: '/how-it-works' },
-        { label: tNav('languages'), href: '/languages-offline' },
+        { label: tNav('howItWorks'), href: '/#how-it-works' },
+        { label: tNav('languages'), href: '/#languages-offline' },
         { label: tNav('about'), href: '/about' },
         { label: tNav('design'), href: '/design' },
       ],
@@ -24,9 +24,9 @@ export function SiteFooter(): React.JSX.Element {
     {
       title: tFooter('sections.stakeholders'),
       links: [
-        { label: tNav('students'), href: '/for-students' },
-        { label: tNav('teachers'), href: '/for-teachers' },
-        { label: tNav('schools'), href: '/for-schools' },
+        { label: tNav('students'), href: '/#students' },
+        { label: tNav('teachers'), href: '/#teachers' },
+        { label: tNav('schools'), href: '/#schools' },
         { label: tNav('contact'), href: '/contact' },
       ],
     },

@@ -75,6 +75,7 @@ export function useLearn(options: UseLearnOptions): UseLearnReturn {
       try {
         return await apiClient.listQuestions({
           skillId: options.skillId,
+          classId: localStorage.getItem('bodhai_selected_class_id') || undefined,
           language,
           limit: 2,
         });

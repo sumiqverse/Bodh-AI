@@ -49,7 +49,7 @@ export interface UseSkillMapReturn {
   refetch: () => void;
 }
 
-export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
+export function useSkillMap(curriculumCode?: string, classId?: string): UseSkillMapReturn {
   const apiClient = getWebApiClient();
   const locale = useLocale();
 
@@ -73,7 +73,7 @@ export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
 
   // Query 2: Student mastery (gracefully defaults to [] for guests or expired tokens)
   const masteryQuery = useQuery({
-    queryKey: ['student-mastery'],
+    queryKey: ['student-mastery', classId],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
       const user = getCurrentUser();
@@ -81,7 +81,7 @@ export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
         return [];
       }
       try {
-        return await apiClient.listMastery(user.id, token);
+        return await apiClient.listMastery(user.id, token, classId);
       } catch (err: unknown) {
         if (
           err &&
@@ -99,11 +99,11 @@ export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
 
   // Query 3: Next recommended item
   const nextItemQuery = useQuery({
-    queryKey: ['next-item', curriculumCode, locale],
+    queryKey: ['next-item', curriculumCode, classId, locale],
     queryFn: async () => {
       const token = getAuthToken() ?? undefined;
       try {
-        return await apiClient.getNextItem(curriculumCode!, token, locale);
+        return await apiClient.getNextItem(curriculumCode!, token, locale, classId);
       } catch {
         return null;
       }
@@ -141,7 +141,7 @@ export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
     });
 
     // Merge any calibrated diagnostic assessment mastery from localStorage (guest & immediate sync)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !getAuthToken()) {
       try {
         const localDiag = localStorage.getItem('bodhai_last_diagnostic_summary');
         if (localDiag) {
@@ -214,10 +214,10 @@ export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
         const score = m ? m.p_mastery : 0;
         let state: MasteryState = 'not_learned';
 
-        if (m?.state === 'mastered' || score >= 0.85) {
+        if (m?.state === 'mastered' || (score >= 0.95 && (m?.attempts_count ?? 0) >= 3)) {
           state = 'mastered';
           mastered++;
-        } else if (m?.state === 'partial' || score >= 0.35 || (m && m.attempts_count > 0)) {
+        } else if (m?.state === 'partial' || score >= 0.4) {
           state = 'partial';
           partial++;
         } else {
@@ -253,10 +253,10 @@ export function useSkillMap(curriculumCode?: string): UseSkillMapReturn {
           const score = m ? m.p_mastery : 0;
           let state: MasteryState = 'not_learned';
 
-          if (m?.state === 'mastered' || score >= 0.85) {
+          if (m?.state === 'mastered' || (score >= 0.95 && (m?.attempts_count ?? 0) >= 3)) {
             state = 'mastered';
             mastered++;
-          } else if (m?.state === 'partial' || score >= 0.35 || (m && m.attempts_count > 0)) {
+          } else if (m?.state === 'partial' || score >= 0.4) {
             state = 'partial';
             partial++;
           } else {

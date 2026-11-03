@@ -52,13 +52,22 @@ export function useTest(options?: UseTestOptions): UseTestReturn {
   const [evaluations, setEvaluations] = React.useState<AttemptResponse[]>([]);
   const [isCompleted, setIsCompleted] = React.useState<boolean>(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const questionStartedAt = React.useRef(Date.now());
+  React.useEffect(() => {
+    questionStartedAt.current = Date.now();
+  }, [currentIndex]);
 
   React.useEffect(() => {
     let isCancelled = false;
     setIsLoading(true);
     setErrorMessage(null);
     void apiClient
-      .listQuestions({ skillId: options?.skillId, language: locale, limit: 3 })
+      .listQuestions({
+        skillId: options?.skillId,
+        classId: localStorage.getItem('bodhai_selected_class_id') || undefined,
+        language: locale,
+        limit: 3,
+      })
       .then((items) => {
         if (isCancelled) return;
         if (items && items.length > 0) {
@@ -103,11 +112,12 @@ export function useTest(options?: UseTestOptions): UseTestReturn {
 
       return apiClient.submitAttempt(
         {
+          class_id: localStorage.getItem('bodhai_selected_class_id') || undefined,
           question_id: payload.question.id,
           skill_id: options?.skillId ?? payload.question.skillId,
           selected_answer: payload.option,
           idempotency_key: idempotencyKey,
-          time_spent_ms: 12000,
+          time_spent_ms: Math.max(0, Date.now() - questionStartedAt.current),
           client_timestamp: new Date().toISOString(),
         },
         token,
@@ -126,6 +136,9 @@ export function useTest(options?: UseTestOptions): UseTestReturn {
       } else {
         setIsCompleted(true);
         void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
+        void queryClient.invalidateQueries({ queryKey: ['class-leaderboard'] });
+        void queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+        void queryClient.invalidateQueries({ queryKey: ['student-assignments'] });
       }
     },
     onError: (err: Error) => {

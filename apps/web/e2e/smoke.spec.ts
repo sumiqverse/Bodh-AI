@@ -26,6 +26,7 @@ for (const locale of locales) {
         const url = `/${locale}${pageInfo.path}`;
         const response = await page.goto(url);
         expect(response?.status()).toBe(200);
+        expect(new URL(page.url()).pathname).toBe(url);
 
         // Check html lang attribute
         const htmlLang = await page.locator('html').getAttribute('lang');
@@ -52,8 +53,8 @@ for (const locale of locales) {
       // Check cited statistics
       await expect(page.getByText('10.09')).toBeVisible();
       await expect(page.getByText('45.8%')).toBeVisible();
-      await expect(page.getByText(/UDISE\+/i)).toBeVisible();
-      await expect(page.getByText(/ASER/i)).toBeVisible();
+      await expect(page.getByText(/UDISE\+/i).first()).toBeVisible();
+      await expect(page.getByText(/ASER/i).first()).toBeVisible();
     });
 
     test(`contact page /${locale}/contact has accessible form controls`, async ({ page }) => {

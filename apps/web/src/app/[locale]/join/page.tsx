@@ -76,38 +76,49 @@ export default function StudentJoinPage(): React.JSX.Element {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center px-4 py-12">
-      <Card className="w-full shadow-floating">
-        <CardHeader className="text-center">
-          <CardTitle className="font-serif text-2xl font-bold tracking-tight text-foreground">
+    <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
+        <CardHeader className="text-center pb-4">
+          <img
+            src="/image.png"
+            alt="BodhAI"
+            className="mx-auto mb-3 h-14 w-14 rounded-full object-contain shrink-0 select-none drop-shadow-sm"
+          />
+          <CardTitle className="font-serif text-2xl font-black tracking-tight text-ink dark:text-white">
             {t('joinTitle')}
           </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
+          <CardDescription className="text-xs text-text-secondary mt-1">
             {t('joinSubtitle')}
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="rounded-lg bg-primary/5 p-3 border border-primary/10 text-xs text-muted-foreground">
+            <div className="rounded-xl bg-surface-cream/50 p-3 border-2 border-ink text-xs text-ink font-medium">
               {t('privacyMinorNote')}
             </div>
 
             {errorMessage && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium"
+                className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-3.5 text-xs sm:text-sm text-ink dark:text-pink-100 font-bold flex items-center gap-2.5 shadow-xs"
               >
-                {errorMessage}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
+                  !
+                </span>
+                <span className="leading-snug">{errorMessage}</span>
               </div>
             )}
 
             {successMessage && (
               <div
                 role="status"
-                className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300 font-medium"
+                className="rounded-2xl border-2 border-ink bg-emerald-100 dark:bg-emerald-950/40 p-3.5 text-xs sm:text-sm text-ink dark:text-emerald-200 font-bold flex items-center gap-2.5 shadow-xs"
               >
-                {successMessage}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-300 border-2 border-ink text-ink font-black text-xs shadow-xs">
+                  ✓
+                </span>
+                <span className="leading-snug">{successMessage}</span>
               </div>
             )}
 
@@ -162,7 +173,7 @@ export default function StudentJoinPage(): React.JSX.Element {
                 placeholder={t('studentPinPlaceholder')}
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                className="text-center tracking-widest"
+                className="text-center tracking-widest font-mono font-bold"
               />
             </div>
 
@@ -201,8 +212,8 @@ export default function StudentJoinPage(): React.JSX.Element {
 
             <Button
               type="submit"
-              variant="primary"
-              className="w-full cursor-pointer py-2.5 font-semibold"
+              variant="orange"
+              className="w-full cursor-pointer py-3 font-bold rounded-full border-2 border-ink shadow-sm text-base hover:-translate-y-0.5 transition-transform"
               disabled={isLoading}
             >
               {isLoading ? t('joining') : t('joinButton')}
@@ -212,7 +223,7 @@ export default function StudentJoinPage(): React.JSX.Element {
               <span>{t('alreadyHaveAccount')} </span>
               <Link
                 href="/login"
-                className="font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+                className="font-bold text-primary underline underline-offset-4 hover:opacity-80"
               >
                 {t('loginLink')}
               </Link>

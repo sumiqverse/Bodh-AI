@@ -26,6 +26,14 @@ function DiagnosticContent(): React.JSX.Element {
   const apiClient = getWebApiClient();
 
   const token = typeof window !== 'undefined' ? getAuthToken() : null;
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && !getAuthToken()) {
+      const currentPath = window.location.pathname + window.location.search;
+      router.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
+    }
+  }, [router]);
+
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
     queryFn: () => apiClient.getMyProfile(token || undefined),
@@ -60,7 +68,8 @@ function DiagnosticContent(): React.JSX.Element {
     isPendingCompletion,
   } = useDiagnostic({
     curriculumCode: enrolledCurriculum,
-    totalTarget: 15,
+    classId: searchParams.get('classId') ?? undefined,
+    totalTarget: 20,
   });
 
   const targetCurriculum = enrolledCurriculum || 'NCERT-MATH-C8';
@@ -255,16 +264,16 @@ function DiagnosticContent(): React.JSX.Element {
     const recommendedSkills = (summary?.recommended_starting_skills as string[]) ?? [];
 
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-8 sm:py-12 flex flex-col items-center">
-        <Card className="w-full shadow-floating text-center border-border/80 overflow-hidden">
+      <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-8 sm:py-12">
+        <Card className="w-full max-w-2xl rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card text-center overflow-hidden">
           <CardHeader className="pb-4">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
-              ✓
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-cream text-ink border-2 border-ink text-3xl font-black shadow-sm">
+              🏆
             </div>
-            <CardTitle className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            <CardTitle className="font-serif text-2xl sm:text-3xl font-black tracking-tight text-ink dark:text-white">
               {t('completedTitle')}
             </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground mt-2 leading-relaxed">
+            <CardDescription className="text-sm text-text-secondary dark:text-muted-foreground mt-2 leading-relaxed">
               {t('completedSubtitle')}
             </CardDescription>
           </CardHeader>
@@ -272,32 +281,28 @@ function DiagnosticContent(): React.JSX.Element {
           <CardContent className="space-y-6 pt-2 text-left">
             {/* Quick Metrics Grid */}
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-xl border border-border bg-muted/30 p-3">
-                <span className="block text-2xl font-extrabold text-foreground">
-                  {totalAnswered}
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Questions Assessed
-                </span>
+              <div className="rounded-xl border-2 border-ink bg-surface-cream/50 p-3 shadow-xs">
+                <span className="block text-2xl font-black text-ink">{totalAnswered}</span>
+                <span className="text-xs text-text-secondary font-bold">Questions Assessed</span>
               </div>
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                <span className="block text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div className="rounded-xl border-2 border-ink bg-emerald-100 p-3 shadow-xs">
+                <span className="block text-2xl font-black text-emerald-950">
                   {masteredSkills.length}
                 </span>
-                <span className="text-xs text-muted-foreground font-medium">Mastered</span>
+                <span className="text-xs text-emerald-900 font-bold">Mastered</span>
               </div>
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                <span className="block text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+              <div className="rounded-xl border-2 border-ink bg-surface-pink/40 p-3 shadow-xs">
+                <span className="block text-2xl font-black text-ink">
                   {focusGaps.length + partialSkills.length}
                 </span>
-                <span className="text-xs text-muted-foreground font-medium">Focus Gaps</span>
+                <span className="text-xs text-text-secondary font-bold">Focus Gaps</span>
               </div>
             </div>
 
             {/* Strengths / Mastered Skills */}
             {masteredSkills.length > 0 && (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+              <div className="rounded-tile border-2 border-ink bg-emerald-50/60 p-4 space-y-2">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
                   ✓ Strong Foundational Skills
                 </span>
                 <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
@@ -306,7 +311,7 @@ function DiagnosticContent(): React.JSX.Element {
                       key={typeof sk === 'string' ? sk : idx}
                       variant="outline"
                       size="sm"
-                      className="border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 text-xs font-medium"
+                      className="border-2 border-ink bg-surface-white text-ink text-xs font-bold"
                     >
                       {formatSkillName(sk)}
                     </Badge>
@@ -317,11 +322,11 @@ function DiagnosticContent(): React.JSX.Element {
 
             {/* Learning Focus Areas / Gaps */}
             {(focusGaps.length > 0 || recommendedSkills.length > 0) && (
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+              <div className="rounded-tile border-2 border-ink bg-surface-cream/50 p-4 space-y-2">
+                <span className="text-xs font-black uppercase tracking-wider text-primary-orange flex items-center gap-1.5">
                   🎯 Recommended Starting Focus
                 </span>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-text-secondary">
                   Our diagnostic engine has calibrated specific learning pathways for you in:
                 </p>
                 <div className="flex flex-wrap gap-1.5 pt-1 max-h-48 overflow-y-auto pr-1">
@@ -330,7 +335,7 @@ function DiagnosticContent(): React.JSX.Element {
                       key={typeof sk === 'string' ? sk : idx}
                       variant="outline"
                       size="sm"
-                      className="border-primary/30 bg-primary/10 text-primary text-xs font-medium"
+                      className="border-2 border-ink bg-surface-white text-ink text-xs font-bold"
                     >
                       {formatSkillName(sk)}
                     </Badge>
@@ -339,7 +344,7 @@ function DiagnosticContent(): React.JSX.Element {
               </div>
             )}
 
-            <div className="rounded-xl border border-border bg-muted/40 p-4 text-xs text-muted-foreground leading-relaxed text-center">
+            <div className="rounded-xl border-2 border-ink bg-surface-white p-4 text-xs text-text-secondary leading-relaxed text-center font-medium shadow-xs">
               {t('hintFreeNotice')}
             </div>
 
@@ -349,16 +354,16 @@ function DiagnosticContent(): React.JSX.Element {
                 variant="outline"
                 size="lg"
                 onClick={() => void startSession()}
-                className="w-full min-h-[48px] cursor-pointer font-semibold"
+                className="w-full min-h-[48px] cursor-pointer font-bold rounded-full border-2 border-ink"
               >
                 {t('retakeDiagnostic')}
               </Button>
               <Button
                 type="button"
-                variant="primary"
+                variant="orange"
                 size="lg"
                 onClick={() => router.push('/student')}
-                className="w-full min-h-[48px] cursor-pointer font-semibold shadow-elevated"
+                className="w-full min-h-[48px] cursor-pointer font-bold shadow-sm rounded-full border-2 border-ink hover:-translate-y-0.5 transition-transform"
               >
                 {t('viewSkillMap')} →
               </Button>
@@ -373,18 +378,19 @@ function DiagnosticContent(): React.JSX.Element {
   const progressPercent = Math.min(100, Math.round((questionNumber / totalQuestions) * 100));
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-xl flex-col items-center justify-center px-4 py-6 sm:py-10">
-      <Card className="w-full shadow-floating border-border/80">
+    <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-6 sm:py-10">
+      <Card className="w-full max-w-xl rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
         <CardHeader className="space-y-3 pb-4">
-          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
+          <div className="flex items-center justify-between text-xs font-bold text-text-secondary">
             <span aria-live="polite">
               {t('questionProgress', { current: questionNumber, total: totalQuestions })}
             </span>
+            <span className="font-mono text-ink font-bold">{progressPercent}%</span>
           </div>
 
           {/* Smooth progress indicator bar */}
           <div
-            className="h-2 w-full overflow-hidden rounded-full bg-muted"
+            className="h-3.5 w-full overflow-hidden rounded-full border-2 border-ink bg-surface-peach/40"
             role="progressbar"
             aria-valuenow={progressPercent}
             aria-valuemin={0}
@@ -392,7 +398,7 @@ function DiagnosticContent(): React.JSX.Element {
             aria-label={t('progressLabel')}
           >
             <div
-              className="h-full bg-primary transition-all duration-300 ease-out"
+              className="h-full bg-primary-orange rounded-full transition-all duration-300 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -400,18 +406,18 @@ function DiagnosticContent(): React.JSX.Element {
 
         <CardContent className="space-y-6 pt-2">
           {/* Question Prompt with KaTeX Math rendering */}
-          <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xs">
+          <div className="rounded-tile border-2 border-ink bg-surface-cream/40 p-4 sm:p-6 shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-primary">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-primary-orange">
                 {currentItem?.topic_name ||
                   formatSkillName(currentItem?.skill_code) ||
                   'NCERT Class 8'}
               </span>
-              <span className="text-[11px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
+              <span className="text-[11px] font-mono text-ink bg-surface-white border border-ink px-2 py-0.5 rounded-md font-bold">
                 {currentItem?.code}
               </span>
             </div>
-            <div className="text-base sm:text-lg text-foreground font-medium leading-relaxed">
+            <div className="text-base sm:text-lg text-ink font-semibold leading-relaxed">
               <KatexRenderer content={currentItem?.prompt || ''} />
             </div>
           </div>
@@ -419,7 +425,7 @@ function DiagnosticContent(): React.JSX.Element {
           {/* Options List or Numerical Input Field */}
           {currentItem?.options && currentItem.options.length > 0 ? (
             <div className="space-y-2.5" role="radiogroup" aria-label={t('selectOptionPrompt')}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">
                 {t('selectOptionPrompt')}
               </p>
 
@@ -430,34 +436,33 @@ function DiagnosticContent(): React.JSX.Element {
                 const isCorrectSelection = Boolean(feedback && isSelected && feedback.isCorrect);
 
                 let optionStyle =
-                  'border-border bg-card hover:border-primary/50 hover:bg-muted/30 text-foreground';
-                let badgeStyle = 'border-border bg-muted/50 text-muted-foreground';
+                  'border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink';
+                let badgeStyle = 'border-2 border-ink bg-surface-white text-ink';
                 let badgeContent: React.ReactNode = opt.id;
 
                 if (feedback) {
                   if (isCorrectSelection) {
                     optionStyle =
-                      'border-emerald-500 bg-emerald-500/15 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500 font-semibold shadow-xs';
-                    badgeStyle = 'border-emerald-600 bg-emerald-600 text-white font-bold';
+                      'border-2 border-ink bg-emerald-100 text-emerald-950 font-bold shadow-xs';
+                    badgeStyle = 'border-2 border-ink bg-emerald-600 text-white font-bold';
                     badgeContent = '✓';
                   } else if (isWrongSelection) {
                     optionStyle =
-                      'border-rose-500 bg-rose-500/15 text-rose-950 dark:text-rose-100 ring-2 ring-rose-500 font-semibold shadow-xs';
-                    badgeStyle = 'border-rose-600 bg-rose-600 text-white font-bold';
+                      'border-2 border-ink bg-surface-pink text-ink font-bold shadow-xs';
+                    badgeStyle = 'border-2 border-ink bg-rose-600 text-white font-bold';
                     badgeContent = '✕';
                   } else if (isCorrectAnswer) {
-                    optionStyle =
-                      'border-emerald-500/60 bg-emerald-500/5 text-emerald-900 dark:text-emerald-100 ring-1 ring-emerald-500/60 font-semibold';
-                    badgeStyle =
-                      'border-emerald-600/50 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold';
+                    optionStyle = 'border-2 border-ink bg-emerald-50 text-emerald-950 font-bold';
+                    badgeStyle = 'border-2 border-ink bg-emerald-600 text-white font-bold';
                     badgeContent = '✓';
                   } else {
-                    optionStyle = 'opacity-40 border-border bg-card/40 text-muted-foreground';
+                    optionStyle =
+                      'opacity-40 border-2 border-ink bg-surface-white text-muted-foreground';
                   }
                 } else if (isSelected) {
                   optionStyle =
-                    'border-primary bg-primary/10 shadow-xs ring-1 ring-primary text-foreground font-semibold';
-                  badgeStyle = 'border-primary bg-primary text-primary-foreground font-bold';
+                    'border-2 border-ink bg-surface-yellow shadow-xs text-ink font-bold';
+                  badgeStyle = 'border-2 border-ink bg-primary-orange text-white font-bold';
                 }
 
                 return (
@@ -468,13 +473,13 @@ function DiagnosticContent(): React.JSX.Element {
                     aria-checked={isSelected}
                     disabled={isSubmitting || Boolean(feedback)}
                     onClick={() => handleSelectOption(opt.id)}
-                    className={`flex min-h-[56px] w-full cursor-pointer items-center justify-between rounded-xl border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${optionStyle} ${
+                    className={`flex min-h-[56px] w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${optionStyle} ${
                       isSubmitting ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs ${badgeStyle}`}
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${badgeStyle}`}
                       >
                         {badgeContent}
                       </span>
@@ -526,12 +531,12 @@ function DiagnosticContent(): React.JSX.Element {
                     }
                   }}
                   placeholder="Type your number here (e.g. 18)..."
-                  className={`w-full rounded-2xl border px-5 py-4 text-xl sm:text-2xl font-bold tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-primary ${
+                  className={`w-full rounded-2xl border-2 border-ink px-5 py-4 text-xl sm:text-2xl font-bold tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-primary bg-surface-white text-ink ${
                     feedback
                       ? feedback.isCorrect
-                        ? 'border-emerald-500 bg-emerald-500/15 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500'
-                        : 'border-rose-500 bg-rose-500/15 text-rose-950 dark:text-rose-100 ring-2 ring-rose-500'
-                      : 'border-border bg-card text-foreground focus:border-primary shadow-xs'
+                        ? 'bg-emerald-100 text-emerald-950'
+                        : 'bg-surface-pink text-ink'
+                      : 'shadow-xs'
                   } ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
                 {feedback && (
@@ -557,9 +562,12 @@ function DiagnosticContent(): React.JSX.Element {
           {errorMessage && (
             <div
               role="alert"
-              className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs sm:text-sm text-destructive font-medium"
+              className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-3.5 text-xs sm:text-sm text-ink dark:text-pink-100 font-bold flex items-center gap-2.5 shadow-xs"
             >
-              {errorMessage}
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
+                !
+              </span>
+              <span className="leading-snug">{errorMessage}</span>
             </div>
           )}
         </CardContent>
@@ -567,10 +575,8 @@ function DiagnosticContent(): React.JSX.Element {
         <CardFooter className="pt-2 pb-6 flex flex-col items-stretch gap-4">
           {feedback ? (
             <div
-              className={`w-full rounded-2xl p-4 sm:p-5 border transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-                feedback.isCorrect
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-100'
+              className={`w-full rounded-2xl p-4 sm:p-5 border-2 border-ink transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+                feedback.isCorrect ? 'bg-emerald-100 text-emerald-950' : 'bg-surface-pink text-ink'
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -592,7 +598,7 @@ function DiagnosticContent(): React.JSX.Element {
                           ? t('excellentSuccess')
                           : t('workOnWeakness')}
                     </h4>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed font-medium">
                       {isPendingCompletion
                         ? t('viewSummaryDesc')
                         : feedback.isCorrect
@@ -608,14 +614,10 @@ function DiagnosticContent(): React.JSX.Element {
 
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="orange"
                   size="lg"
                   onClick={() => advanceToNext()}
-                  className={`min-h-[48px] px-8 text-base font-bold shadow-elevated cursor-pointer shrink-0 ${
-                    feedback.isCorrect
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                  }`}
+                  className="min-h-[48px] px-8 text-base font-bold shadow-sm cursor-pointer shrink-0 rounded-full border-2 border-ink"
                 >
                   {isPendingCompletion ? 'View Results & Summary →' : 'Continue →'}
                 </Button>
@@ -624,11 +626,11 @@ function DiagnosticContent(): React.JSX.Element {
           ) : (
             <Button
               type="button"
-              variant="primary"
+              variant="orange"
               size="lg"
               disabled={!selectedOption || isSubmitting}
               onClick={() => void handleConfirmNext()}
-              className="w-full min-h-[48px] cursor-pointer text-base font-semibold shadow-elevated"
+              className="w-full min-h-[48px] cursor-pointer text-base font-bold shadow-sm rounded-full border-2 border-ink hover:-translate-y-0.5 transition-transform"
             >
               {isSubmitting ? t('submitting') : t('submitAnswer')}
             </Button>

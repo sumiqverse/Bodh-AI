@@ -4,6 +4,23 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const handleI18nRouting = createMiddleware(routing);
 
+// Protected internal routes that require an authenticated session
+const PROTECTED_PREFIXES = [
+  '/diagnostic',
+  '/student',
+  '/learn',
+  '/solve',
+  '/test',
+  '/profile',
+  '/profiles',
+  '/classes',
+  '/admin',
+  '/progress',
+  '/certificate',
+  '/settings',
+  '/curriculum',
+];
+
 export default function middleware(request: NextRequest): NextResponse {
   // Generate cryptographically secure base64 nonce for strict CSP without 'unsafe-inline'
   const nonce = btoa(crypto.randomUUID());
@@ -27,6 +44,20 @@ export default function middleware(request: NextRequest): NextResponse {
     `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'} http://127.0.0.1:8000`,
   ].join('; ');
 
+  function applySecurityHeaders(res: NextResponse): NextResponse {
+    res.headers.set('Content-Security-Policy', cspHeader);
+    res.headers.set('X-Content-Type-Options', 'nosniff');
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.headers.set(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=()',
+    );
+    res.headers.set('x-nonce', nonce);
+    return res;
+  }
+
   // Check for maintenance mode gating
   const isMaintenance =
     process.env.MAINTENANCE_MODE === 'true' || process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
@@ -41,18 +72,32 @@ export default function middleware(request: NextRequest): NextResponse {
   ) {
     const locale = pathname.startsWith('/hi') ? 'hi' : 'en';
     const maintenanceUrl = new URL(`/${locale}/maintenance`, request.url);
-    return NextResponse.redirect(maintenanceUrl, { status: 307 });
+    return applySecurityHeaders(NextResponse.redirect(maintenanceUrl, { status: 307 }));
   }
 
-  // Check for authenticated user redirect on landing page / login / signup
   const isLoggedIn = request.cookies.get('bodhai_logged_in')?.value === 'true';
   const isPublicBypass = request.nextUrl.searchParams.get('public') === 'true';
+  const locale = pathname.startsWith('/hi') ? 'hi' : 'en';
+  const cleanPath = pathname.replace(new RegExp(`^/(?:en|hi)(?=/|$)`), '') || '/';
 
+  // Unauthenticated users attempting to access protected routes -> redirect to login with redirect path
+  const isProtectedRoute = PROTECTED_PREFIXES.some(
+    (prefix) => cleanPath === prefix || cleanPath.startsWith(prefix + '/'),
+  );
+
+  if (!isLoggedIn && isProtectedRoute) {
+    const search = request.nextUrl.search || '';
+    const targetUrl = cleanPath + search;
+    const redirectUrl = new URL(
+      `/${locale}/login?redirect=${encodeURIComponent(targetUrl)}`,
+      request.url,
+    );
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl, { status: 307 }));
+  }
+
+  // Authenticated users visiting landing page / login / signup -> redirect to their role dashboard
   if (isLoggedIn && !isPublicBypass) {
-    const locale = pathname.startsWith('/hi') ? 'hi' : 'en';
-    const cleanPath = pathname.replace(new RegExp(`^/(?:en|hi)(?=/|$)`), '') || '/';
-    const isAuthOrLanding =
-      cleanPath === '/' || cleanPath === '/login' || cleanPath === '/signup';
+    const isAuthOrLanding = cleanPath === '/' || cleanPath === '/login' || cleanPath === '/signup';
 
     if (isAuthOrLanding) {
       const role = request.cookies.get('bodhai_user_role')?.value;
@@ -66,43 +111,14 @@ export default function middleware(request: NextRequest): NextResponse {
       }
 
       const redirectUrl = new URL(targetPath, request.url);
-      const redirectResponse = NextResponse.redirect(redirectUrl, { status: 307 });
-
-      redirectResponse.headers.set('Content-Security-Policy', cspHeader);
-      redirectResponse.headers.set('X-Content-Type-Options', 'nosniff');
-      redirectResponse.headers.set('X-Frame-Options', 'DENY');
-      redirectResponse.headers.set(
-        'Strict-Transport-Security',
-        'max-age=31536000; includeSubDomains; preload',
-      );
-      redirectResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      redirectResponse.headers.set(
-        'Permissions-Policy',
-        'camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=()',
-      );
-      redirectResponse.headers.set('x-nonce', nonce);
-
-      return redirectResponse;
+      return applySecurityHeaders(NextResponse.redirect(redirectUrl, { status: 307 }));
     }
   }
 
   const response = handleI18nRouting(request);
-
-  // Set strict security headers on response
-  response.headers.set('Content-Security-Policy', cspHeader);
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=()',
-  );
-  response.headers.set('x-nonce', nonce);
-
-  return response;
+  return applySecurityHeaders(response);
 }
 
 export const config = {
-  matcher: ['/', '/(en|hi)/:path*'],
+  matcher: ['/', '/(en|hi)/:path*', '/((?!api|_next|_vercel|.*\\..*).*)'],
 };

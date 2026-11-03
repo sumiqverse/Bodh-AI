@@ -37,17 +37,20 @@ export interface UseProgressHistoryReturn {
   refetch: () => void;
 }
 
-export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgressHistoryReturn {
+export function useProgressHistory(
+  curriculumCode = 'NCERT-MATH-C8',
+  classId?: string,
+): UseProgressHistoryReturn {
   const apiClient = getWebApiClient();
 
   const masteryQuery = useQuery({
-    queryKey: ['progress-history-mastery'],
+    queryKey: ['progress-history-mastery', classId],
     queryFn: async (): Promise<MasteryResponse[]> => {
       const token = getAuthToken();
       const user = getCurrentUser();
       if (!token || !user) return [];
       try {
-        return await apiClient.listMastery(user.id, token);
+        return await apiClient.listMastery(user.id, token, classId);
       } catch (err: unknown) {
         if (
           err &&
@@ -95,7 +98,7 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
 
     // Merge any client-side diagnostic assessment states
     const combinedMastery = [...rawMastery];
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !getAuthToken()) {
       try {
         const localDiag = localStorage.getItem('bodhai_last_diagnostic_summary');
         if (localDiag) {
@@ -147,14 +150,10 @@ export function useProgressHistory(curriculumCode = 'NCERT-MATH-C8'): UseProgres
       totalCorrect += m.correct_count || 0;
 
       let state: 'not_learned' | 'partial' | 'mastered' = 'not_learned';
-      if (m.state === 'mastered' || (m.p_mastery ?? 0) >= 0.85) {
+      if (m.state === 'mastered' || ((m.p_mastery ?? 0) >= 0.95 && (m.attempts_count ?? 0) >= 3)) {
         state = 'mastered';
         mastered++;
-      } else if (
-        m.state === 'partial' ||
-        (m.p_mastery ?? 0) >= 0.35 ||
-        (m.attempts_count ?? 0) > 0
-      ) {
+      } else if (m.state === 'partial' || (m.p_mastery ?? 0) >= 0.4) {
         state = 'partial';
         partial++;
       } else {

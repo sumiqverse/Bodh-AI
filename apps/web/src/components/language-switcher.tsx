@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from '@/i18n/routing';
-import { Button } from '@bodhai/ui';
 import { useLocale } from 'next-intl';
 
 export function LanguageSwitcher(): React.JSX.Element {
@@ -18,30 +17,36 @@ export function LanguageSwitcher(): React.JSX.Element {
 
   return (
     <div
-      className="inline-flex items-center rounded-lg border border-border p-0.5 bg-muted/40"
+      className="inline-flex items-center rounded-full border-2 border-ink p-0.5 bg-surface-cream/50 shadow-xs"
       role="group"
       aria-label="Language Selector"
     >
-      <Button
-        variant={currentLocale === 'en' ? 'primary' : 'ghost'}
-        size="sm"
+      <button
+        type="button"
         onClick={() => handleLocaleChange('en')}
         aria-pressed={currentLocale === 'en'}
-        aria-label="Switch to English"
-        className="h-7 px-2.5 text-xs font-semibold"
+        aria-label="EN - Switch to English"
+        className={`h-7 px-3 text-xs font-black rounded-full transition-all cursor-pointer select-none ${
+          currentLocale === 'en'
+            ? 'bg-primary-orange text-ink border-2 border-ink shadow-xs'
+            : 'text-ink/80 hover:text-ink font-bold'
+        }`}
       >
         EN
-      </Button>
-      <Button
-        variant={currentLocale === 'hi' ? 'primary' : 'ghost'}
-        size="sm"
+      </button>
+      <button
+        type="button"
         onClick={() => handleLocaleChange('hi')}
         aria-pressed={currentLocale === 'hi'}
-        aria-label="Switch to Hindi (हिन्दी)"
-        className="h-7 px-2.5 text-xs font-semibold"
+        aria-label="हिन्दी - Switch to Hindi"
+        className={`h-7 px-3 text-xs font-black rounded-full transition-all cursor-pointer select-none ${
+          currentLocale === 'hi'
+            ? 'bg-primary-orange text-ink border-2 border-ink shadow-xs'
+            : 'text-ink/80 hover:text-ink font-bold'
+        }`}
       >
         हिन्दी
-      </Button>
+      </button>
     </div>
   );
 }

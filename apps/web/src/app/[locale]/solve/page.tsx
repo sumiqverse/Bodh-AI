@@ -114,38 +114,40 @@ function SolveContent(): React.JSX.Element {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-6 sm:py-10 space-y-8">
+    <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-8">
       {/* Navigation header */}
-      <div className="flex items-center justify-between">
+      <div className="w-full max-w-2xl flex items-center justify-between mb-4">
         <Link
           href="/student"
-          className="text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80 inline-flex items-center gap-1"
+          className="text-xs font-bold text-ink underline underline-offset-4 hover:opacity-80 inline-flex items-center gap-1"
         >
           ← {tCommon('backToHome')}
         </Link>
-        <span className="text-xs font-mono text-muted-foreground">{question.code}</span>
+        <span className="text-xs font-mono font-bold text-ink bg-surface-cream px-2.5 py-1 rounded-full border border-ink shadow-xs">
+          {question.code}
+        </span>
       </div>
 
-      <Card className="shadow-floating border-border/80">
+      <Card className="w-full max-w-2xl rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
         <CardHeader className="pb-4 space-y-2">
           <div className="flex items-center justify-between">
-            <Badge variant="default" size="sm" className="font-semibold text-xs">
+            <Badge variant="default" size="sm" className="font-bold text-xs border-2 border-ink">
               {t('title')}
             </Badge>
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="text-xs text-text-secondary font-mono font-bold">
               Difficulty: Tier {question.difficulty}
             </span>
           </div>
 
-          <CardTitle className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+          <CardTitle className="font-serif text-xl sm:text-2xl font-black text-ink dark:text-white">
             {t('subtitle')}
           </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6 pt-2">
           {/* Question Prompt with KaTeX */}
-          <div className="rounded-2xl border border-border bg-card/60 p-5 sm:p-6 shadow-xs">
-            <div className="text-base sm:text-lg font-medium text-foreground leading-relaxed">
+          <div className="rounded-tile border-2 border-ink bg-surface-cream/40 p-5 sm:p-6 shadow-xs">
+            <div className="text-base sm:text-lg font-semibold text-ink leading-relaxed">
               <KatexRenderer content={question.prompt} />
             </div>
           </div>
@@ -165,18 +167,16 @@ function SolveContent(): React.JSX.Element {
                     onClick={() =>
                       form.setValue('selectedAnswer', opt.id, { shouldValidate: true })
                     }
-                    className={`flex min-h-[56px] w-full cursor-pointer items-center justify-between rounded-xl border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`flex min-h-[56px] w-full cursor-pointer items-center justify-between rounded-xl border-2 border-ink px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       isSelected
-                        ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary font-semibold text-foreground'
-                        : 'border-border bg-card hover:border-primary/50 hover:bg-muted/30 text-foreground'
+                        ? 'bg-surface-yellow shadow-xs font-bold text-ink ring-1 ring-ink'
+                        : 'bg-surface-white hover:bg-surface-cream text-ink font-medium'
                     } ${isSubmitting || hasSubmitted ? 'cursor-default' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-bold ${
-                          isSelected
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-muted/50 text-muted-foreground'
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-ink text-xs font-bold ${
+                          isSelected ? 'bg-primary-orange text-white' : 'bg-surface-cream text-ink'
                         }`}
                       >
                         {opt.id}
@@ -186,7 +186,7 @@ function SolveContent(): React.JSX.Element {
                       </div>
                     </div>
                     <span
-                      className="text-xs text-muted-foreground font-mono ml-2 hidden sm:inline"
+                      className="text-xs text-text-secondary font-mono ml-2 hidden sm:inline"
                       aria-hidden="true"
                     >
                       [{idx + 1}]
@@ -203,12 +203,12 @@ function SolveContent(): React.JSX.Element {
             )}
 
             {/* Hint Ladder with 3 Progressive Levels */}
-            <div className="rounded-2xl border border-border/80 bg-muted/30 p-4 space-y-3">
+            <div className="rounded-tile border-2 border-ink bg-surface-cream/50 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-black uppercase tracking-wider text-ink">
                   {t('hintLadderTitle')}
                 </span>
-                <span className="text-xs font-mono text-muted-foreground">
+                <span className="text-xs font-mono font-bold text-ink">
                   {hintLevel}/{maxHints}
                 </span>
               </div>
@@ -219,9 +219,9 @@ function SolveContent(): React.JSX.Element {
                   {activeHints.map((hintText, i) => (
                     <div
                       key={i}
-                      className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs sm:text-sm text-foreground leading-relaxed"
+                      className="rounded-xl border-2 border-ink bg-surface-white p-3 text-xs sm:text-sm text-ink leading-relaxed font-medium shadow-xs"
                     >
-                      <span className="font-bold text-primary mr-1.5">Hint {i + 1}:</span>
+                      <span className="font-bold text-primary-orange mr-1.5">Hint {i + 1}:</span>
                       <KatexRenderer content={hintText} className="inline" />
                     </div>
                   ))}
@@ -235,14 +235,14 @@ function SolveContent(): React.JSX.Element {
                   variant="outline"
                   size="sm"
                   onClick={requestHint}
-                  className="w-full min-h-[42px] cursor-pointer text-xs font-semibold hover:border-primary"
+                  className="w-full min-h-[42px] cursor-pointer text-xs font-bold rounded-full border-2 border-ink hover:bg-surface-yellow"
                 >
                   💡 {t('requestHintButton', { level: hintLevel + 1 })}
                 </Button>
               )}
 
               {hintLevel >= maxHints && (
-                <p className="text-center text-xs text-muted-foreground font-medium pt-1">
+                <p className="text-center text-xs text-text-secondary font-bold pt-1">
                   {t('allHintsUsed')}
                 </p>
               )}
@@ -251,10 +251,10 @@ function SolveContent(): React.JSX.Element {
             {!hasSubmitted && (
               <Button
                 type="submit"
-                variant="primary"
+                variant="orange"
                 size="lg"
                 disabled={isSubmitting || !selectedAnswer}
-                className="w-full min-h-[48px] cursor-pointer text-base font-semibold shadow-elevated"
+                className="w-full min-h-[48px] cursor-pointer text-base font-bold shadow-sm rounded-full border-2 border-ink hover:-translate-y-0.5 transition-transform"
               >
                 {isSubmitting ? t('submittingButton') : t('submitButton')}
               </Button>
@@ -266,18 +266,16 @@ function SolveContent(): React.JSX.Element {
             <section
               aria-live="polite"
               aria-labelledby="feedback-heading"
-              className={`rounded-2xl border p-5 sm:p-6 space-y-4 shadow-sm animate-in fade-in duration-300 ${
-                submissionResult.is_correct
-                  ? 'border-emerald-500/30 bg-emerald-500/5'
-                  : 'border-amber-500/30 bg-amber-500/5'
+              className={`rounded-card border-2 border-ink p-5 sm:p-6 space-y-4 shadow-card animate-in fade-in duration-300 ${
+                submissionResult.is_correct ? 'bg-emerald-100' : 'bg-surface-pink/40'
               }`}
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base font-bold ${
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base font-bold border-2 border-ink ${
                     submissionResult.is_correct
-                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-surface-yellow text-ink'
                   }`}
                   aria-hidden="true"
                 >
@@ -285,22 +283,18 @@ function SolveContent(): React.JSX.Element {
                 </span>
                 <h3
                   id="feedback-heading"
-                  className={`font-serif text-lg sm:text-xl font-bold ${
-                    submissionResult.is_correct
-                      ? 'text-emerald-900 dark:text-emerald-100'
-                      : 'text-amber-900 dark:text-amber-100'
-                  }`}
+                  className="font-serif text-lg sm:text-xl font-bold text-ink"
                 >
                   {submissionResult.is_correct ? t('calmCorrectTitle') : t('calmIncorrectTitle')}
                 </h3>
               </div>
 
               {/* Pedagogical Step-by-Step Explanation */}
-              <div className="rounded-xl border border-border/80 bg-card p-4 space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="rounded-xl border-2 border-ink bg-surface-white p-4 space-y-2 shadow-xs">
+                <h4 className="text-xs font-black uppercase tracking-wider text-text-secondary">
                   {t('explanationHeading')}
                 </h4>
-                <div className="text-sm sm:text-base text-foreground leading-relaxed">
+                <div className="text-sm sm:text-base text-ink leading-relaxed font-medium">
                   <KatexRenderer content={submissionResult.explanation} />
                 </div>
               </div>
@@ -312,16 +306,16 @@ function SolveContent(): React.JSX.Element {
                   variant="outline"
                   size="md"
                   onClick={handleNextProblem}
-                  className="flex-1 min-h-[46px] cursor-pointer font-semibold"
+                  className="flex-1 min-h-[46px] cursor-pointer font-bold rounded-full border-2 border-ink"
                 >
                   {t('nextQuestionButton')}
                 </Button>
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="orange"
                   size="md"
                   onClick={() => router.push(`/test?skillId=${question.skillId}`)}
-                  className="flex-1 min-h-[46px] cursor-pointer font-semibold shadow-elevated"
+                  className="flex-1 min-h-[46px] cursor-pointer font-bold shadow-sm rounded-full border-2 border-ink hover:-translate-y-0.5 transition-transform"
                 >
                   {t('readyForTestButton')} →
                 </Button>

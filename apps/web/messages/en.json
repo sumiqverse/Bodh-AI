@@ -60,9 +60,10 @@
     "problemHeading": "The Foundational Learning Challenge in Middle School",
     "problemText": "According to official national data from UDISE+ (2024-25) and ASER (2024), foundational arithmetic and reading gaps accumulated in early grades become acute barriers when students encounter abstract concepts in Classes 6 through 10. Without individualized diagnostic support, classroom instruction moves forward while learning gaps compound.",
     "frameworkHeading": "Curriculum Coverage",
-    "frameworkDesc": "Built from the ground up on CBSE/NCERT curriculum standards for Mathematics, Science, English, and Social Science across grades 6, 7, 8, 9, and 10."
+    "frameworkDesc": "Built from the ground up on NCERT & CBSE pedagogical standards for Mathematics, Science, Social Science, English, and Hindi across Classes 6, 7, 8, 9, and 10."
   },
   "howItWorks": {
+    "badge": "Pedagogical Framework",
     "title": "How BodhAI Works",
     "subtitle": "An evidence-based adaptive cycle engineered to diagnose prerequisites, bridge learning gaps, and build enduring conceptual mastery.",
     "step1Title": "1. Diagnose",
@@ -77,6 +78,7 @@
     "step5Desc": "The learning path re-calibrates in real time, serving remedial refreshers or accelerated challenges based on individual student mastery."
   },
   "students": {
+    "badge": "Classes 6–10",
     "title": "Built for Student Autonomy",
     "subtitle": "Learn at your own pace without fear of making mistakes.",
     "card1Title": "Prerequisite Clarity",
@@ -87,6 +89,7 @@
     "card3Desc": "Practice in a private, supportive environment designed to reward perseverance, systematic reasoning, and self-correction."
   },
   "teachers": {
+    "badge": "Educators & Mentors",
     "title": "Empowering Classroom Teachers",
     "subtitle": "Actionable diagnostic insights that respect your pedagogy and save valuable instructional time.",
     "card1Title": "Classwide Prerequisite Heatmaps",
@@ -97,6 +100,7 @@
     "card3Desc": "Access clear student progress trails linked directly to NCERT learning outcomes."
   },
   "schools": {
+    "badge": "Institutional Infrastructure",
     "title": "Scalable Infrastructure for Schools",
     "subtitle": "Designed for rural and urban school environments with intermittent connectivity.",
     "feature1": "Lightweight client bundle compatible with low-cost tablets and smart classrooms",
@@ -131,6 +135,7 @@
     "teamDesc": "Engineered with strict quality controls: zero unverified assertions, WCAG 2.2 AA accessibility, verifiable data citations from UDISE+ and ASER, and open-source infrastructure."
   },
   "contact": {
+    "badge": "Partnerships & Inquiries",
     "title": "Contact the BodhAI Team",
     "subtitle": "Get in touch for school pilots, research partnerships, or platform inquiries.",
     "formName": "Full Name",
@@ -148,6 +153,8 @@
     "formSubmit": "Send Message",
     "formSubmitting": "Sending...",
     "formSuccess": "Thank you! Your message has been received. Our team will contact you within two business days.",
+    "formSuccessTitle": "Message Sent",
+    "formSuccessReset": "Send Another Inquiry",
     "honeypotLabel": "Do not fill this field if human",
     "rateLimitNotice": "Form submissions are protected by automated rate limiting to prevent abuse.",
     "validationNameRequired": "Please enter your full name (minimum 2 characters).",
@@ -640,11 +647,12 @@
       "description": "Cross-tabular mastery matrix (students × skills). Accessible visual patterns differentiate states.",
       "mastered": "Mastered",
       "partial": "In Progress",
-      "notLearned": "Not Started",
+      "notLearned": "Needs Support",
+      "unassessed": "Not Assessed",
       "patternLegend": "Mastery Level Legend",
-      "masteredPattern": "Green fill — Mastery probability ≥ 80%",
-      "partialPattern": "Amber fill — In progress 40%–79%",
-      "notLearnedPattern": "Neutral fill — Not started < 40%",
+      "masteredPattern": "Green — Mastered",
+      "partialPattern": "Amber — In progress",
+      "notLearnedPattern": "Neutral — Needs support",
       "filterTopic": "Filter by Topic",
       "allTopics": "All Topics",
       "searchStudent": "Search student by name or roll...",

@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/routing';
-import { Card, CardTitle, Badge, buttonVariants } from '@bodhai/ui';
+import { GraduationCap, LayoutDashboard, RefreshCw, Shield } from 'lucide-react';
+import {
+  MarketingActions,
+  MarketingFeatureGrid,
+  MarketingPageShell,
+  type MarketingFeature,
+} from '@/components/marketing-page';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -24,53 +29,47 @@ export default async function ForSchoolsPage({ params }: PageProps): Promise<Rea
   const t = await getTranslations({ locale, namespace: 'schools' });
   const tCommon = await getTranslations({ locale, namespace: 'common' });
 
-  const features = [t('feature1'), t('feature2'), t('feature3'), t('feature4')];
+  const features: MarketingFeature[] = [
+    {
+      title: t('feature1'),
+      Icon: GraduationCap,
+      surface: 'bg-surface-cream',
+      iconSurface: 'bg-surface-yellow',
+      marker: 'icon',
+    },
+    {
+      title: t('feature2'),
+      Icon: RefreshCw,
+      surface: 'bg-surface-blue',
+      iconSurface: 'bg-surface-white',
+      marker: 'icon',
+    },
+    {
+      title: t('feature3'),
+      Icon: Shield,
+      surface: 'bg-surface-peach',
+      iconSurface: 'bg-surface-butter',
+      marker: 'icon',
+    },
+    {
+      title: t('feature4'),
+      Icon: LayoutDashboard,
+      surface: 'bg-surface-butter',
+      iconSurface: 'bg-surface-cream',
+      marker: 'icon',
+    },
+  ];
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <Badge variant="default" size="sm" className="mb-3 font-semibold">
-          Institutional Infrastructure
-        </Badge>
-        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-          {t('title')}
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-          {t('subtitle')}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {features.map((feature, index) => (
-          <Card
-            key={index}
-            className="p-6 flex items-start gap-4 hover:border-primary/40 transition-colors"
-          >
-            <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm"
-              aria-hidden="true"
-            >
-              ✓
-            </span>
-            <CardTitle className="text-base font-medium leading-relaxed text-foreground">
-              {feature}
-            </CardTitle>
-          </Card>
-        ))}
-      </div>
-
-      <div className="mt-14 text-center">
-        <Link
-          href="/contact"
-          className={buttonVariants({
-            variant: 'primary',
-            size: 'lg',
-            className: 'shadow-md',
-          })}
-        >
-          {tCommon('contactUs')}
-        </Link>
-      </div>
-    </div>
+    <MarketingPageShell
+      badge={t('badge')}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      locale={locale}
+      dots={['bg-surface-yellow', 'bg-surface-blue', 'bg-surface-peach', 'bg-surface-pink']}
+    >
+      <MarketingFeatureGrid features={features} columns={2} />
+      <MarketingActions actions={[{ href: '/contact', label: tCommon('contactUs') }]} />
+    </MarketingPageShell>
   );
 }

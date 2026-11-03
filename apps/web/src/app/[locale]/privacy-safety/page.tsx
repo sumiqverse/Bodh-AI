@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@bodhai/ui';
+import { ShieldCheck, Ban, FileCheck2, ArrowLeft } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -23,49 +24,87 @@ export default async function PrivacySafetyPage({ params }: PageProps): Promise<
   const t = await getTranslations({ locale, namespace: 'privacySafety' });
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <Badge variant="success" size="sm" className="mb-3 font-semibold">
-          Child Protection
-        </Badge>
-        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-          {t('title')}
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-          {t('subtitle')}
-        </p>
-      </div>
+    <div className="min-h-screen bg-canvas-gradient py-8 sm:py-16 px-4 sm:px-6 flex justify-center">
+      {/* App Shell Container */}
+      <div className="w-full max-w-5xl rounded-[28px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-12 shadow-shell relative overflow-hidden flex flex-col justify-between">
+        {/* Decorative Corner Arc Accent */}
+        <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-surface-peach-light/80 border-2 border-ink/10 pointer-events-none" />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="hover:border-success/40 transition-colors">
-          <CardHeader>
-            <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center font-bold mb-3">
-              🛡️
-            </div>
-            <CardTitle>{t('principle1Title')}</CardTitle>
-            <CardDescription className="mt-2">{t('principle1Desc')}</CardDescription>
-          </CardHeader>
-        </Card>
+        <div>
+          {/* Back link */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-ink bg-surface-cream hover:bg-surface-yellow text-ink px-4 py-1.5 text-xs font-bold shadow-xs hover:-translate-y-0.5 transition-all mb-8"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>{locale === 'hi' ? 'मुख्य पृष्ठ पर वापस' : 'Back to Home'}</span>
+          </Link>
 
-        <Card className="hover:border-success/40 transition-colors">
-          <CardHeader>
-            <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center font-bold mb-3">
-              🚫
+          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-surface-cream px-4 py-1.5 text-xs font-bold text-ink shadow-xs mb-4">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 border border-ink" />
+              {locale === 'hi' ? 'बाल संरक्षण एवं गोपनीयता' : 'Child Protection & Safety'}
             </div>
-            <CardTitle>{t('principle2Title')}</CardTitle>
-            <CardDescription className="mt-2">{t('principle2Desc')}</CardDescription>
-          </CardHeader>
-        </Card>
+            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-ink dark:text-white leading-tight">
+              {t('title')}
+            </h1>
+            <p className="mt-4 text-base sm:text-lg text-text-secondary dark:text-muted-foreground leading-relaxed font-medium">
+              {t('subtitle')}
+            </p>
+          </div>
 
-        <Card className="hover:border-success/40 transition-colors">
-          <CardHeader>
-            <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center font-bold mb-3">
-              📜
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Principle 1 */}
+            <div className="rounded-2xl border-2 border-ink bg-surface-cream/50 dark:bg-muted/20 p-6 space-y-4 shadow-xs hover:shadow-card hover:-translate-y-1 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-surface-cream border-2 border-ink text-ink flex items-center justify-center font-bold shadow-xs">
+                <ShieldCheck className="w-6 h-6 text-ink" />
+              </div>
+              <h2 className="font-black text-lg text-ink dark:text-white">
+                {t('principle1Title')}
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
+                {t('principle1Desc')}
+              </p>
             </div>
-            <CardTitle>{t('principle3Title')}</CardTitle>
-            <CardDescription className="mt-2">{t('principle3Desc')}</CardDescription>
-          </CardHeader>
-        </Card>
+
+            {/* Principle 2 */}
+            <div className="rounded-2xl border-2 border-ink bg-surface-peach/40 dark:bg-muted/20 p-6 space-y-4 shadow-xs hover:shadow-card hover:-translate-y-1 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-surface-peach border-2 border-ink text-ink flex items-center justify-center font-bold shadow-xs">
+                <Ban className="w-6 h-6 text-ink" />
+              </div>
+              <h2 className="font-black text-lg text-ink dark:text-white">
+                {t('principle2Title')}
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
+                {t('principle2Desc')}
+              </p>
+            </div>
+
+            {/* Principle 3 */}
+            <div className="rounded-2xl border-2 border-ink bg-surface-blue/40 dark:bg-muted/20 p-6 space-y-4 shadow-xs hover:shadow-card hover:-translate-y-1 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-surface-blue border-2 border-ink text-ink flex items-center justify-center font-bold shadow-xs">
+                <FileCheck2 className="w-6 h-6 text-ink" />
+              </div>
+              <h2 className="font-black text-lg text-ink dark:text-white">
+                {t('principle3Title')}
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
+                {t('principle3Desc')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer compliance note */}
+        <div className="mt-12 pt-6 border-t-2 border-dashed border-ink/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-secondary dark:text-muted-foreground">
+          <span>Digital Personal Data Protection Act (DPDP) 2023 · Compliance Verified</span>
+          <Link
+            href="/contact"
+            className="font-bold text-ink dark:text-white hover:underline flex items-center gap-1"
+          >
+            {locale === 'hi' ? 'गोपनीयता अधिकारी से संपर्क करें →' : 'Contact Grievance Officer →'}
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -7,11 +7,13 @@ import * as apiClientModule from '../../lib/api-client';
 describe('useDiagnostic hook', () => {
   const mockStartDiagnostic = vi.fn();
   const mockProgressDiagnostic = vi.fn();
+  const mockGetCurrentDiagnostic = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(apiClientModule, 'getWebApiClient').mockReturnValue({
       startDiagnostic: mockStartDiagnostic,
+      getCurrentDiagnostic: mockGetCurrentDiagnostic,
       progressDiagnostic: mockProgressDiagnostic,
     } as unknown as ReturnType<typeof apiClientModule.getWebApiClient>);
   });
@@ -103,5 +105,39 @@ describe('useDiagnostic hook', () => {
     expect(result.current.currentItem?.prompt).toBe('Question 2');
     // Ensure no interim score or ranking is exposed
     expect(result.current.summary).toBeNull();
+  });
+  it('resumes a classroom diagnostic before creating a new session', async () => {
+    mockGetCurrentDiagnostic.mockResolvedValueOnce({
+      session_id: 'resumed',
+      is_completed: false,
+      questions_answered: 4,
+      next_item: null,
+    });
+    const { result } = renderHookWithProviders(() =>
+      useDiagnostic({ curriculumCode: 'NCERT-MATH-C8', classId: 'class-a', totalTarget: 20 }),
+    );
+    await waitFor(() => expect(result.current.sessionId).toBe('resumed'));
+    expect(mockGetCurrentDiagnostic).toHaveBeenCalledWith('NCERT-MATH-C8', undefined, 'class-a');
+    expect(mockStartDiagnostic).not.toHaveBeenCalled();
+  });
+
+  it('starts a classroom diagnostic when no saved session exists', async () => {
+    mockGetCurrentDiagnostic.mockRejectedValueOnce(
+      Object.assign(new Error('Not found'), { status: 404 }),
+    );
+    mockStartDiagnostic.mockResolvedValueOnce({
+      session_id: 'new-session',
+      is_completed: false,
+      questions_answered: 0,
+      next_item: null,
+    });
+    const { result } = renderHookWithProviders(() =>
+      useDiagnostic({ curriculumCode: 'NCERT-MATH-C8', classId: 'class-b', totalTarget: 20 }),
+    );
+    await waitFor(() => expect(result.current.sessionId).toBe('new-session'));
+    expect(mockStartDiagnostic).toHaveBeenCalledWith(
+      expect.objectContaining({ class_id: 'class-b', curriculum_code: 'NCERT-MATH-C8' }),
+      undefined,
+    );
   });
 });

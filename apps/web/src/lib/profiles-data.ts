@@ -5,8 +5,6 @@
  * with distinct competencies, error patterns, hint usage ladders, and learning streaks.
  */
 
-import { setAuthSession } from './api-client';
-
 export interface SkillMasteryItem {
   skillId: string;
   skillCode: string;
@@ -2334,17 +2332,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   },
 ];
 
-export function loginAsDemoUser(demoId: string): DemoAccount | null {
-  const account = DEMO_ACCOUNTS.find((a) => a.id === demoId);
-  if (!account) return null;
-  const mockToken = `mock_token_${account.user.id}`;
-  if (typeof window !== 'undefined') {
-    setAuthSession(mockToken, account.user);
-    localStorage.removeItem('bodhai_active_persona');
-  }
-  return account;
-}
-
 // Backward compatibility helpers
 export interface ActivePersona {
   type: 'student' | 'teacher';
@@ -2380,6 +2367,19 @@ export function getActivePersona(): ActivePersona {
   } catch {
     // fallback
   }
+
+  try {
+    const rawPersona = localStorage.getItem('bodhai_active_persona');
+    if (rawPersona) {
+      const parsed = JSON.parse(rawPersona) as ActivePersona;
+      if (parsed?.type && parsed?.id && parsed?.slug && parsed?.name) {
+        return parsed;
+      }
+    }
+  } catch {
+    // fallback
+  }
+
   return {
     type: 'student',
     id: defaultStudent.id,
@@ -2390,47 +2390,12 @@ export function getActivePersona(): ActivePersona {
 
 export function setActivePersona(persona: ActivePersona): void {
   if (typeof window === 'undefined') return;
-  // Also sync user auth session
-  const matchedStudent = STUDENTS_DATA.find((s) => s.slug === persona.slug || s.id === persona.id);
-  if (matchedStudent) {
-    const mockUser = {
-      id: matchedStudent.id,
-      email: `${matchedStudent.slug}@bodhai.internal`,
-      username: matchedStudent.slug.replace('stu-', ''),
-      full_name: matchedStudent.fullName,
-      role: 'student',
-      preferred_language: matchedStudent.preferredLanguage,
-      is_minor: true,
-      created_at: '2026-09-01T00:00:00Z',
-    };
-    localStorage.setItem('bodhai_user', JSON.stringify(mockUser));
-    localStorage.setItem('bodhai_access_token', `mock_token_${matchedStudent.id}`);
-    try {
-      window.dispatchEvent(new Event('bodhai_auth_change'));
-    } catch {
-      // ignore
-    }
-    return;
-  }
-
-  const matchedTeacher = TEACHERS_DATA.find((t) => t.slug === persona.slug || t.id === persona.id);
-  if (matchedTeacher) {
-    const mockUser = {
-      id: matchedTeacher.id,
-      email: matchedTeacher.email,
-      username: matchedTeacher.slug.replace('tchr-', ''),
-      full_name: matchedTeacher.fullName,
-      role: 'teacher',
-      preferred_language: 'en',
-      is_minor: false,
-      created_at: '2026-08-01T00:00:00Z',
-    };
-    localStorage.setItem('bodhai_user', JSON.stringify(mockUser));
-    localStorage.setItem('bodhai_access_token', `mock_token_${matchedTeacher.id}`);
-    try {
-      window.dispatchEvent(new Event('bodhai_auth_change'));
-    } catch {
-      // ignore
-    }
+  // Persona switching is a display-only demo feature. It must never create an
+  // authentication session or write a bearer token.
+  localStorage.setItem('bodhai_active_persona', JSON.stringify(persona));
+  try {
+    window.dispatchEvent(new Event('bodhai_auth_change'));
+  } catch {
+    // ignore
   }
 }

@@ -22,6 +22,7 @@ describe('useSkillMap hook', () => {
     });
     vi.spyOn(apiClientModule, 'getWebApiClient').mockReturnValue({
       getCurriculumTopics: mockGetCurriculumTopics,
+      getCurriculumGraph: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
       listMastery: mockListMastery,
       getNextItem: mockGetNextItem,
     } as unknown as ReturnType<typeof apiClientModule.getWebApiClient>);

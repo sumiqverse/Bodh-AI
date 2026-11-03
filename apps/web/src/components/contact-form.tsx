@@ -99,27 +99,25 @@ export function ContactForm(): React.JSX.Element {
   };
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-elevated border-border bg-card">
+    <Card className="mx-auto max-w-2xl shadow-shell">
       <CardContent className="p-6 sm:p-8">
         {isSuccess ? (
           <div
             role="status"
-            className="rounded-xl border border-success/40 bg-success/10 p-6 text-center text-foreground flex flex-col items-center gap-3 animate-fade-in"
+            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-ink bg-surface-cream p-6 text-center text-ink animate-fade-in"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success text-success-foreground text-xl">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink bg-surface-yellow text-xl text-ink">
               ✓
             </span>
-            <h3 className="text-lg font-bold text-success font-serif">Message Sent</h3>
-            <p className="text-sm text-foreground/90 max-w-md leading-relaxed">
-              {t('formSuccess')}
-            </p>
+            <h2 className="font-serif text-lg font-extrabold text-ink">{t('formSuccessTitle')}</h2>
+            <p className="max-w-md text-sm leading-relaxed text-ink/75">{t('formSuccess')}</p>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsSuccess(false)}
-              className="mt-2"
+              className="mt-2 rounded-full border-2 border-ink bg-surface-white"
             >
-              Send Another Inquiry
+              {t('formSuccessReset')}
             </Button>
           </div>
         ) : (
@@ -188,7 +186,7 @@ export function ContactForm(): React.JSX.Element {
                 placeholder={t('formMessagePlaceholder')}
                 aria-invalid={Boolean(errors.message)}
                 onChange={(e) => setFormValues((prev) => ({ ...prev, message: e.target.value }))}
-                className={`flex w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors ${
+                className={`flex w-full rounded-xl border-2 border-ink bg-surface-white p-3.5 text-sm text-foreground shadow-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 transition-all dark:bg-background ${
                   errors.message ? 'border-destructive focus-visible:ring-destructive' : ''
                 }`}
               />
@@ -201,7 +199,7 @@ export function ContactForm(): React.JSX.Element {
 
             {/* Rate limit note */}
             <p className="text-xs text-muted-foreground/80 leading-relaxed">
-              🛡️ {t('rateLimitNotice')}
+              {t('rateLimitNotice')}
             </p>
 
             {/* Submit Button */}
@@ -210,7 +208,7 @@ export function ContactForm(): React.JSX.Element {
               variant="primary"
               size="lg"
               isLoading={isSubmitting}
-              className="mt-2 w-full sm:w-auto self-start"
+              className="mt-2 w-full rounded-full sm:w-auto self-start"
             >
               {isSubmitting ? t('formSubmitting') : t('formSubmit')}
             </Button>

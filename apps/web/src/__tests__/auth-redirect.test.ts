@@ -79,6 +79,75 @@ describe('Authenticated User Dashboard Redirect Middleware', () => {
     expect(res.headers.get('location')).toBeNull();
   });
 
+  it('redirects unauthenticated visitor attempting /en/diagnostic to login with redirect param', () => {
+    const req = new NextRequest('http://localhost:3000/en/diagnostic');
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe(
+      'http://localhost:3000/en/login?redirect=%2Fdiagnostic',
+    );
+  });
+
+  it('redirects unauthenticated visitor attempting /hi/diagnostic?curriculum=NCERT-MATH-C8 to hi login with query params preserved', () => {
+    const req = new NextRequest('http://localhost:3000/hi/diagnostic?curriculum=NCERT-MATH-C8');
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe(
+      'http://localhost:3000/hi/login?redirect=%2Fdiagnostic%3Fcurriculum%3DNCERT-MATH-C8',
+    );
+  });
+
+  it('redirects unauthenticated visitor attempting /en/classes to login', () => {
+    const req = new NextRequest('http://localhost:3000/en/classes');
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/login?redirect=%2Fclasses');
+  });
+
+  it('redirects unauthenticated visitor attempting /en/student to login', () => {
+    const req = new NextRequest('http://localhost:3000/en/student');
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/login?redirect=%2Fstudent');
+  });
+
+  it('redirects unauthenticated visitor attempting /en/profile to login', () => {
+    const req = new NextRequest('http://localhost:3000/en/profile');
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/login?redirect=%2Fprofile');
+  });
+
+  it('does NOT redirect public marketing pages to landing page anchors', () => {
+    for (const path of [
+      '/en/how-it-works',
+      '/en/for-students',
+      '/en/for-teachers',
+      '/en/for-schools',
+      '/en/languages-offline',
+    ]) {
+      const req = new NextRequest(`http://localhost:3000${path}`);
+      const res = middleware(req);
+
+      expect(res.headers.get('location')).toBeNull();
+    }
+  });
+
+  it('does NOT redirect unauthenticated visitor on public pages like /en/contact or /en/privacy-safety', () => {
+    const reqContact = new NextRequest('http://localhost:3000/en/contact');
+    const resContact = middleware(reqContact);
+    expect(resContact.headers.get('location')).toBeNull();
+
+    const reqSafety = new NextRequest('http://localhost:3000/en/privacy-safety');
+    const resSafety = middleware(reqSafety);
+    expect(resSafety.headers.get('location')).toBeNull();
+  });
+
   it('allows logged-in user to bypass redirect when ?public=true is supplied', () => {
     const req = new NextRequest('http://localhost:3000/en?public=true', {
       headers: {

@@ -31,13 +31,9 @@ import {
   getUserDashboardPath,
   syncSessionCookies,
 } from '@/lib/api-client';
-import { DEMO_ACCOUNTS, loginAsDemoUser } from '@/lib/profiles-data';
-import { Sparkles, ArrowRight } from 'lucide-react';
-import { useLocale } from 'next-intl';
 
 export default function LoginPage(): React.JSX.Element {
   const t = useTranslations('auth');
-  const locale = useLocale();
   const router = useRouter();
   const apiClient = getWebApiClient();
 
@@ -68,7 +64,13 @@ export default function LoginPage(): React.JSX.Element {
       const token = getAuthToken();
       if (user && token) {
         syncSessionCookies(token, user);
-        router.replace(getUserDashboardPath(user));
+        const params = new URLSearchParams(window.location.search);
+        const redirectParam = params.get('redirect');
+        const safeRedirect =
+          redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+            ? redirectParam
+            : null;
+        router.replace(safeRedirect || getUserDashboardPath(user));
         return;
       }
 
@@ -188,7 +190,16 @@ export default function LoginPage(): React.JSX.Element {
         }
       }
 
-      if (res.user.role === 'admin') {
+      const params =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const redirectParam = params?.get('redirect');
+      const cleanPath = redirectParam?.replace(/^\/(?:en|hi)(?=\/|$)/, '') || null;
+      const safeRedirect =
+        cleanPath && cleanPath.startsWith('/') && !cleanPath.startsWith('//') ? cleanPath : null;
+
+      if (safeRedirect) {
+        router.push(safeRedirect);
+      } else if (res.user.role === 'admin') {
         router.push('/admin/stats');
       } else {
         router.push('/classes');
@@ -228,7 +239,18 @@ export default function LoginPage(): React.JSX.Element {
           // ignore
         }
       }
-      router.push('/consent');
+      const params =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const redirectParam = params?.get('redirect');
+      const cleanPath = redirectParam?.replace(/^\/(?:en|hi)(?=\/|$)/, '') || null;
+      const safeRedirect =
+        cleanPath && cleanPath.startsWith('/') && !cleanPath.startsWith('//') ? cleanPath : null;
+
+      if (safeRedirect) {
+        router.push(safeRedirect);
+      } else {
+        router.push('/student');
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('authFailed');
       setErrorMessage(msg);
@@ -237,111 +259,16 @@ export default function LoginPage(): React.JSX.Element {
     }
   };
 
-  const handleQuickDemoLogin = async (demoId: string) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      if (demoId === 'demo-sunita') {
-        const res = await apiClient.teacherLogin({
-          email: 'sunita.sharma@delhiedu.gov.in',
-          password: 'Password@123',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/classes');
-        return;
-      }
-      if (demoId === 'demo-rajesh') {
-        const res = await apiClient.teacherLogin({
-          email: 'rajesh.kumar@delhiedu.gov.in',
-          password: 'Password@123',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/classes');
-        return;
-      }
-      if (demoId === 'demo-ananya-roy') {
-        const res = await apiClient.teacherLogin({
-          email: 'ananya.roy@delhiedu.gov.in',
-          password: 'Password@123',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/classes');
-        return;
-      }
-      if (demoId === 'demo-vikram-sen') {
-        const res = await apiClient.teacherLogin({
-          email: 'vikram.sen@delhiedu.gov.in',
-          password: 'Password@123',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/classes');
-        return;
-      }
-      if (demoId === 'demo-kavita') {
-        const res = await apiClient.teacherLogin({
-          email: 'kavita.deshmukh@delhiedu.gov.in',
-          password: 'Password@123',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/classes');
-        return;
-      }
-      if (demoId === 'demo-aarav') {
-        const res = await apiClient.studentLogin({
-          join_code: 'MATH8A',
-          username: 'aarav_sharma',
-          pin: '1234',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/student');
-        return;
-      }
-      if (demoId === 'demo-priya') {
-        const res = await apiClient.studentLogin({
-          join_code: 'MATH8A',
-          username: 'priya_patel',
-          pin: '1234',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/student');
-        return;
-      }
-      if (demoId === 'demo-rohan') {
-        const res = await apiClient.studentLogin({
-          join_code: 'MATH8A',
-          username: 'rohan_verma',
-          pin: '1234',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/student');
-        return;
-      }
-      if (demoId === 'demo-ananya') {
-        const res = await apiClient.studentLogin({
-          join_code: 'MATH8A',
-          username: 'ananya_sen',
-          pin: '1234',
-        });
-        setAuthSession(res.access_token, res.user);
-        router.push('/student');
-        return;
-      }
-      // Fallback
-      loginAsDemoUser(demoId);
-      router.push('/classes');
-    } catch {
-      loginAsDemoUser(demoId);
-      router.push('/classes');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-12">
       <Card className="w-full max-w-lg rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
-        <CardHeader className="text-center">
-          <CardTitle className="font-extrabold text-2xl tracking-tight text-ink dark:text-white">
+        <CardHeader className="text-center pb-3">
+          <img
+            src="/image.png"
+            alt="BodhAI"
+            className="mx-auto mb-3 h-14 w-14 rounded-full object-contain shrink-0 select-none drop-shadow-sm"
+          />
+          <CardTitle className="font-serif text-2xl font-black tracking-tight text-ink dark:text-white">
             {t('loginTitle')}
           </CardTitle>
           <CardDescription className="text-xs text-text-secondary dark:text-muted-foreground mt-1">
@@ -357,11 +284,11 @@ export default function LoginPage(): React.JSX.Element {
               setErrorMessage(null);
             }}
           >
-            <TabsList className="grid w-full grid-cols-2 rounded-xl border-2 border-ink bg-surface-cream/40 p-1">
-              <TabsTrigger value="teacher" className="rounded-lg font-bold text-xs">
+            <TabsList className="grid w-full grid-cols-2 rounded-full border-2 border-ink bg-surface-cream/50 p-1 shadow-xs">
+              <TabsTrigger value="teacher" className="rounded-full font-bold text-xs py-2">
                 {t('tabTeacher')}
               </TabsTrigger>
-              <TabsTrigger value="student" className="rounded-lg font-bold text-xs">
+              <TabsTrigger value="student" className="rounded-full font-bold text-xs py-2">
                 {t('tabStudent')}
               </TabsTrigger>
             </TabsList>
@@ -369,25 +296,33 @@ export default function LoginPage(): React.JSX.Element {
             {successMessage && !errorMessage && (
               <div
                 role="status"
-                className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400 font-medium"
+                className="mt-4 rounded-2xl border-2 border-ink bg-emerald-100 dark:bg-emerald-950/40 p-3.5 text-xs sm:text-sm text-ink dark:text-emerald-200 font-bold shadow-xs flex items-center gap-2.5"
               >
-                {successMessage}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-300 border-2 border-ink text-ink font-black text-xs shadow-xs">
+                  ✓
+                </span>
+                <div className="leading-snug">{successMessage}</div>
               </div>
             )}
 
             {errorMessage && (
               <div
                 role="alert"
-                className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3.5 text-sm text-destructive font-medium space-y-2.5"
+                className="mt-4 rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-3.5 text-xs sm:text-sm text-ink dark:text-pink-100 font-bold space-y-2.5 shadow-xs"
               >
-                <div>{errorMessage}</div>
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
+                    !
+                  </span>
+                  <div className="leading-snug">{errorMessage}</div>
+                </div>
                 {email && password && password.length >= 8 && (
-                  <div className="pt-2 border-t border-destructive/20 space-y-2">
+                  <div className="pt-2 border-t border-ink/20 space-y-2">
                     <button
                       type="button"
                       onClick={handleDirectResetWithEnteredPassword}
                       disabled={resetLoading || isLoading}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-full bg-primary-orange text-white border-2 border-ink hover:bg-primary-orange-dark transition-all cursor-pointer shadow-xs"
                     >
                       {resetLoading
                         ? 'Saving password & signing in...'
@@ -396,13 +331,13 @@ export default function LoginPage(): React.JSX.Element {
                     <button
                       type="button"
                       onClick={async () => {
-                        setPassword('Password@123');
+                        // Keep the password the user already entered.
                         setIsLoading(true);
                         setErrorMessage(null);
                         try {
                           const res = await apiClient.teacherLogin({
                             email: email.trim(),
-                            password: 'Password@123',
+                            password,
                           });
                           setAuthSession(res.access_token, res.user);
                           router.push('/classes');
@@ -413,9 +348,9 @@ export default function LoginPage(): React.JSX.Element {
                         }
                       }}
                       disabled={resetLoading || isLoading}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-surface-cream text-ink border-2 border-ink hover:bg-surface-yellow transition-all cursor-pointer shadow-xs"
                     >
-                      🔑 Try standard password: Password@123
+                      🔐 Retry sign-in with entered password
                     </button>
                   </div>
                 )}
@@ -428,7 +363,7 @@ export default function LoginPage(): React.JSX.Element {
                         setResetError(null);
                         setIsResetOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 underline underline-offset-2 hover:opacity-80 cursor-pointer text-primary dark:text-primary-foreground font-semibold"
+                      className="inline-flex items-center gap-1 underline underline-offset-2 hover:opacity-80 cursor-pointer text-ink dark:text-pink-200 font-bold"
                     >
                       Or enter a different new password →
                     </button>
@@ -488,56 +423,18 @@ export default function LoginPage(): React.JSX.Element {
 
                 <Button
                   type="submit"
-                  variant="primary"
-                  className="w-full cursor-pointer py-2.5 font-semibold"
+                  variant="orange"
+                  className="w-full cursor-pointer py-3 font-bold rounded-full border-2 border-ink shadow-sm text-base hover:-translate-y-0.5 transition-transform"
                   disabled={isLoading}
                 >
                   {isLoading ? t('signingIn') : t('signInButton')}
-                </Button>
-
-                <div className="relative my-4 flex items-center justify-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
-                  </div>
-                  <span className="relative bg-card px-2 text-xs uppercase tracking-wider text-muted-foreground">
-                    {t('orContinueWith')}
-                  </span>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full cursor-pointer py-2 text-sm font-medium"
-                  onClick={() => {
-                    setErrorMessage('Google OAuth redirect initiated (Mock provider)');
-                  }}
-                >
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  {t('googleSignIn')}
                 </Button>
 
                 <div className="pt-2 text-center text-xs text-muted-foreground">
                   <span>{t('noAccount')} </span>
                   <Link
                     href="/signup"
-                    className="font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+                    className="font-bold text-primary underline underline-offset-4 hover:opacity-80"
                   >
                     {t('signupLink')}
                   </Link>
@@ -547,7 +444,7 @@ export default function LoginPage(): React.JSX.Element {
 
             <TabsContent value="student">
               <form onSubmit={handleStudentSubmit} className="space-y-4">
-                <div className="rounded-lg bg-primary/5 p-3 border border-primary/10 text-xs text-muted-foreground">
+                <div className="rounded-xl bg-surface-cream/50 p-3 border-2 border-ink text-xs text-ink font-medium">
                   {t('privacyMinorNote')}
                 </div>
 
@@ -583,14 +480,14 @@ export default function LoginPage(): React.JSX.Element {
                     placeholder={t('studentPinPlaceholder')}
                     value={studentPin}
                     onChange={(e) => setStudentPin(e.target.value)}
-                    className="text-center tracking-widest"
+                    className="text-center tracking-widest font-mono text-lg font-bold"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  variant="primary"
-                  className="w-full cursor-pointer py-2.5 font-semibold"
+                  variant="orange"
+                  className="w-full cursor-pointer py-3 font-bold rounded-full border-2 border-ink shadow-sm text-base hover:-translate-y-0.5 transition-transform"
                   disabled={isLoading}
                 >
                   {isLoading ? t('signingIn') : t('studentSignInButton')}
@@ -600,7 +497,7 @@ export default function LoginPage(): React.JSX.Element {
                   <span>{t('studentJoinPrompt')} </span>
                   <Link
                     href="/join"
-                    className="font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+                    className="font-bold text-primary underline underline-offset-4 hover:opacity-80"
                   >
                     {t('studentJoinLink')}
                   </Link>
@@ -611,64 +508,15 @@ export default function LoginPage(): React.JSX.Element {
         </CardContent>
       </Card>
 
-      {/* 1-Click Demo Sign-In for Immediate Persona Testing */}
-      <div className="w-full mt-6 rounded-2xl border border-primary/20 bg-muted/30 p-5 space-y-4">
-        <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-              {locale === 'hi' ? 'त्वरित 1-क्लिक डेमो लॉगिन' : 'Quick 1-Click Demo Sign-In'}
-            </h3>
-          </div>
-          <span className="text-[10px] text-muted-foreground font-medium">
-            {locale === 'hi' ? 'प्रत्येक प्रोफ़ाइल अलग है' : 'Isolated Profiles'}
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {locale === 'hi'
-            ? 'किसी भी छात्र या शिक्षक पर क्लिक करें और उनका निजी प्रोफ़ाइल डेटा देखें:'
-            : 'Click any persona below to test their isolated individual profile:'}
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.id}
-              type="button"
-              onClick={() => handleQuickDemoLogin(acc.id)}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-border/70 bg-card hover:bg-primary/5 hover:border-primary/50 transition-all text-left cursor-pointer group shadow-2xs"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div
-                  className={`w-7 h-7 rounded-lg bg-gradient-to-tr ${acc.avatarGradient} text-white flex items-center justify-center font-bold text-xs shrink-0`}
-                >
-                  {acc.name.replace('Mr. ', '').replace('Mrs. ', '').charAt(0)}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    {locale === 'hi' ? acc.nameHi : acc.name}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate font-mono">
-                    {acc.badge}
-                  </div>
-                </div>
-              </div>
-              <span className="text-primary text-[11px] font-semibold flex items-center gap-0.5 shrink-0 ml-2 group-hover:translate-x-0.5 transition-transform">
-                {locale === 'hi' ? 'लॉगिन' : 'Log In'}
-                <ArrowRight className="w-3 h-3" />
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl font-bold">
+            <DialogTitle className="font-serif text-xl font-black text-ink dark:text-white">
               Reset BodhAI Password
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Enter your registered email address and choose a new password (min. 8 characters).
+            <DialogDescription className="text-xs text-text-secondary dark:text-muted-foreground">
+              Password recovery is currently unavailable. Contact your school administrator for
+              assistance.
             </DialogDescription>
           </DialogHeader>
 
@@ -676,16 +524,19 @@ export default function LoginPage(): React.JSX.Element {
             {resetError && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive font-medium"
+                className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-3 text-xs text-ink dark:text-pink-100 font-bold flex items-center gap-2.5 shadow-xs"
               >
-                {resetError}
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-[10px] shadow-xs">
+                  !
+                </span>
+                <span className="leading-snug">{resetError}</span>
               </div>
             )}
 
             <div className="space-y-1.5">
               <label
                 htmlFor="reset-email"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                className="text-xs font-semibold uppercase tracking-wider text-text-secondary"
               >
                 Account Email
               </label>
@@ -702,7 +553,7 @@ export default function LoginPage(): React.JSX.Element {
             <div className="space-y-1.5">
               <label
                 htmlFor="reset-new-password"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                className="text-xs font-semibold uppercase tracking-wider text-text-secondary"
               >
                 New Password (min 8 characters)
               </label>
@@ -720,7 +571,7 @@ export default function LoginPage(): React.JSX.Element {
             <div className="space-y-1.5">
               <label
                 htmlFor="reset-confirm-password"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                className="text-xs font-semibold uppercase tracking-wider text-text-secondary"
               >
                 Confirm New Password
               </label>
@@ -742,15 +593,16 @@ export default function LoginPage(): React.JSX.Element {
                 size="sm"
                 onClick={() => setIsResetOpen(false)}
                 disabled={resetLoading}
+                className="rounded-full border-2 border-ink font-bold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                variant="primary"
+                variant="orange"
                 size="sm"
-                disabled={resetLoading}
-                className="cursor-pointer font-semibold"
+                disabled
+                className="cursor-pointer font-bold rounded-full border-2 border-ink shadow-xs"
               >
                 {resetLoading ? 'Updating...' : 'Update & Sign In'}
               </Button>

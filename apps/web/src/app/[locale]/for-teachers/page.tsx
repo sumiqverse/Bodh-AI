@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/routing';
-import { Card, CardHeader, CardTitle, CardDescription, Badge, buttonVariants } from '@bodhai/ui';
+import { BookOpen, LayoutDashboard, Users } from 'lucide-react';
+import {
+  MarketingActions,
+  MarketingFeatureGrid,
+  MarketingPageShell,
+  type MarketingFeature,
+} from '@/components/marketing-page';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -23,75 +28,47 @@ export default async function ForTeachersPage({ params }: PageProps): Promise<Re
 
   const t = await getTranslations({ locale, namespace: 'teachers' });
   const tCommon = await getTranslations({ locale, namespace: 'common' });
+  const tNav = await getTranslations({ locale, namespace: 'nav' });
+
+  const features: MarketingFeature[] = [
+    {
+      title: t('card1Title'),
+      description: t('card1Desc'),
+      Icon: Users,
+      surface: 'bg-surface-blue',
+      iconSurface: 'bg-surface-white',
+    },
+    {
+      title: t('card2Title'),
+      description: t('card2Desc'),
+      Icon: BookOpen,
+      surface: 'bg-surface-butter',
+      iconSurface: 'bg-surface-cream',
+    },
+    {
+      title: t('card3Title'),
+      description: t('card3Desc'),
+      Icon: LayoutDashboard,
+      surface: 'bg-surface-pink',
+      iconSurface: 'bg-surface-white',
+    },
+  ];
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <Badge variant="default" size="sm" className="mb-3 font-semibold">
-          Educators & Mentors
-        </Badge>
-        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-          {t('title')}
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-          {t('subtitle')}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="hover:border-primary/40 transition-colors">
-          <CardHeader>
-            <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold mb-3">
-              01
-            </div>
-            <CardTitle>{t('card1Title')}</CardTitle>
-            <CardDescription className="mt-2">{t('card1Desc')}</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card className="hover:border-primary/40 transition-colors">
-          <CardHeader>
-            <div className="h-10 w-10 rounded-lg bg-accent/20 text-accent flex items-center justify-center font-bold mb-3">
-              02
-            </div>
-            <CardTitle>{t('card2Title')}</CardTitle>
-            <CardDescription className="mt-2">{t('card2Desc')}</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card className="hover:border-primary/40 transition-colors">
-          <CardHeader>
-            <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center font-bold mb-3">
-              03
-            </div>
-            <CardTitle>{t('card3Title')}</CardTitle>
-            <CardDescription className="mt-2">{t('card3Desc')}</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-center">
-        <Link
-          href="/contact"
-          className={buttonVariants({
-            variant: 'primary',
-            size: 'lg',
-            className: 'shadow-md',
-          })}
-        >
-          {tCommon('contactUs')}
-        </Link>
-        <Link
-          href="/profile"
-          className={buttonVariants({
-            variant: 'outline',
-            size: 'lg',
-            className: 'border-primary/40 text-primary font-bold hover:bg-primary/10',
-          })}
-        >
-          {locale === 'hi' ? 'मेरी प्रोफ़ाइल' : 'My Profile'}
-        </Link>
-      </div>
-    </div>
+    <MarketingPageShell
+      badge={t('badge')}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      locale={locale}
+      dots={['bg-surface-white', 'bg-surface-cream', 'bg-surface-pink']}
+    >
+      <MarketingFeatureGrid features={features} />
+      <MarketingActions
+        actions={[
+          { href: '/contact', label: tCommon('contactUs') },
+          { href: '/profile', label: tNav('myProfile') },
+        ]}
+      />
+    </MarketingPageShell>
   );
 }

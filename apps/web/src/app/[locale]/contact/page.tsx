@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Badge } from '@bodhai/ui';
 import { ContactForm } from '@/components/contact-form';
+import { MarketingPageShell } from '@/components/marketing-page';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -24,18 +24,14 @@ export default async function ContactPage({ params }: PageProps): Promise<React.
   const t = await getTranslations({ locale, namespace: 'contact' });
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 text-center">
-      <Badge variant="default" size="sm" className="mb-3 font-semibold">
-        Partnerships & Inquiries
-      </Badge>
-      <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-        {t('title')}
-      </h1>
-      <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto mb-10">
-        {t('subtitle')}
-      </p>
-
+    <MarketingPageShell
+      badge={t('badge')}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      locale={locale}
+      maxWidth="max-w-4xl"
+    >
       <ContactForm />
-    </div>
+    </MarketingPageShell>
   );
 }

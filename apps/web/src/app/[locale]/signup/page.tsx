@@ -132,13 +132,18 @@ export default function SignupPage(): React.JSX.Element {
   ];
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-lg items-center justify-center px-4 py-12">
-      <Card className="w-full shadow-floating">
-        <CardHeader className="text-center">
-          <CardTitle className="font-serif text-2xl font-bold tracking-tight text-foreground">
+    <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-lg rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">
+        <CardHeader className="text-center pb-4">
+          <img
+            src="/image.png"
+            alt="BodhAI"
+            className="mx-auto mb-3 h-14 w-14 rounded-full object-contain shrink-0 select-none drop-shadow-sm"
+          />
+          <CardTitle className="font-serif text-2xl font-black tracking-tight text-ink dark:text-white">
             {t('signupTitle')}
           </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
+          <CardDescription className="text-xs text-text-secondary dark:text-muted-foreground mt-1">
             {t('signupSubtitle')}
           </CardDescription>
         </CardHeader>
@@ -148,17 +153,22 @@ export default function SignupPage(): React.JSX.Element {
             {errorMessage && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive/10 p-3.5 text-sm text-destructive font-medium space-y-2.5"
+                className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-3.5 text-xs sm:text-sm text-ink dark:text-pink-100 font-bold space-y-2.5 shadow-xs"
               >
-                <div>{errorMessage}</div>
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
+                    !
+                  </span>
+                  <div className="leading-snug">{errorMessage}</div>
+                </div>
                 {(errorMessage.includes('already exists') || errorMessage.includes('409')) && (
-                  <div className="space-y-2 pt-2 border-t border-destructive/20 mt-1">
+                  <div className="space-y-2 pt-2 border-t border-ink/20 mt-1">
                     {password && password.length >= 8 && (
                       <button
                         type="button"
                         onClick={handleDirectResetWithEnteredPassword}
                         disabled={isLoading}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-full bg-primary-orange text-white border-2 border-ink hover:bg-primary-orange-dark transition-all cursor-pointer shadow-xs"
                       >
                         {isLoading
                           ? 'Updating & Signing in...'
@@ -168,13 +178,13 @@ export default function SignupPage(): React.JSX.Element {
                     <div className="flex flex-wrap items-center gap-3 text-xs">
                       <Link
                         href={`/login?email=${encodeURIComponent(email.trim())}`}
-                        className="font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
+                        className="font-bold text-ink underline underline-offset-2 hover:opacity-80"
                       >
                         Sign in with this account →
                       </Link>
                       <Link
                         href={`/login?email=${encodeURIComponent(email.trim())}&reset=true`}
-                        className="font-semibold text-primary dark:text-primary-foreground underline underline-offset-2 hover:opacity-80"
+                        className="font-bold text-ink underline underline-offset-2 hover:opacity-80"
                       >
                         Forgot / Reset Password →
                       </Link>
@@ -307,8 +317,8 @@ export default function SignupPage(): React.JSX.Element {
 
             <Button
               type="submit"
-              variant="primary"
-              className="w-full cursor-pointer py-2.5 font-semibold"
+              variant="orange"
+              className="w-full cursor-pointer py-3 font-bold rounded-full border-2 border-ink shadow-sm text-base hover:-translate-y-0.5 transition-transform"
               disabled={isLoading}
             >
               {isLoading ? t('signingUp') : t('signUpButton')}
