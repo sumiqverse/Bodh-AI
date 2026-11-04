@@ -205,12 +205,15 @@ export function SiteHeader(): React.JSX.Element {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState<boolean>(false);
   const dropdownRef = React.useRef<HTMLDivElement | null>(null);
   const dropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastUserHoverTimeRef = React.useRef<number>(0);
 
   const [isAuthDropdownOpen, setIsAuthDropdownOpen] = React.useState<boolean>(false);
   const authDropdownRef = React.useRef<HTMLDivElement | null>(null);
   const authDropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastAuthHoverTimeRef = React.useRef<number>(0);
 
   const handleDropdownEnter = () => {
+    lastUserHoverTimeRef.current = Date.now();
     if (dropdownTimeoutRef.current) {
       clearTimeout(dropdownTimeoutRef.current);
       dropdownTimeoutRef.current = null;
@@ -221,10 +224,25 @@ export function SiteHeader(): React.JSX.Element {
   const handleDropdownLeave = () => {
     dropdownTimeoutRef.current = setTimeout(() => {
       setIsDropdownOpen(false);
-    }, 180);
+    }, 200);
+  };
+
+  const handleUserButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+    const timeSinceHover = Date.now() - lastUserHoverTimeRef.current;
+    if (timeSinceHover < 600 && isDropdownOpen) {
+      setIsDropdownOpen(true);
+    } else {
+      setIsDropdownOpen((prev) => !prev);
+    }
   };
 
   const handleAuthDropdownEnter = () => {
+    lastAuthHoverTimeRef.current = Date.now();
     if (authDropdownTimeoutRef.current) {
       clearTimeout(authDropdownTimeoutRef.current);
       authDropdownTimeoutRef.current = null;
@@ -235,7 +253,17 @@ export function SiteHeader(): React.JSX.Element {
   const handleAuthDropdownLeave = () => {
     authDropdownTimeoutRef.current = setTimeout(() => {
       setIsAuthDropdownOpen(false);
-    }, 180);
+    }, 200);
+  };
+
+  const handleAuthButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (authDropdownTimeoutRef.current) {
+      clearTimeout(authDropdownTimeoutRef.current);
+      authDropdownTimeoutRef.current = null;
+    }
+    // Clicking CTA button ensures dropdown is open and stays open
+    setIsAuthDropdownOpen(true);
   };
 
   React.useEffect(() => {
@@ -365,7 +393,7 @@ export function SiteHeader(): React.JSX.Element {
             >
               <button
                 type="button"
-                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                onClick={handleUserButtonClick}
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="true"
                 className={`group flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full border-2 border-ink transition-all cursor-pointer select-none ${
@@ -561,16 +589,16 @@ export function SiteHeader(): React.JSX.Element {
             >
               <button
                 type="button"
-                onClick={() => setIsAuthDropdownOpen((prev) => !prev)}
+                onClick={handleAuthButtonClick}
                 aria-expanded={isAuthDropdownOpen}
                 aria-haspopup="menu"
-                className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink font-black text-xs sm:text-sm px-4 py-1.5 shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink font-black text-xs sm:text-sm px-4 py-1.5 shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer whitespace-nowrap shrink-0 select-none ${
                   isAuthDropdownOpen ? 'bg-primary-orange-dark' : ''
                 }`}
               >
                 <span>{tCommon('getStarted')}</span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
                     isAuthDropdownOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -580,7 +608,7 @@ export function SiteHeader(): React.JSX.Element {
               {isAuthDropdownOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-2 w-60 rounded-2xl border-2 border-ink bg-surface-white dark:bg-[#1A1D24] p-2.5 shadow-shell z-50 animate-in fade-in slide-in-from-top-1 duration-150 space-y-1.5"
+                  className="absolute right-0 top-full mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-ink bg-surface-white dark:bg-[#1A1D24] p-2.5 shadow-shell z-50 animate-in fade-in slide-in-from-top-1 duration-150 space-y-1.5"
                 >
                   {/* Sign In Link */}
                   <Link

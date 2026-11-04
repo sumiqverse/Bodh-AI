@@ -21,14 +21,12 @@ export function ThemeToggle({ label = 'Toggle theme' }: { label?: string }): Rea
       aria-label={label}
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       title={label}
-      className="h-8 w-8 rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink dark:text-white dark:bg-card shadow-xs cursor-pointer select-none shrink-0"
+      className="h-8 w-8 rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink dark:text-white dark:bg-card shadow-xs cursor-pointer select-none shrink-0 inline-flex items-center justify-center transition-colors"
       suppressHydrationWarning
     >
-      {!mounted ? (
-        <span className="h-4 w-4 rounded-full bg-muted" aria-hidden="true" />
-      ) : isDark ? (
+      {isDark ? (
         <svg
-          className="h-4 w-4 text-warning"
+          className="h-4 w-4 text-amber-500 dark:text-amber-400"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -44,7 +42,7 @@ export function ThemeToggle({ label = 'Toggle theme' }: { label?: string }): Rea
         </svg>
       ) : (
         <svg
-          className="h-4 w-4 text-muted-foreground"
+          className="h-4 w-4 text-ink dark:text-zinc-300"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"

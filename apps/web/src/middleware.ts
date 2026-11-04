@@ -22,26 +22,20 @@ const PROTECTED_PREFIXES = [
 ];
 
 export default function middleware(request: NextRequest): NextResponse {
-  // Generate cryptographically secure base64 nonce for strict CSP without 'unsafe-inline'
-  const nonce = btoa(crypto.randomUUID());
-  const isDev = process.env.NODE_ENV !== 'production';
-
-  // Strict CSP: Zero 'unsafe-inline' for scripts in production; nonced strict-dynamic
-  const scriptSrc = isDev
-    ? `'self' 'unsafe-eval' 'nonce-${nonce}'`
-    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+  const apiHost = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   const cspHeader = [
     "default-src 'self'",
-    `script-src ${scriptSrc}`,
-    `style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net`,
-    "img-src 'self' blob: data:",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "img-src 'self' blob: data: https:",
     "font-src 'self' data: https://cdn.jsdelivr.net",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'} http://127.0.0.1:8000`,
+    `connect-src 'self' https: ${apiHost} http://127.0.0.1:8000 http://localhost:8000`,
+    "worker-src 'self' blob:",
   ].join('; ');
 
   function applySecurityHeaders(res: NextResponse): NextResponse {
@@ -54,7 +48,6 @@ export default function middleware(request: NextRequest): NextResponse {
       'Permissions-Policy',
       'camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=()',
     );
-    res.headers.set('x-nonce', nonce);
     return res;
   }
 

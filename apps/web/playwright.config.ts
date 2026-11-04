@@ -43,6 +43,7 @@ export default defineConfig({
     },
   ],
   webServer: {
+    cwd: __dirname,
     command: `node node_modules/next/dist/bin/next start --port ${new URL(baseURL).port || '3000'}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
