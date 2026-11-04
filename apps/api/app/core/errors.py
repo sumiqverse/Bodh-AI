@@ -165,6 +165,25 @@ def _extract_request_id(request: Request) -> str:
     return str(uuid.uuid4())
 
 
+def _build_error_headers(request: Request, request_id: str) -> dict[str, str]:
+    """Ensure standard tracking and CORS headers are present on all error responses."""
+    headers: dict[str, str] = {"X-Request-ID": request_id}
+    origin = request.headers.get("origin")
+    if origin:
+        try:
+            from app.core.config import get_settings
+
+            settings = get_settings()
+            allowed = settings.cors_origins_list
+            if origin in allowed or "*" in allowed:
+                headers["Access-Control-Allow-Origin"] = origin
+                headers["Access-Control-Allow-Credentials"] = "true"
+                headers["Vary"] = "Origin"
+        except Exception:
+            pass
+    return headers
+
+
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
     """Handle custom application exceptions."""
     request_id = _extract_request_id(request)
@@ -181,7 +200,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         status_code=exc.status_code,
         content=problem.model_dump(exclude_none=True),
         media_type=PROBLEM_JSON_MEDIA_TYPE,
-        headers={"X-Request-ID": request_id},
+        headers=_build_error_headers(request, request_id),
     )
 
 
@@ -210,7 +229,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         status_code=exc.status_code,
         content=problem.model_dump(exclude_none=True),
         media_type=PROBLEM_JSON_MEDIA_TYPE,
-        headers={"X-Request-ID": request_id},
+        headers=_build_error_headers(request, request_id),
     )
 
 
@@ -243,7 +262,7 @@ async def validation_exception_handler(
         status_code=http_422,
         content=problem.model_dump(exclude_none=True),
         media_type=PROBLEM_JSON_MEDIA_TYPE,
-        headers={"X-Request-ID": request_id},
+        headers=_build_error_headers(request, request_id),
     )
 
 
@@ -264,7 +283,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=problem.model_dump(exclude_none=True),
         media_type=PROBLEM_JSON_MEDIA_TYPE,
-        headers={"X-Request-ID": request_id},
+        headers=_build_error_headers(request, request_id),
     )
 
 

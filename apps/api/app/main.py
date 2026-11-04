@@ -21,6 +21,7 @@ from app.core.middleware import (
     SecurityHeadersMiddleware,
 )
 from app.core.telemetry import configure_telemetry
+from app.db.migrate import run_startup_migrations
 from app.db.redis import close_redis, get_redis_client
 from app.db.session import get_engine
 
@@ -34,6 +35,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging(settings.debug)
     configure_telemetry()
     logger.info("Starting BodhAI API service", env=settings.app_env)
+
+    # Ensure schema migrations are up-to-date
+    await run_startup_migrations()
 
     # Initialize Redis connection in application state
     try:
