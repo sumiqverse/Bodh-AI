@@ -1,6 +1,12 @@
 import { BodhaiApiClient, COOKIE_SESSION_TOKEN, type UserResponse } from '@bodhai/api-client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL = rawApiUrl.includes('bodhai-api.onrender.com')
+  ? 'https://bodhai-kqwj.onrender.com'
+  : rawApiUrl ||
+    (typeof window !== 'undefined' && window.location.origin.includes('vercel.app')
+      ? 'https://bodhai-kqwj.onrender.com'
+      : 'http://localhost:8000');
 
 const TOKEN_KEY = 'bodhai_access_token';
 const USER_KEY = 'bodhai_user';

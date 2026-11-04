@@ -34,7 +34,7 @@ export default function middleware(request: NextRequest): NextResponse {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    `connect-src 'self' https: ${apiHost} http://127.0.0.1:8000 http://localhost:8000`,
+    `connect-src 'self' https: https://bodhai-kqwj.onrender.com ${apiHost} http://127.0.0.1:8000 http://localhost:8000`,
     "worker-src 'self' blob:",
   ].join('; ');
 
