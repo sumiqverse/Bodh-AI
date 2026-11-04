@@ -168,8 +168,8 @@ async def seed_all_curricula() -> None:
                                     skill_id=skill.id,
                                     difficulty=q_data["difficulty"],
                                     question_type=q_data["question_type"],
-                                    status="draft",
-                                    needs_teacher_review=True,
+                                    status="published",
+                                    needs_teacher_review=False,
                                     version=1,
                                 )
                                 session.add(q_obj)

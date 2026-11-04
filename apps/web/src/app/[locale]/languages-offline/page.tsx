@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@bodhai/ui';
 import { ChapterDownloadManager } from '@/components/offline';
 
 const OFFLINE_SAMPLE_CHAPTERS = [
@@ -65,50 +64,48 @@ export default async function LanguagesOfflinePage({
   const typedLocale = locale === 'hi' ? 'hi' : 'en';
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <Badge variant="default" size="sm" className="mb-3 font-semibold">
-          Vernacular & Resilient
-        </Badge>
-        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-          {t('title')}
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-          {t('subtitle')}
-        </p>
-      </div>
+    <main className="min-h-screen bg-canvas-gradient px-4 py-8 sm:py-12 flex justify-center text-ink selection:bg-surface-cream selection:text-ink">
+      <div className="w-full max-w-5xl space-y-10">
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <span className="inline-block text-xs font-black uppercase tracking-wider rounded-full border-2 border-ink bg-surface-yellow px-4 py-1 text-ink shadow-xs">
+            Vernacular & Resilient
+          </span>
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-black text-ink dark:text-white tracking-tight">
+            {t('title')}
+          </h1>
+          <p className="text-sm sm:text-base text-text-secondary dark:text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            {t('subtitle')}
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        <Card className="p-2 border-primary/20 hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <div className="text-2xl mb-2" aria-hidden="true">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-card relative overflow-hidden space-y-4 hover:-translate-y-0.5 transition-transform">
+            <div className="w-12 h-12 rounded-full border-2 border-ink bg-surface-blue flex items-center justify-center text-2xl shadow-xs">
               🌐
             </div>
-            <CardTitle className="text-xl font-bold font-serif text-foreground">
+            <h2 className="font-serif text-xl sm:text-2xl font-black text-ink dark:text-white">
               {t('langTitle')}
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground leading-relaxed mt-2">
+            </h2>
+            <p className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
               {t('langDesc')}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+            </p>
+          </div>
 
-        <Card className="p-2 border-primary/20 hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <div className="text-2xl mb-2" aria-hidden="true">
+          <div className="rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-card relative overflow-hidden space-y-4 hover:-translate-y-0.5 transition-transform">
+            <div className="w-12 h-12 rounded-full border-2 border-ink bg-surface-cream flex items-center justify-center text-2xl shadow-xs">
               ⚡
             </div>
-            <CardTitle className="text-xl font-bold font-serif text-foreground">
+            <h2 className="font-serif text-xl sm:text-2xl font-black text-ink dark:text-white">
               {t('offlineTitle')}
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground leading-relaxed mt-2">
+            </h2>
+            <p className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
               {t('offlineDesc')}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+            </p>
+          </div>
+        </div>
 
-      <ChapterDownloadManager chapters={OFFLINE_SAMPLE_CHAPTERS} locale={typedLocale} />
-    </div>
+        <ChapterDownloadManager chapters={OFFLINE_SAMPLE_CHAPTERS} locale={typedLocale} />
+      </div>
+    </main>
   );
 }

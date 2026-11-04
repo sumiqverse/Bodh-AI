@@ -128,27 +128,30 @@ export function ChapterDownloadManager({
 
   return (
     <section
-      className={`rounded-xl border border-slate-700 bg-slate-900/80 p-5 text-slate-100 shadow-md ${className}`}
+      className={`rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-card text-ink dark:text-white ${className}`}
       aria-labelledby="offline-pack-heading"
       data-testid="chapter-download-manager"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b-2 border-dashed border-ink/20 pb-5">
         <div>
-          <h2 id="offline-pack-heading" className="text-lg font-semibold tracking-tight text-white">
+          <h2
+            id="offline-pack-heading"
+            className="font-serif text-xl sm:text-2xl font-black text-ink dark:text-white tracking-tight"
+          >
             {t('offline.download.title', locale)}
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs font-medium text-text-secondary dark:text-muted-foreground mt-0.5">
             {t('offline.download.available_offline', locale)}
           </p>
         </div>
 
         {quotaInfo && (
           <div
-            className="flex items-center gap-2 rounded-lg bg-slate-800/90 px-3 py-1.5 text-xs text-slate-300"
+            className="flex items-center gap-2 rounded-full border-2 border-ink bg-surface-cream px-4 py-1.5 text-xs font-bold text-ink shadow-xs"
             role="status"
             aria-label={`${t('offline.download.storage_used', locale)}: ${formatMB(quotaInfo.usedBytes)} MB of ${formatMB(quotaInfo.totalBytes)} MB`}
           >
-            <HardDrive className="h-4 w-4 text-sky-400 shrink-0" aria-hidden="true" />
+            <HardDrive className="h-4 w-4 text-primary-orange shrink-0" aria-hidden="true" />
             <span>
               {formatMB(quotaInfo.usedBytes)} MB / {formatMB(quotaInfo.totalBytes)} MB (
               {quotaInfo.percentUsed}%)
@@ -160,14 +163,14 @@ export function ChapterDownloadManager({
       {errorMessage && (
         <div
           role="alert"
-          className="mt-3 rounded-lg border border-red-800 bg-red-950/50 p-3 text-xs text-red-300"
+          className="mt-4 rounded-xl border-2 border-ink bg-red-100 dark:bg-red-950/60 p-3 text-xs font-bold text-red-800 dark:text-red-200 shadow-xs"
           data-testid="quota-error-alert"
         >
           {errorMessage}
         </div>
       )}
 
-      <ul className="mt-4 divide-y divide-slate-800/80" role="list">
+      <ul className="mt-5 space-y-3" role="list">
         {chapters.map((chapter) => {
           const isDownloaded = downloadedChapters.has(chapter.chapterId);
           const progress = downloadProgress[chapter.chapterId];
@@ -176,18 +179,18 @@ export function ChapterDownloadManager({
           return (
             <li
               key={chapter.chapterId}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 gap-2"
+              className="rounded-2xl border-2 border-ink bg-surface-white dark:bg-card/70 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:translate-x-0.5 transition-transform"
               data-testid={`chapter-item-${chapter.chapterId}`}
             >
-              <div className="min-w-0">
-                <span className="text-xs font-medium uppercase tracking-wider text-sky-400">
+              <div className="space-y-1 min-w-0">
+                <span className="inline-block text-[10px] font-black uppercase tracking-wider rounded-full border border-ink/40 bg-surface-yellow px-2.5 py-0.5 text-ink">
                   {chapter.subject} • Class {chapter.grade}
                 </span>
-                <p className="truncate font-medium text-sm text-slate-200">
+                <p className="font-bold text-sm sm:text-base text-ink dark:text-white truncate">
                   {chapter.chapterTitle}
                 </p>
                 {chapter.estimatedSizeBytes && (
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-xs font-mono text-text-secondary dark:text-muted-foreground">
                     ~{formatMB(chapter.estimatedSizeBytes)} MB
                   </span>
                 )}
@@ -197,7 +200,7 @@ export function ChapterDownloadManager({
                 {isDownloading ? (
                   <div className="flex items-center gap-2 w-36">
                     <div
-                      className="h-2 w-full overflow-hidden rounded-full bg-slate-800"
+                      className="h-2.5 w-full overflow-hidden rounded-full border border-ink bg-surface-cream"
                       role="progressbar"
                       aria-valuenow={progress}
                       aria-valuemin={0}
@@ -205,22 +208,24 @@ export function ChapterDownloadManager({
                       aria-label={`${chapter.chapterTitle} ${t('offline.download.progress', locale)}`}
                     >
                       <div
-                        className="h-full bg-sky-500 transition-all duration-300"
+                        className="h-full bg-primary-orange transition-all duration-300"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    <span className="text-[11px] font-mono text-slate-400">{progress}%</span>
+                    <span className="text-xs font-mono font-bold text-ink dark:text-white">
+                      {progress}%
+                    </span>
                   </div>
                 ) : isDownloaded ? (
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-950/60 border border-emerald-800/60 px-2 py-1 text-xs font-medium text-emerald-300">
-                      <Check className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-xs">
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
                       {t('offline.download.ready', locale)}
                     </span>
                     <button
                       type="button"
                       onClick={() => void handleDelete(chapter.chapterId)}
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                      className="rounded-full border-2 border-ink bg-surface-white hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 p-2 shadow-xs transition-colors cursor-pointer"
                       aria-label={`${t('offline.download.delete', locale)} ${chapter.chapterTitle}`}
                       data-testid={`delete-btn-${chapter.chapterId}`}
                     >
@@ -231,7 +236,7 @@ export function ChapterDownloadManager({
                   <button
                     type="button"
                     onClick={() => void handleDownload(chapter.chapterId)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-white px-4 py-2 text-xs font-bold shadow-xs transition-colors cursor-pointer"
                     aria-label={`${t('offline.download.action', locale)} ${chapter.chapterTitle}`}
                     data-testid={`download-btn-${chapter.chapterId}`}
                   >

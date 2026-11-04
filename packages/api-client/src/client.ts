@@ -103,6 +103,12 @@ export interface ClassroomSkillItem {
   difficulty: number;
   blooms_level: string;
   questions: ClassroomQuestionItem[];
+  default_lesson?: ClassroomDefaultLesson | null;
+}
+
+export interface ClassroomDefaultLesson {
+  title: string;
+  body: string;
 }
 
 export interface ClassroomTopicItem {
@@ -724,6 +730,7 @@ export interface ClassroomLesson {
   difficulty: number;
   title: string;
   body: string;
+  is_default?: boolean;
 }
 
 export class ApiRequestError extends Error {

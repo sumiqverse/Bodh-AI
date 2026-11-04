@@ -191,6 +191,13 @@ class ClassroomQuestionItem(BaseModel):
     is_custom: bool = False
 
 
+class ClassroomDefaultLesson(BaseModel):
+    """Ready-to-use NCERT-aligned lesson shown when a class has no custom lesson."""
+
+    title: str
+    body: str
+
+
 class ClassroomSkillItem(BaseModel):
     """Competency skill with associated questions."""
 
@@ -201,6 +208,7 @@ class ClassroomSkillItem(BaseModel):
     difficulty: float
     blooms_level: str
     questions: list[ClassroomQuestionItem] = Field(default_factory=list)
+    default_lesson: ClassroomDefaultLesson | None = None
 
 
 class ClassroomTopicItem(BaseModel):

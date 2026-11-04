@@ -1,6 +1,9 @@
 """SQLAlchemy 2.0 async database engine and session factory."""
 
+import socket
+import ssl
 from collections.abc import AsyncGenerator
+from urllib.parse import urlparse
 
 import structlog
 from sqlalchemy import text
@@ -19,6 +22,35 @@ _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
+def _resolve_neon_ipv4(url_str: str, connect_args: dict[str, object]) -> str:
+    """Resolve Neon host to IPv4 to eliminate IPv6 network route drop timeouts on Windows."""
+    if "neon.tech" in url_str:
+        try:
+            parsed = urlparse(url_str)
+            hostname = parsed.hostname
+            if hostname:
+                endpoint_id = hostname.split(".")[0]
+                port = parsed.port or 5432
+                ipv4 = socket.getaddrinfo(hostname, port, socket.AF_INET)[0][4][0]
+                userinfo = f"{parsed.username}:{parsed.password}@" if parsed.username else ""
+                netloc = f"{userinfo}{ipv4}:{port}"
+                new_url = parsed._replace(netloc=netloc).geturl()
+
+                ssl_ctx = ssl.create_default_context()
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+
+                connect_args["statement_cache_size"] = 0
+                connect_args["ssl"] = ssl_ctx
+                connect_args["server_settings"] = {"options": f"endpoint={endpoint_id}"}
+                return new_url
+        except Exception as exc:
+            logger.warning(
+                "Could not resolve Neon host to IPv4, using original URL", error=str(exc)
+            )
+    return url_str
+
+
 def get_engine() -> AsyncEngine:
     """Retrieve or initialize the singleton async SQLAlchemy engine."""
     global _engine
@@ -29,9 +61,11 @@ def get_engine() -> AsyncEngine:
         if "-pooler" in settings.database_url:
             connect_args["statement_cache_size"] = 0
 
+        target_url = _resolve_neon_ipv4(settings.database_url, connect_args)
+
         # Enable connection pooling and pool pre-ping to recycle dead connections
         _engine = create_async_engine(
-            settings.database_url,
+            target_url,
             echo=settings.debug,
             pool_pre_ping=True,
             pool_size=10,

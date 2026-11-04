@@ -872,7 +872,7 @@ async def test_adaptive_lessons_are_owned_and_selected_by_class_mastery(
     other_teacher_auth: tuple[User, str, dict[str, str]],
     setup_adaptive_data: dict[str, Any],
 ) -> None:
-    from app.models.assessment import Mastery
+    from app.models.assessment import Mastery, QuestionTranslation
     from app.models.organization import Enrollment
 
     data = setup_adaptive_data
@@ -888,7 +888,42 @@ async def test_adaptive_lessons_are_owned_and_selected_by_class_mastery(
     class_id = uuid.UUID(created.json()["id"])
     db_session.add(Enrollment(class_id=class_id, student_id=data["student"].id, status="active"))
     await db_session.flush()
+    draft_question = QuestionFactory.build(
+        skill_id=data["skill1"].id,
+        code=f"DRAFT-{uuid.uuid4().hex[:8]}",
+        status="draft",
+    )
+    db_session.add(draft_question)
+    await db_session.flush()
+    db_session.add(
+        QuestionTranslation(
+            question_id=draft_question.id,
+            language="en",
+            prompt="DRAFT_ONLY_PROMPT",
+            options=[{"id": "A", "text": "draft", "is_correct": True}],
+            verified_answer="A",
+            worked_solution="",
+            explanation="draft explanation",
+            hints=[],
+        )
+    )
+    await db_session.flush()
     url = f"/api/v1/classes/{class_id}/lessons"
+    content_response = await client.get(
+        f"/api/v1/classes/{class_id}/content", headers=teacher_headers
+    )
+    assert content_response.status_code == 200
+    first_skill = content_response.json()["topics"][0]["skills"][0]
+    assert first_skill["default_lesson"]["body"]
+    assert first_skill["default_lesson"]["title"]
+
+    student_url = f"{url}/{data['skill1'].id}"
+    default_lesson = await client.get(student_url, headers=data["headers"])
+    assert default_lesson.status_code == 200
+    assert default_lesson.json()["is_default"] is True
+    assert default_lesson.json()["title"] == data["skill1"].name
+    assert "DRAFT_ONLY_PROMPT" not in default_lesson.json()["body"]
+
     base = {"skill_id": str(data["skill1"].id), "language": "en"}
     for level in (1, 4):
         payload = {
@@ -905,7 +940,6 @@ async def test_adaptive_lessons_are_owned_and_selected_by_class_mastery(
             headers=other_headers,
         )
     ).status_code == 403
-    student_url = f"{url}/{data['skill1'].id}"
     student_lesson = await client.get(student_url, headers=data["headers"])
     assert student_lesson.json()["difficulty"] == 1
     mastery = Mastery(
@@ -937,9 +971,10 @@ async def test_adaptive_lessons_are_owned_and_selected_by_class_mastery(
         "body": "Advanced content",
     }
     assert (await client.put(url, json=high_only, headers=teacher_headers)).status_code == 200
-    assert (
-        await client.get(f"{url}/{data['skill2'].id}", headers=data["headers"])
-    ).status_code == 404
+    fallback = await client.get(f"{url}/{data['skill2'].id}", headers=data["headers"])
+    assert fallback.status_code == 200
+    assert fallback.json()["is_default"] is True
+    assert fallback.json()["difficulty"] == 1
 
 
 @pytest.mark.asyncio

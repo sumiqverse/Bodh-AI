@@ -106,7 +106,9 @@ function LessonPage(): React.JSX.Element {
                 <span className="text-xs font-black uppercase tracking-wider rounded-full border-2 border-ink bg-surface-yellow px-3 py-1 text-ink shadow-xs">
                   Difficulty Level {lesson.data.difficulty}
                 </span>
-                <span className="text-xs font-bold text-text-secondary">Classroom Lesson</span>
+                <span className="text-xs font-bold text-text-secondary">
+                  {lesson.data.is_default ? 'NCERT-aligned lesson' : 'Classroom Lesson'}
+                </span>
               </div>
               <h1 className="font-serif text-2xl sm:text-3xl font-black text-ink dark:text-white">
                 {lesson.data.title}

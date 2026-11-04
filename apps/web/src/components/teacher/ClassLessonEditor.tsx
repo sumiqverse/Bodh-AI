@@ -2,7 +2,17 @@
 
 import * as React from 'react';
 import { getAuthToken, getWebApiClient } from '@/lib/api-client';
-import type { ClassroomContentResponse, ClassroomLesson } from '@bodhai/api-client';
+import type {
+  ClassroomContentResponse,
+  ClassroomLesson,
+  ClassroomSkillItem,
+  ClassroomTopicItem,
+} from '@bodhai/api-client';
+
+interface LessonOption {
+  skill: ClassroomSkillItem;
+  topic: ClassroomTopicItem;
+}
 
 export function ClassLessonEditor({
   classId,
@@ -12,8 +22,8 @@ export function ClassLessonEditor({
   content: ClassroomContentResponse | null;
 }): React.JSX.Element {
   const api = getWebApiClient();
-  const skills = React.useMemo(
-    () => content?.topics.flatMap((topic) => topic.skills) ?? [],
+  const options = React.useMemo<LessonOption[]>(
+    () => content?.topics.flatMap((topic) => topic.skills.map((skill) => ({ skill, topic }))) ?? [],
     [content],
   );
   const [lessons, setLessons] = React.useState<ClassroomLesson[]>([]);
@@ -31,28 +41,56 @@ export function ClassLessonEditor({
       setMessage('Could not load lessons.');
     }
   }, [api, classId]);
+
   React.useEffect(() => {
     void load();
   }, [load]);
+
   React.useEffect(() => {
-    setSkillId(skills[0]?.id ?? '');
-  }, [classId, skills]);
-  React.useEffect(() => {
-    const found = lessons.find(
-      (item) =>
-        item.skill_id === skillId && item.language === language && item.difficulty === difficulty,
+    setSkillId((current) =>
+      current && options.some((option) => option.skill.id === current)
+        ? current
+        : (options[0]?.skill.id ?? ''),
     );
-    setTitle(found?.title ?? '');
-    setBody(found?.body ?? '');
-  }, [lessons, skillId, language, difficulty]);
+  }, [options]);
+
+  const selected = React.useMemo(
+    () => options.find((option) => option.skill.id === skillId) ?? options[0] ?? null,
+    [options, skillId],
+  );
+  const defaultLesson = selected?.skill.default_lesson ?? null;
+  const savedLesson = lessons.find(
+    (item) =>
+      item.skill_id === skillId && item.language === language && item.difficulty === difficulty,
+  );
+
+  React.useEffect(() => {
+    setTitle(savedLesson?.title ?? defaultLesson?.title ?? '');
+    setBody(savedLesson?.body ?? defaultLesson?.body ?? '');
+  }, [defaultLesson, savedLesson, skillId, language, difficulty]);
+
+  const isTeacherVersion = Boolean(savedLesson);
 
   return (
     <section className="rounded-xl border-2 border-ink p-4 space-y-3">
-      <h3 className="font-bold">Classroom lesson editor</h3>
-      <p className="text-sm">
-        Create a lesson for each difficulty level. Students receive a level matched to their
-        mastery.
-      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="font-bold">Classroom lesson editor</h3>
+          <p className="text-sm">
+            The NCERT-aligned study guide is preloaded for every skill. Review it, then edit or
+            extend it with your own examples, activities, or local context; saving creates a version
+            for this class only.
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border-2 border-ink bg-surface-cream px-3 py-1 text-[10px] font-black uppercase tracking-wider text-ink">
+          {isTeacherVersion
+            ? 'Your class version'
+            : defaultLesson
+              ? 'NCERT-aligned default'
+              : 'Default unavailable'}
+        </span>
+      </div>
+
       <div className="grid gap-2 sm:grid-cols-3">
         <select
           aria-label="Lesson skill"
@@ -60,9 +98,9 @@ export function ClassLessonEditor({
           onChange={(e) => setSkillId(e.target.value)}
           className="border rounded p-2"
         >
-          {skills.map((skill) => (
-            <option key={skill.id} value={skill.id}>
-              {skill.name}
+          {options.map((option) => (
+            <option key={option.skill.id} value={option.skill.id}>
+              {option.topic.name} — {option.skill.name}
             </option>
           ))}
         </select>
@@ -88,6 +126,13 @@ export function ClassLessonEditor({
           ))}
         </select>
       </div>
+
+      {!isTeacherVersion && language === 'hi' && defaultLesson && (
+        <p className="text-xs text-text-secondary">
+          The default guide is in English. Edit and save this level to add a Hindi version.
+        </p>
+      )}
+
       <input
         aria-label="Lesson title"
         value={title}
@@ -100,29 +145,49 @@ export function ClassLessonEditor({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Write the lesson content"
-        rows={7}
-        className="w-full border rounded p-2"
+        rows={10}
+        className="w-full border rounded p-2 font-mono text-sm"
       />
-      <button
-        type="button"
-        disabled={!skillId || !title.trim() || !body.trim()}
-        className="rounded-full bg-primary-orange text-white px-4 py-2 disabled:opacity-50"
-        onClick={async () => {
-          try {
-            await api.saveClassLesson(
-              classId,
-              { skill_id: skillId, language, difficulty, title: title.trim(), body: body.trim() },
-              getAuthToken() || undefined,
-            );
-            await load();
-            setMessage('Lesson saved.');
-          } catch {
-            setMessage('Could not save the lesson.');
-          }
-        }}
-      >
-        Save lesson
-      </button>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={!skillId || !title.trim() || !body.trim()}
+          className="rounded-full bg-primary-orange px-4 py-2 text-white disabled:opacity-50"
+          onClick={async () => {
+            try {
+              await api.saveClassLesson(
+                classId,
+                { skill_id: skillId, language, difficulty, title: title.trim(), body: body.trim() },
+                getAuthToken() || undefined,
+              );
+              await load();
+              setMessage('Lesson saved for this class.');
+            } catch {
+              setMessage('Could not save the lesson.');
+            }
+          }}
+        >
+          Save lesson
+        </button>
+
+        {isTeacherVersion && defaultLesson && (
+          <button
+            type="button"
+            className="rounded-full border-2 border-ink px-4 py-2 text-sm font-bold"
+            onClick={() => {
+              setTitle(defaultLesson.title);
+              setBody(defaultLesson.body);
+              setMessage(
+                'NCERT default restored in the editor. Save to replace your class version.',
+              );
+            }}
+          >
+            Restore NCERT default
+          </button>
+        )}
+      </div>
+
       {message && (
         <p role="status" className="text-sm">
           {message}

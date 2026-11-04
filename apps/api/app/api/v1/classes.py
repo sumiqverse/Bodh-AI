@@ -54,6 +54,7 @@ from app.schemas.teacher import (
     TeacherDecisionCreateRequest,
     TeacherDecisionResponse,
 )
+from app.services.lesson_builder import build_default_lesson
 from app.services.teacher_service import TeacherDashboardService
 
 router = APIRouter(prefix="/classes", tags=["Classes"])
@@ -567,8 +568,6 @@ async def get_class_lesson(
         )
     )
     lessons = result.scalars().all()
-    if not lessons:
-        raise NotFoundError("ClassroomLesson", skill_id)
     mastery_result = await session.execute(
         select(Mastery).where(
             Mastery.class_id == class_id,
@@ -591,7 +590,21 @@ async def get_class_lesson(
     )
     eligible = [lesson for lesson in lessons if lesson.difficulty <= target]
     if not eligible:
-        raise NotFoundError("Lesson at student's current level", skill_id)
+        school_class = await ClassRepository(session).get_by_id(class_id)
+        if school_class is None:
+            raise NotFoundError("Class", class_id)
+        default_lesson = await _load_default_lesson(session, school_class, skill_id)
+        if default_lesson is None:
+            raise NotFoundError("Lesson at student's current level", skill_id)
+        return {
+            "id": f"default-{skill_id}",
+            "skill_id": str(skill_id),
+            "language": language,
+            "difficulty": target,
+            "title": default_lesson["title"],
+            "body": default_lesson["body"],
+            "is_default": True,
+        }
     chosen = max(eligible, key=lambda lesson: lesson.difficulty)
     return {
         "id": str(chosen.id),
@@ -1017,6 +1030,81 @@ def _detect_subject_from_class_name(name: str) -> str:
     return "mathematics"
 
 
+def _question_preview(q: Question, skill_name: str) -> ClassroomQuestionItem:
+    """Build the teacher-facing preview for one question."""
+    trans = next((tr for tr in q.translations if tr.language == "en"), None)
+    if not trans and q.translations:
+        trans = q.translations[0]
+
+    prompt_text = trans.prompt if trans else f"Assessment item for {skill_name}"
+    options_data = trans.options if trans and trans.options else []
+    explanation_text = trans.explanation if trans else ""
+    hints_data = trans.hints if trans and trans.hints else []
+    return ClassroomQuestionItem(
+        id=q.id,
+        code=q.code or str(q.id),
+        prompt=prompt_text,
+        options=options_data,
+        explanation=explanation_text,
+        hints=hints_data,
+        difficulty=q.difficulty,
+        is_custom=bool(q.code and "CUSTOM" in q.code),
+    )
+
+
+async def _load_default_lesson(
+    session: AsyncSession,
+    school_class: SchoolClass,
+    skill_id: uuid.UUID,
+) -> dict[str, str] | None:
+    """Build the default lesson for a skill that belongs to this class curriculum."""
+    curriculum_code = resolve_curriculum_code(
+        school_class.grade, school_class.subject or school_class.name
+    )
+    row = (
+        await session.execute(
+            select(Skill, Topic)
+            .join(Topic, Skill.topic_id == Topic.id)
+            .join(Curriculum, Topic.curriculum_id == Curriculum.id)
+            .where(
+                Skill.id == skill_id,
+                Curriculum.code == curriculum_code,
+                Skill.is_deleted.is_(False),
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        return None
+    skill, topic = row
+    questions = (
+        (
+            await session.execute(
+                select(Question)
+                .where(
+                    Question.skill_id == skill.id,
+                    (Question.class_id.is_(None)) | (Question.class_id == school_class.id),
+                    Question.status == "published",
+                    Question.is_active.is_(True),
+                    Question.is_deleted.is_(False),
+                )
+                .options(selectinload(Question.translations))
+                .order_by(Question.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    previews = [_question_preview(q, skill.name) for q in questions]
+    return build_default_lesson(
+        topic_name=topic.name,
+        topic_description=topic.description,
+        skill_name=skill.name,
+        skill_description=skill.description,
+        blooms_level=skill.blooms_level,
+        questions=[preview.model_dump() for preview in previews],
+    )
+
+
 @router.get(
     "/{class_id}/content",
     response_model=ClassroomContentResponse,
@@ -1098,30 +1186,19 @@ async def get_classroom_content(
         for s in skills_by_topic.get(t.id, []):
             skill_questions: list[ClassroomQuestionItem] = []
             for q in questions_by_skill.get(s.id, []):
-                trans = next((tr for tr in q.translations if tr.language == "en"), None)
-                if not trans and q.translations:
-                    trans = q.translations[0]
-
-                prompt_text = trans.prompt if trans else f"Assessment item for {s.name}"
-                options_data = trans.options if trans and trans.options else []
-                explanation_text = trans.explanation if trans else ""
-                hints_data = trans.hints if trans and trans.hints else []
-                is_custom = bool(q.code and "CUSTOM" in q.code)
-                if is_custom:
+                preview = _question_preview(q, s.name)
+                if preview.is_custom:
                     total_custom += 1
+                skill_questions.append(preview)
 
-                skill_questions.append(
-                    ClassroomQuestionItem(
-                        id=q.id,
-                        code=q.code or str(q.id),
-                        prompt=prompt_text,
-                        options=options_data,
-                        explanation=explanation_text,
-                        hints=hints_data,
-                        difficulty=q.difficulty,
-                        is_custom=is_custom,
-                    )
-                )
+            default_lesson = build_default_lesson(
+                topic_name=t.name,
+                topic_description=t.description,
+                skill_name=s.name,
+                skill_description=s.description,
+                blooms_level=s.blooms_level,
+                questions=[question.model_dump() for question in skill_questions],
+            )
 
             topic_skills.append(
                 ClassroomSkillItem(
@@ -1132,6 +1209,7 @@ async def get_classroom_content(
                     difficulty=s.difficulty,
                     blooms_level=s.blooms_level,
                     questions=skill_questions,
+                    default_lesson=default_lesson,
                 )
             )
 
