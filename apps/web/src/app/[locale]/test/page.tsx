@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Trophy, Check, RotateCcw, ArrowRight } from 'lucide-react';
 import { useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import {
@@ -67,57 +68,132 @@ function TestContent(): React.JSX.Element {
 
   // Completed Test State — Clear 'mastery check' framing & outcome
   if (isCompleted && result) {
+    const accuracyPercent = Math.round(
+      (result.correctAnswers / Math.max(result.totalQuestions, 1)) * 100,
+    );
+
     return (
       <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-8">
-        <Card className="w-full max-w-lg rounded-card border-2 border-ink bg-surface-white dark:bg-card text-center shadow-card">
-          <CardHeader className="pb-4">
+        <Card className="w-full max-w-lg rounded-[28px] border-2 border-ink bg-surface-white dark:bg-card text-center shadow-shell relative overflow-hidden p-2 sm:p-4">
+          {/* Subtle Decorative Arc */}
+          <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-surface-butter/60 border-2 border-ink/10 pointer-events-none" />
+
+          <CardHeader className="pb-4 relative z-10">
+            {/* Visual Icon Badge (Replaces generic emoji with crisp SVG iconography) */}
             <div
-              className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-3xl font-black border-2 border-ink shadow-sm ${
-                result.isMastered ? 'bg-emerald-100 text-emerald-950' : 'bg-surface-cream text-ink'
+              className={`relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-ink shadow-card transition-transform hover:scale-105 ${
+                result.isMastered ? 'bg-surface-yellow text-ink' : 'bg-surface-peach text-ink'
               }`}
             >
-              {result.isMastered ? '🏆' : '✓'}
+              {result.isMastered ? (
+                <>
+                  <Trophy className="h-10 w-10 text-ink stroke-[2.2]" />
+                  <span className="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-ink bg-emerald-500 text-white shadow-xs">
+                    <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  </span>
+                </>
+              ) : (
+                <RotateCcw className="h-9 w-9 text-ink stroke-[2.2]" />
+              )}
             </div>
 
-            <Badge
-              variant={result.isMastered ? 'default' : 'outline'}
-              size="sm"
-              className="mx-auto mb-2 font-bold border-2 border-ink"
+            {/* Status Pill */}
+            <div
+              className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3.5 py-1 text-xs font-black uppercase tracking-wider shadow-xs mb-3 mx-auto ${
+                result.isMastered
+                  ? 'bg-emerald-100 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-200'
+                  : 'bg-surface-cream text-ink dark:bg-card dark:text-white'
+              }`}
             >
-              {result.isMastered ? 'Mastery Verified' : 'Practice Progress'}
-            </Badge>
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  result.isMastered ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'
+                }`}
+              />
+              <span>{result.isMastered ? 'Mastery Verified' : 'Practice Progress'}</span>
+            </div>
 
             <CardTitle className="font-serif text-2xl sm:text-3xl font-black tracking-tight text-ink dark:text-white">
               {t('testCompletedTitle')}
             </CardTitle>
 
-            <CardDescription className="text-sm text-text-secondary mt-2 leading-relaxed">
+            <CardDescription className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed font-medium">
               {result.isMastered ? t('masteredCongratulations') : t('needsPracticeAdvice')}
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6 pt-2">
-            <div className="rounded-xl border-2 border-ink bg-surface-cream/50 p-5 space-y-1 shadow-xs">
-              <span className="text-xs uppercase font-extrabold text-text-secondary tracking-wider">
-                Assessment Outcome
-              </span>
-              <p className="font-serif text-2xl font-black text-ink">
-                {t('scoreSummary', {
-                  correct: result.correctAnswers,
-                  total: result.totalQuestions,
+          <CardContent className="space-y-6 pt-2 relative z-10">
+            {/* Assessment Telemetry Box */}
+            <div className="rounded-2xl border-2 border-ink bg-surface-cream/70 dark:bg-card p-5 space-y-3 shadow-xs text-left">
+              <div className="flex items-center justify-between border-b border-ink/15 pb-2 text-xs font-mono font-black uppercase text-ink/70 dark:text-muted-foreground">
+                <span>Assessment Outcome</span>
+                <span
+                  className={`px-2 py-0.5 rounded-md border border-ink/20 font-bold ${
+                    result.isMastered
+                      ? 'bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200'
+                      : 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200'
+                  }`}
+                >
+                  {accuracyPercent}% Accuracy
+                </span>
+              </div>
+
+              <div className="flex items-baseline justify-between pt-1">
+                <div className="text-3xl sm:text-4xl font-black font-sans text-ink dark:text-white tracking-tight">
+                  <span
+                    className={
+                      result.isMastered ? 'text-emerald-700 dark:text-emerald-400' : 'text-ink'
+                    }
+                  >
+                    {result.correctAnswers}
+                  </span>
+                  <span className="text-ink/40 font-bold mx-1.5">/</span>
+                  <span>{result.totalQuestions}</span>
+                  <span className="text-xs sm:text-sm font-bold text-text-secondary dark:text-muted-foreground ml-2">
+                    {t('scoreSummary', {
+                      correct: result.correctAnswers,
+                      total: result.totalQuestions,
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Per-question verification indicators */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {Array.from({ length: result.totalQuestions }).map((_, i) => {
+                  const isCorrectQuestion = i < result.correctAnswers;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg border border-ink/20 text-[11px] font-bold ${
+                        isCorrectQuestion
+                          ? 'bg-emerald-100/80 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          : 'bg-surface-white text-ink/60 dark:bg-muted dark:text-muted-foreground'
+                      }`}
+                    >
+                      <Check
+                        className={`w-3.5 h-3.5 ${
+                          isCorrectQuestion ? 'text-emerald-600 stroke-[3]' : 'opacity-30'
+                        }`}
+                      />
+                      <span>Q{i + 1}</span>
+                    </div>
+                  );
                 })}
-              </p>
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
                 type="button"
                 variant="orange"
                 size="lg"
                 onClick={() => router.push('/student')}
-                className="w-full sm:flex-1 min-h-[48px] cursor-pointer font-bold shadow-sm rounded-full border-2 border-ink hover:-translate-y-0.5 transition-transform"
+                className="w-full sm:flex-1 h-12 min-h-[48px] cursor-pointer font-black text-sm shadow-card rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
               >
-                {t('returnToMap')}
+                <span>{t('returnToMap')}</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </Button>
               {!result.isMastered && (
                 <Button
@@ -125,9 +201,10 @@ function TestContent(): React.JSX.Element {
                   variant="outline"
                   size="lg"
                   onClick={resetTest}
-                  className="w-full sm:flex-1 min-h-[48px] cursor-pointer font-bold rounded-full border-2 border-ink"
+                  className="w-full sm:flex-1 h-12 min-h-[48px] cursor-pointer font-bold text-sm rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
                 >
-                  {t('retryTest')}
+                  <RotateCcw className="w-4 h-4 stroke-[2.2]" />
+                  <span>{t('retryTest')}</span>
                 </Button>
               )}
             </div>
