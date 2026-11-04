@@ -21,7 +21,7 @@ export function ThemeToggle({ label = 'Toggle theme' }: { label?: string }): Rea
       aria-label={label}
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       title={label}
-      className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink dark:text-white dark:bg-card shadow-xs cursor-pointer select-none shrink-0 inline-flex items-center justify-center transition-colors"
+      className="h-10 w-10 rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink dark:text-white dark:bg-card shadow-xs cursor-pointer select-none shrink-0 inline-flex items-center justify-center transition-colors box-border p-0"
       suppressHydrationWarning
     >
       {isDark ? (

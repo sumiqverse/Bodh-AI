@@ -102,10 +102,10 @@ export function Navbar({
             aria-controls={menuId}
             aria-label="Toggle navigation menu"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink dark:text-white dark:bg-card shadow-xs cursor-pointer select-none shrink-0"
           >
             {mobileMenuOpen ? (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -114,7 +114,7 @@ export function Navbar({
                 />
               </svg>
             ) : (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

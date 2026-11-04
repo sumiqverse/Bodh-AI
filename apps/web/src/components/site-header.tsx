@@ -395,7 +395,7 @@ export function SiteHeader(): React.JSX.Element {
                 onClick={handleUserButtonClick}
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="true"
-                className={`group flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full border-2 border-ink transition-all cursor-pointer select-none ${
+                className={`group h-10 inline-flex items-center gap-2 pl-1.5 pr-3 rounded-full border-2 border-ink transition-all cursor-pointer select-none shrink-0 box-border ${
                   isDropdownOpen
                     ? 'bg-surface-cream text-ink shadow-xs translate-y-0.5'
                     : 'bg-surface-white dark:bg-card text-ink dark:text-white shadow-xs hover:bg-surface-cream hover:-translate-y-0.5'
@@ -595,7 +595,7 @@ export function SiteHeader(): React.JSX.Element {
                 onClick={handleAuthButtonClick}
                 aria-expanded={isAuthDropdownOpen}
                 aria-haspopup="menu"
-                className={`inline-flex items-center gap-1.5 min-h-[44px] rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink font-black text-xs sm:text-sm px-5 py-2.5 shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer whitespace-nowrap shrink-0 select-none ${
+                className={`inline-flex items-center gap-1.5 h-10 rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink font-black text-xs sm:text-sm px-4 shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer whitespace-nowrap shrink-0 select-none box-border ${
                   isAuthDropdownOpen ? 'bg-primary-orange-dark' : ''
                 }`}
               >
