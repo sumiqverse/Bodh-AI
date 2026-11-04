@@ -124,17 +124,13 @@ export default async function LocaleLayout({
   // Comprehensive JSON-LD Schemas for SEO & Semantic Web
   const organizationJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'EducationalOrganization',
+    '@type': ['Organization', 'EducationalOrganization'],
     '@id': 'https://bodhai.org.in/#organization',
     name: 'BodhAI Foundation',
     alternateName: ['बोधAI', 'BodhAI Educational Technologies'],
     url: 'https://bodhai.org.in',
-    logo: {
-      '@type': 'ImageObject',
-      url: 'https://bodhai.org.in/icons/image.png',
-      width: 512,
-      height: 512,
-    },
+    logo: 'https://bodhai.org.in/icons/image.png',
+    image: 'https://bodhai.org.in/icons/image.png',
     description:
       'Open-source adaptive diagnostic mastery learning platform for Classes 6 to 10 across India, aligned with NCERT curriculum frameworks.',
     areaServed: {
@@ -175,10 +171,25 @@ export default async function LocaleLayout({
       url: 'https://bodhai.org.in',
     },
     about: {
+      '@type': 'Organization',
       '@id': 'https://bodhai.org.in/#organization',
+      name: 'BodhAI Foundation',
+      url: 'https://bodhai.org.in',
     },
     publisher: {
+      '@type': 'Organization',
       '@id': 'https://bodhai.org.in/#organization',
+      name: 'BodhAI Foundation',
+      url: 'https://bodhai.org.in',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://bodhai.org.in/icons/image.png',
+      },
+    },
+    author: {
+      '@type': 'Organization',
+      name: 'BodhAI Foundation',
+      url: 'https://bodhai.org.in',
     },
     datePublished: '2026-01-15T00:00:00+05:30',
     dateModified: '2026-11-04T00:00:00+05:30',
@@ -203,6 +214,11 @@ export default async function LocaleLayout({
     ],
   };
 
+  const graphJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [organizationJsonLd, webPageJsonLd, breadcrumbJsonLd],
+  };
+
   return (
     <html
       lang={locale}
@@ -215,6 +231,10 @@ export default async function LocaleLayout({
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
           crossOrigin="anonymous"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(graphJsonLd) }}
         />
         <script
           type="application/ld+json"
