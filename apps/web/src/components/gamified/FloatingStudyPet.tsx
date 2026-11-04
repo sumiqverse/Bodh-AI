@@ -4,9 +4,9 @@ import * as React from 'react';
 import { useLocale } from 'next-intl';
 import { Lightbulb, X } from 'lucide-react';
 import { usePathname, useRouter } from '@/i18n/routing';
-import { SquirrelAvatar } from './MascotIcons';
+import { RobotAvatar } from './RobotAvatar';
 
-type CompanionMood = 'idle' | 'thinking' | 'celebrating' | 'encouraging';
+export type CompanionMood = 'idle' | 'thinking' | 'celebrating' | 'encouraging';
 
 type Position = { x: number; y: number };
 const SIZE = 112;
@@ -123,7 +123,7 @@ export function FloatingStudyPet(): React.JSX.Element | null {
         }}
         aria-label={isHindi ? 'अध्ययन साथी दिखाएं' : 'Show study companion'}
       >
-        <SquirrelAvatar className="h-10 w-10" />
+        <RobotAvatar className="h-10 w-10" />
       </button>
     );
   }
@@ -242,7 +242,7 @@ export function FloatingStudyPet(): React.JSX.Element | null {
         }
         aria-expanded={open}
       >
-        <SquirrelAvatar mood={mood} className="h-28 w-28 drop-shadow-lg" />
+        <RobotAvatar mood={mood} className="h-28 w-28" />
       </button>
     </div>
   );

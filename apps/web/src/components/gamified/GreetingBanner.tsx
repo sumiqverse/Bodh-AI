@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { SquirrelAvatar } from './MascotIcons';
+import { RobotAvatar } from './RobotAvatar';
 
 interface GreetingBannerProps {
   studentName?: string;
@@ -25,7 +25,7 @@ export function GreetingBanner({
 
         {/* Mascot Avatar */}
         <div className="relative shrink-0">
-          <SquirrelAvatar className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-xs" />
+          <RobotAvatar className="w-14 h-14 sm:w-16 sm:h-16" />
         </div>
 
         {/* Speech Bubble with left-pointing arrow */}
