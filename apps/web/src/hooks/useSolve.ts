@@ -50,14 +50,22 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const [hintLevel, setHintLevel] = React.useState<number>(0);
   const [submissionResult, setSubmissionResult] = React.useState<AttemptResponse | null>(null);
   const [hasSubmitted, setHasSubmitted] = React.useState<boolean>(false);
+  const [skipInitialQuestionId, setSkipInitialQuestionId] = React.useState<boolean>(false);
+  const [questionCycle, setQuestionCycle] = React.useState<number>(0);
   const startTime = React.useRef(Date.now());
 
   // Fetch authentic practice question by questionId or skillId
   const questionQuery = useQuery({
-    queryKey: ['solve-question', options?.questionId ?? options?.skillId ?? 'none', locale],
+    queryKey: [
+      'solve-question',
+      options?.skillId ?? 'none',
+      skipInitialQuestionId ? 'next' : (options?.questionId ?? 'next'),
+      questionCycle,
+      locale,
+    ],
     queryFn: async (): Promise<SolveQuestionData> => {
       const isHindi = locale === 'hi';
-      if (options?.questionId) {
+      if (!skipInitialQuestionId && options?.questionId) {
         try {
           const token = getAuthToken() ?? undefined;
           const q = await apiClient.getQuestion(options.questionId, token, locale);
@@ -104,7 +112,7 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
           : 'No practice questions currently available for this topic.',
       );
     },
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const question = questionQuery.data ?? null;
@@ -174,8 +182,10 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
     setHintLevel(0);
     setSubmissionResult(null);
     setHasSubmitted(false);
-    void questionQuery.refetch();
-  }, [questionQuery]);
+    setSkipInitialQuestionId(true);
+    setQuestionCycle((prev) => prev + 1);
+    void queryClient.invalidateQueries({ queryKey: ['solve-question'] });
+  }, [queryClient]);
 
   const activeHints = React.useMemo(() => {
     if (!question || hintLevel === 0) return [];

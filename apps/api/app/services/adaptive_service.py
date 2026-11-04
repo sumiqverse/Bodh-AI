@@ -296,7 +296,7 @@ class AdaptiveService:
         # 1. Fetch student's attempt history to avoid repetition
         attempt_stmt = (
             select(Attempt.question_id, Attempt.skill_id)
-            .where(Attempt.student_id == student_id, Attempt.class_id == class_id)
+            .where(Attempt.student_id == student_id)
             .order_by(Attempt.created_at)
         )
         attempt_res = await self.session.execute(attempt_stmt)

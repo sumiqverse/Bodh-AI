@@ -22,6 +22,7 @@ import {
 import { useSolve, solveSubmissionSchema, type SolveSubmissionFormValues } from '@/hooks/useSolve';
 import { KatexRenderer } from '@/components/katex-renderer';
 import { isGuardianConsentError } from '@/lib/api-errors';
+import { Check, Info, ArrowRight } from 'lucide-react';
 
 function SolveSkeleton(): React.JSX.Element {
   return (
@@ -75,6 +76,12 @@ function SolveContent(): React.JSX.Element {
 
   const handleNextProblem = (): void => {
     form.reset({ selectedAnswer: '' });
+    if (searchParams.has('questionId')) {
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete('questionId');
+      const qs = newParams.toString() ? `?${newParams.toString()}` : '';
+      router.replace(`/solve${qs}`);
+    }
     resetForNextQuestion();
   };
 
@@ -313,7 +320,11 @@ function SolveContent(): React.JSX.Element {
                   }`}
                   aria-hidden="true"
                 >
-                  {submissionResult.is_correct ? '✓' : 'ℹ'}
+                  {submissionResult.is_correct ? (
+                    <Check className="w-4 h-4 stroke-[3]" />
+                  ) : (
+                    <Info className="w-4 h-4 stroke-[2.5]" />
+                  )}
                 </span>
                 <h3
                   id="feedback-heading"
@@ -340,18 +351,20 @@ function SolveContent(): React.JSX.Element {
                   variant="outline"
                   size="md"
                   onClick={handleNextProblem}
-                  className="flex-1 min-h-[46px] cursor-pointer font-bold rounded-full border-2 border-ink"
+                  className="flex-1 min-h-[48px] cursor-pointer font-bold text-sm rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
                 >
-                  {t('nextQuestionButton')}
+                  <span>{t('nextQuestionButton')}</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </Button>
                 <Button
                   type="button"
                   variant="orange"
                   size="md"
                   onClick={() => router.push(`/test?skillId=${question.skillId}`)}
-                  className="flex-1 min-h-[46px] cursor-pointer font-bold shadow-sm rounded-full border-2 border-ink hover:-translate-y-0.5 transition-transform"
+                  className="flex-1 min-h-[48px] cursor-pointer font-black text-sm shadow-card rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
                 >
-                  {t('readyForTestButton')} →
+                  <span>{t('readyForTestButton')}</span>
+                  <span aria-hidden="true">→</span>
                 </Button>
               </div>
             </section>
