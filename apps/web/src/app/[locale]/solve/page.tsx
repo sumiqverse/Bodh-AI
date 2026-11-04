@@ -21,7 +21,6 @@ import {
 } from '@bodhai/ui';
 import { useSolve, solveSubmissionSchema, type SolveSubmissionFormValues } from '@/hooks/useSolve';
 import { KatexRenderer } from '@/components/katex-renderer';
-import { StudyCompanion, type CompanionMood } from '@/components/gamified';
 
 function SolveSkeleton(): React.JSX.Element {
   return (
@@ -67,13 +66,6 @@ function SolveContent(): React.JSX.Element {
   });
 
   const selectedAnswer = form.watch('selectedAnswer');
-  const companionMood: CompanionMood = submissionResult
-    ? submissionResult.is_correct
-      ? 'celebrating'
-      : 'encouraging'
-    : hintLevel > 0
-      ? 'thinking'
-      : 'idle';
 
   const onSubmit = async (values: SolveSubmissionFormValues): Promise<void> => {
     if (isSubmitting || hasSubmitted) return;
@@ -134,10 +126,6 @@ function SolveContent(): React.JSX.Element {
         <span className="text-xs font-mono font-bold text-ink bg-surface-cream px-2.5 py-1 rounded-full border border-ink shadow-xs">
           {question.code}
         </span>
-      </div>
-
-      <div className="w-full max-w-2xl mb-4">
-        <StudyCompanion mood={companionMood} hintLevel={hintLevel} />
       </div>
 
       <Card className="w-full max-w-2xl rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card">

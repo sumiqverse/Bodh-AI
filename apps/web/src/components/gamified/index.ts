@@ -2,7 +2,7 @@ export * from './MascotIcons';
 export * from './StudentSidebar';
 export * from './StudentTopBar';
 export * from './GreetingBanner';
-export * from './StudyCompanion';
+export * from './FloatingStudyPet';
 export * from './StatTiles';
 export * from './CourseProgressCard';
 export * from './TodayChallengeCard';
