@@ -203,6 +203,54 @@
 }
 
 /* The companion has gentle motion at rest and a short response to study events. */
+@keyframes robot-hover {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(2deg);
+  }
+}
+
+@keyframes robot-think {
+  0%,
+  100% {
+    transform: rotate(-5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(4deg) translateY(-3px);
+  }
+}
+
+@keyframes robot-cheer {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-14px) scale(1.08);
+  }
+  70% {
+    transform: translateY(-4px) scale(1.03);
+  }
+}
+
+.robot-pet {
+  transform-origin: center bottom;
+  animation: robot-hover 3.2s ease-in-out infinite;
+}
+
+.robot-pet--thinking {
+  animation: robot-think 2s ease-in-out infinite;
+}
+.robot-pet--celebrating {
+  animation: robot-cheer 0.75s ease-in-out 3;
+}
+.robot-pet--encouraging {
+  animation-duration: 4.5s;
+}
+
 @keyframes companion-bob {
   0%,
   100% {
