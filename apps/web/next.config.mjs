@@ -22,6 +22,20 @@ const nextConfig = {
       }
     : {}),
   transpilePackages: ['@bodhai/ui', '@bodhai/engine-ts', '@bodhai/api-client'],
+  async rewrites() {
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const targetApiUrl =
+      rawApiUrl && !rawApiUrl.includes('bodhai-api.onrender.com')
+        ? rawApiUrl
+        : 'https://bodhai-kqwj.onrender.com';
+
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${targetApiUrl}/api/v1/:path*`,
+      },
+    ];
+  },
   async headers() {
     return [
       {

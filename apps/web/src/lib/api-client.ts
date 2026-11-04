@@ -18,10 +18,9 @@ let memoryToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
 let refreshGeneration = 0;
 
-// Purge legacy bearer tokens left in localStorage by older builds.
+// Initialize refresh generation tracking
 if (typeof window !== 'undefined') {
   try {
-    localStorage.removeItem(TOKEN_KEY);
     refreshGeneration = Number(localStorage.getItem(REFRESH_GENERATION_KEY) || '0') || 0;
   } catch {
     // Storage can be unavailable in privacy-restricted contexts.
@@ -69,8 +68,16 @@ export function getUserDashboardPath(user: UserResponse | null): string {
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
   if (memoryToken) return memoryToken;
-  // The real access token lives in an HttpOnly cookie. This non-secret sentinel
-  // keeps existing callers working while the API client falls back to cookies.
+  try {
+    const stored = localStorage.getItem(TOKEN_KEY);
+    if (stored) {
+      memoryToken = stored;
+      return stored;
+    }
+  } catch {
+    // Storage can be unavailable in privacy-restricted contexts.
+  }
+  // Fall back to cookie sentinel if user profile is known
   return getCurrentUser() ? COOKIE_SESSION_TOKEN : null;
 }
 
@@ -88,8 +95,14 @@ export function getCurrentUser(): UserResponse | null {
 export function setAuthSession(token: string, user: UserResponse): void {
   if (typeof window === 'undefined') return;
   memoryToken = token;
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  try {
+    if (token && token !== COOKIE_SESSION_TOKEN) {
+      localStorage.setItem(TOKEN_KEY, token);
+    }
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch {
+    // Storage can be unavailable in privacy-restricted contexts.
+  }
   syncSessionCookies(token, user);
   try {
     window.dispatchEvent(new Event('bodhai_auth_change'));

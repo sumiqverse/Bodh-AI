@@ -469,9 +469,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           <CardContent>
             <form
               onSubmit={handleCreateClass}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 items-end"
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end"
             >
-              <div className="space-y-1.5 lg:col-span-2">
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
                 <label
                   htmlFor="new-class-name-empty"
                   className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -486,7 +486,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 lg:col-span-2">
                 <label
                   htmlFor="new-class-grade-empty"
                   className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -501,7 +501,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 lg:col-span-3">
                 <label
                   htmlFor="new-class-subject-empty"
                   className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -516,7 +516,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 lg:col-span-1">
                 <label
                   htmlFor="new-class-section-empty"
                   className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -531,14 +531,14 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-2 lg:col-span-2">
                 <Button
                   type="submit"
                   variant="primary"
                   className="w-full cursor-pointer py-2 font-semibold text-xs min-h-[40px]"
                   disabled={isCreating}
                 >
-                  {isCreating ? t('creating') : '➕ Create Class'}
+                  {isCreating ? t('creating') : '+ Create Class'}
                 </Button>
               </div>
             </form>
