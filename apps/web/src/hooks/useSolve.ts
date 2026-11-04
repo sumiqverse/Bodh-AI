@@ -159,18 +159,8 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   });
 
   const requestHint = React.useCallback(() => {
-    if (hasSubmitted || hintLevel >= 3) return;
-    const nextLevel = hintLevel + 1;
-    setHintLevel(nextLevel);
-    window.dispatchEvent(
-      new CustomEvent('bodhai_hint_requested', { detail: { level: nextLevel } }),
-    );
-  }, [hasSubmitted, hintLevel]);
-
-  React.useEffect(() => {
-    window.addEventListener('bodhai_companion_request_hint', requestHint);
-    return () => window.removeEventListener('bodhai_companion_request_hint', requestHint);
-  }, [requestHint]);
+    setHintLevel((prev) => Math.min(prev + 1, 3));
+  }, []);
 
   const submitAnswer = React.useCallback(
     async (selectedOption: string): Promise<AttemptResponse | undefined> => {

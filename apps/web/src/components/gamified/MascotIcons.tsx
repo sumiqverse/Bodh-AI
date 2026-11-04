@@ -11,25 +11,22 @@ import * as React from 'react';
 // 1. Squirrel Mascot - Greeting Pose (Cheering with fluffy tail)
 export function SquirrelAvatar({
   className = 'w-12 h-12',
-  mood = 'idle',
 }: {
   className?: string;
-  mood?: 'idle' | 'thinking' | 'celebrating' | 'encouraging';
 }): React.JSX.Element {
   return (
     <svg
       viewBox="0 0 100 100"
-      className={`${className} companion-squirrel companion-squirrel--${mood}`}
+      className={className}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label={`Squirrel companion ${mood}`}
+      aria-label="Squirrel mascot cheering"
     >
       {/* Background circle accent */}
       <circle cx="50" cy="50" r="46" fill="#FDEFC3" stroke="#1A1A1A" strokeWidth="2.5" />
       {/* Fluffy tail curved behind */}
       <path
-        className="companion-tail"
         d="M62 76C68 76 84 70 86 52C88 34 76 22 66 18C61 16 57 18 56 21C55 24 57 28 62 30C70 34 74 44 72 54C70 64 64 68 58 70"
         fill="#E8800A"
         stroke="#1A1A1A"
@@ -69,36 +66,16 @@ export function SquirrelAvatar({
       <ellipse cx="53" cy="44" rx="6" ry="6" fill="#FDD9B5" stroke="#1A1A1A" strokeWidth="1.5" />
       <circle cx="33" cy="44" r="2.5" fill="#F9B9B9" />
       <circle cx="53" cy="44" r="2.5" fill="#F9B9B9" />
-      {/* Eyes blink while idle; their shape follows the current learning moment. */}
-      {mood === 'celebrating' ? (
-        <g stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round">
-          <path d="M35 38Q38 34 41 38" />
-          <path d="M45 38Q48 34 51 38" />
-        </g>
-      ) : mood === 'thinking' ? (
-        <g fill="#1A1A1A">
-          <ellipse cx="38" cy="37" rx="3.5" ry="4.5" />
-          <ellipse cx="49" cy="35" rx="3.5" ry="4.5" />
-          <circle cx="37" cy="35.5" r="1.3" fill="white" />
-          <circle cx="48" cy="33.5" r="1.3" fill="white" />
-        </g>
-      ) : (
-        <g className="companion-eyes">
-          <ellipse cx="38" cy="37" rx="3.5" ry="4.5" fill="#1A1A1A" />
-          <circle cx="37" cy="35.5" r="1.5" fill="#FFFFFF" />
-          <ellipse cx="48" cy="37" rx="3.5" ry="4.5" fill="#1A1A1A" />
-          <circle cx="47" cy="35.5" r="1.5" fill="#FFFFFF" />
-        </g>
-      )}
+      {/* Big Eyes */}
+      <ellipse cx="38" cy="37" rx="3.5" ry="4.5" fill="#1A1A1A" />
+      <circle cx="37" cy="35.5" r="1.5" fill="#FFFFFF" />
+      <ellipse cx="48" cy="37" rx="3.5" ry="4.5" fill="#1A1A1A" />
+      <circle cx="47" cy="35.5" r="1.5" fill="#FFFFFF" />
       {/* Snout & Little Nose */}
       <ellipse cx="43" cy="42" rx="4" ry="3" fill="#FFF4B5" />
       <polygon points="41.5,41 44.5,41 43,43" fill="#1A1A1A" />
       <path
-        d={
-          mood === 'encouraging'
-            ? 'M39 46Q43 48 47 46'
-            : 'M43 43C42 45 40 45 39 44M43 43C44 45 46 45 47 44'
-        }
+        d="M43 43C42 45 40 45 39 44M43 43C44 45 46 45 47 44"
         stroke="#1A1A1A"
         strokeWidth="1.5"
         strokeLinecap="round"

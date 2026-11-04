@@ -8,7 +8,6 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { QueryProvider } from '@/components/query-provider';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
-import { FloatingStudyPet } from '@/components/gamified/FloatingStudyPet';
 import { ToastProvider } from '@bodhai/ui';
 import { ServiceWorkerRegister } from '@/components/offline';
 import 'katex/dist/katex.min.css';
@@ -270,7 +269,6 @@ export default async function LocaleLayout({
                   <main id="main-content" className="flex-1 focus:outline-none" tabIndex={-1}>
                     {children}
                   </main>
-                  <FloatingStudyPet />
                   <SiteFooter />
                 </div>
               </ToastProvider>
