@@ -306,6 +306,7 @@
     "withdrawConsentButton": "Withdraw Consent",
     "withdrawing": "Withdrawing consent...",
     "consentGrantedSuccess": "Guardian consent successfully registered. Learning and diagnostic assessments are now unlocked.",
+    "continueToPractice": "Continue to practice",
     "consentWithdrawnSuccess": "Consent withdrawn. Learning telemetry processing has been suspended.",
     "activeConsentsTitle": "Active Consent Records",
     "versionLabel": "Notice Version:",
@@ -585,6 +586,9 @@
     "readyForTestButton": "Take Mastery Check",
     "selectOptionRequired": "Please select an answer choice before submitting.",
     "idempotencyNotice": "Idempotent submission active • Prevents duplicate submissions",
+    "consentRequiredTitle": "Guardian consent required",
+    "consentRequiredDescription": "A parent or guardian must record DPDP consent before this account can submit practice answers. It only takes a minute.",
+    "completeConsentButton": "Complete guardian consent",
     "emptyState": "No practice question available."
   },
   "test": {

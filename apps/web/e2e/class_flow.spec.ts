@@ -132,6 +132,8 @@ test.describe('End-to-End Classroom & Guardian Consent Flow', () => {
 
       // Record Guardian Consent
       if (url.includes('/api/v1/consents') && method === 'POST') {
+        const payload = request.postDataJSON() as { version?: string };
+        expect(payload.version).toBe('2026.1');
         await route.fulfill({
           status: 201,
           contentType: 'application/json',
@@ -140,7 +142,7 @@ test.describe('End-to-End Classroom & Guardian Consent Flow', () => {
               id: '55555555-5555-5555-5555-555555555551',
               student_id: studentId,
               scope: 'diagnostic',
-              version: '2024.1',
+              version: '2026.1',
               is_granted: true,
               timestamp: new Date().toISOString(),
               guardian_name: 'Priya Patel',
@@ -151,7 +153,7 @@ test.describe('End-to-End Classroom & Guardian Consent Flow', () => {
               id: '55555555-5555-5555-5555-555555555552',
               student_id: studentId,
               scope: 'learning',
-              version: '2024.1',
+              version: '2026.1',
               is_granted: true,
               timestamp: new Date().toISOString(),
               guardian_name: 'Priya Patel',
@@ -169,7 +171,7 @@ test.describe('End-to-End Classroom & Guardian Consent Flow', () => {
 
     // --- STEP 1: Teacher creates classroom ---
     await page.goto('/en/signup');
-    await expect(page.locator('h2, .font-serif')).toBeVisible();
+    await expect(page.locator('#teacher-name')).toBeVisible();
 
     await page.locator('#teacher-name').fill('Pooja Sharma');
     await page.locator('#teacher-signup-email').fill('pooja.sharma@school.edu.in');

@@ -306,6 +306,7 @@
     "withdrawConsentButton": "सहमति वापस लें",
     "withdrawing": "सहमति वापस ली जा रही है...",
     "consentGrantedSuccess": "अभिभावक सहमति सफलतापूर्वक पंजीकृत हो गई। अधिगम एवं निदानात्मक मूल्यांकन अब उपलब्ध हैं।",
+    "continueToPractice": "अभ्यास पर वापस जाएं",
     "consentWithdrawnSuccess": "सहमति वापस ले ली गई है। शिक्षण डेटा का प्रसंस्करण निलंबित कर दिया गया है।",
     "activeConsentsTitle": "सक्रिय सहमति अभिलेख",
     "versionLabel": "सूचना संस्करण:",
@@ -585,6 +586,9 @@
     "readyForTestButton": "दक्षता जांच दें",
     "selectOptionRequired": "कृपया उत्तर सबमिट करने से पहले एक विकल्प चुनें।",
     "idempotencyNotice": "सुरक्षित सबमिशन सक्रिय • दोहरे सबमिशन से सुरक्षित",
+    "consentRequiredTitle": "अभिभावक सहमति आवश्यक है",
+    "consentRequiredDescription": "इस खाते से अभ्यास उत्तर सबमिट करने से पहले माता-पिता या अभिभावक को DPDP सहमति दर्ज करनी होगी। इसमें केवल एक मिनट लगता है।",
+    "completeConsentButton": "अभिभावक सहमति पूरी करें",
     "emptyState": "कोई अभ्यास प्रश्न उपलब्ध नहीं है।"
   },
   "test": {

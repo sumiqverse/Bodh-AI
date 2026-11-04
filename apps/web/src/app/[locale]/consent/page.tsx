@@ -17,6 +17,16 @@ import {
 import { getWebApiClient, getAuthToken, getCurrentUser } from '@/lib/api-client';
 import type { ConsentDetailResponse } from '@bodhai/api-client';
 
+// Keep in sync with the backend's active DPDP consent version.
+const CURRENT_CONSENT_VERSION = '2026.1';
+
+function getSafeNextPath(value: string | null): string | null {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
+    return null;
+  }
+  return value;
+}
+
 export default function ConsentPage(): React.JSX.Element {
   const t = useTranslations('consent');
   const router = useRouter();
@@ -30,6 +40,7 @@ export default function ConsentPage(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
   // Form state
+  const [nextPath, setNextPath] = React.useState<string | null>(null);
   const [guardianName, setGuardianName] = React.useState<string>('');
   const [guardianPhone, setGuardianPhone] = React.useState<string>('');
   const [relationship, setRelationship] = React.useState<string>('mother');
@@ -60,6 +71,10 @@ export default function ConsentPage(): React.JSX.Element {
   React.useEffect(() => {
     void fetchConsents();
   }, [fetchConsents]);
+
+  React.useEffect(() => {
+    setNextPath(getSafeNextPath(new URLSearchParams(window.location.search).get('next')));
+  }, []);
 
   const handleSubmitConsent = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -102,7 +117,7 @@ export default function ConsentPage(): React.JSX.Element {
           guardian_name: trimmedName,
           guardian_phone: cleanPhone,
           guardian_relationship: relationship,
-          version: '2024.1',
+          version: CURRENT_CONSENT_VERSION,
           scopes,
         },
         token,
@@ -171,14 +186,14 @@ export default function ConsentPage(): React.JSX.Element {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/diagnostic"
+            href={nextPath ?? '/diagnostic'}
             className={buttonVariants({
               variant: 'primary',
               size: 'md',
               className: 'cursor-pointer font-semibold shadow-elevated inline-flex items-center',
             })}
           >
-            Continue to Diagnostic →
+            {nextPath ? t('continueToPractice') : 'Continue to Diagnostic →'}
           </Link>
           <Link
             href="/student"
@@ -213,7 +228,19 @@ export default function ConsentPage(): React.JSX.Element {
           role="status"
           className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300 font-medium"
         >
-          {successMessage}
+          <p>{successMessage}</p>
+          {nextPath && (
+            <Link
+              href={nextPath}
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'sm',
+                className: 'mt-3 inline-flex items-center font-semibold',
+              })}
+            >
+              {t('continueToPractice')}
+            </Link>
+          )}
         </div>
       )}
 

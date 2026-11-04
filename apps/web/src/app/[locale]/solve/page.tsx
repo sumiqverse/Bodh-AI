@@ -21,6 +21,7 @@ import {
 } from '@bodhai/ui';
 import { useSolve, solveSubmissionSchema, type SolveSubmissionFormValues } from '@/hooks/useSolve';
 import { KatexRenderer } from '@/components/katex-renderer';
+import { isGuardianConsentError } from '@/lib/api-errors';
 
 function SolveSkeleton(): React.JSX.Element {
   return (
@@ -78,25 +79,58 @@ function SolveContent(): React.JSX.Element {
   };
 
   if (error) {
+    const consentRequired = isGuardianConsentError(error);
+    const returnToPractice = `/solve?${searchParams.toString()}`;
+    const consentPath = `/consent?next=${encodeURIComponent(returnToPractice)}`;
+
     return (
       <div className="container mx-auto max-w-md px-4 py-16 text-center">
-        <Card className="p-6 border-destructive/30">
+        <Card className={`p-6 ${consentRequired ? 'border-primary/30' : 'border-destructive/30'}`}>
           <CardHeader>
-            <CardTitle className="text-xl font-bold">{t('emptyState')}</CardTitle>
-            <CardDescription className="text-sm text-destructive mt-1">
-              {error.message}
+            <CardTitle className="text-xl font-bold">
+              {consentRequired ? t('consentRequiredTitle') : t('emptyState')}
+            </CardTitle>
+            <CardDescription
+              className={`text-sm mt-1 ${
+                consentRequired ? 'text-muted-foreground' : 'text-destructive'
+              }`}
+            >
+              {consentRequired ? t('consentRequiredDescription') : error.message}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link
-              href="/student"
-              className={buttonVariants({
-                variant: 'primary',
-                className: 'w-full min-h-[44px] inline-flex items-center justify-center',
-              })}
-            >
-              {tCommon('backToHome')}
-            </Link>
+          <CardContent className={consentRequired ? 'space-y-3' : undefined}>
+            {consentRequired ? (
+              <>
+                <Link
+                  href={consentPath}
+                  className={buttonVariants({
+                    variant: 'primary',
+                    className: 'w-full min-h-[44px] inline-flex items-center justify-center',
+                  })}
+                >
+                  {t('completeConsentButton')}
+                </Link>
+                <Link
+                  href="/student"
+                  className={buttonVariants({
+                    variant: 'outline',
+                    className: 'w-full min-h-[44px] inline-flex items-center justify-center',
+                  })}
+                >
+                  {tCommon('backToHome')}
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/student"
+                className={buttonVariants({
+                  variant: 'primary',
+                  className: 'w-full min-h-[44px] inline-flex items-center justify-center',
+                })}
+              >
+                {tCommon('backToHome')}
+              </Link>
+            )}
           </CardContent>
         </Card>
       </div>
