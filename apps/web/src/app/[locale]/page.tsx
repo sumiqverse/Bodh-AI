@@ -243,6 +243,29 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
           {t('heroSubtitle')}
         </p>
 
+        {/* Top Summary Answer & Definition Support (Opening Section) */}
+        <div className="mt-8 max-w-3xl w-full rounded-2xl border-2 border-ink bg-surface-white dark:bg-card p-5 sm:p-6 text-left shadow-xs space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/15 pb-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-ink/40 bg-surface-yellow px-3 py-0.5 text-xs font-bold text-ink uppercase tracking-wide">
+              <Sparkles className="w-3.5 h-3.5 text-ink" />
+              {locale === 'hi' ? 'त्वरित सारांश' : 'Top Summary Answer'}
+            </span>
+            <span className="text-xs font-bold text-ink/70">
+              {locale === 'hi' ? 'मुख्य परिभाषा एवं निष्कर्ष' : 'Definition & Key Takeaway'}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-ink/90 dark:text-muted-foreground leading-relaxed font-medium">
+            <strong>
+              {locale === 'hi'
+                ? 'संक्षिप्त सारांश (Bottom-Line Answer):'
+                : 'Bottom-Line Answer & Key Takeaway:'}
+            </strong>{' '}
+            {locale === 'hi'
+              ? 'बोधAI भारत में कक्षा 6 से 10 के विद्यार्थियों के लिए एक खुला, गैर-व्यावसायिक और NCERT-संरेखित अनुकूली शिक्षण मंच है। अनुकूली महारत अधिगम (Adaptive Mastery Learning) वह शैक्षणिक ढांचा है जिसमें छात्र अगली अवधारणा पर आगे बढ़ने से पहले पूर्व-आवश्यक दक्षताओं में प्रमाणित महारत प्रदर्शित करते हैं, जो बेयसियन नॉलेज ट्रेसिंग और 3-स्तरीय सोक्रेटिक संकेतों द्वारा संचालित होती है।'
+              : 'BodhAI is an open-source, NCERT-aligned adaptive mastery learning platform for Middle and Secondary school students (Classes 6 through 10) across India. Adaptive mastery learning is defined as an educational framework where students demonstrate verified proficiency in prerequisite competencies before moving forward, powered by real-time Bayesian Knowledge Tracing and 3-tier Socratic hint ladders.'}
+          </p>
+        </div>
+
         {/* Grade Selection Row */}
         <div
           className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3"
@@ -322,6 +345,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                 : 'What is BodhAI? (Definition & Purpose)'}
             </h2>
             <p className="text-base sm:text-lg text-ink/90 dark:text-muted-foreground leading-relaxed font-medium">
+              <strong>{locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}</strong>{' '}
               {locale === 'hi'
                 ? 'बोधAI भारत का एक खुला, गैर-व्यावसायिक और NCERT-संरेखित अनुकूली शिक्षण मंच (Adaptive Mastery Learning Platform) है, जिसे विशेष रूप से कक्षा 6 से 10 के माध्यमिक विद्यार्थियों के लिए तैयार किया गया है। यह बेयसियन नॉलेज ट्रेसिंग (BKT) के जरिए विद्यार्थी के प्रत्येक उत्तर का विश्लेषण कर सीखने की कमियों को उजागर करता है और सोक्रेटिक 3-स्तरीय संकेतों (Hint Ladders) द्वारा सही दिशा में मार्गदर्शन करता है।'
                 : 'BodhAI is an open-source, NCERT-aligned adaptive mastery learning platform designed for Middle and Secondary school students (Classes 6 to 10) across India. Built to eradicate rote memorization and diagnose hidden learning deficits, BodhAI models student competency dynamically using Bayesian Knowledge Tracing (BKT), providing structured 3-tier Socratic hint ladders and offline-resilient practice without punitive scoring.'}
@@ -904,6 +928,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                   : 'Which Approach is Best for Your School & Students?'}
               </h3>
               <p className="text-xs sm:text-sm text-ink/90 font-medium leading-relaxed">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'बोधAI उन विद्यालयों, शिक्षकों और विद्यार्थियों के लिए सर्वश्रेष्ठ (best for) है जो NEP 2020 के अनुसार वास्तविक अवधारणात्मक समझ और NCERT महारत चाहते हैं, विशेष रूप से कम बैंडविड्थ या बहुभाषी भारतीय परिवेश में।'
                   : 'BodhAI is best for public and private schools, teachers, and self-directed learners who require authentic NCERT conceptual mastery and actionable gap diagnostics without expensive hardware or reliable internet dependencies.'}
@@ -1380,103 +1407,121 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* FAQ 1: What is BodhAI */}
             <div className="rounded-2xl border-2 border-ink bg-surface-cream/50 dark:bg-card p-6 space-y-3 shadow-xs">
-              <div className="flex items-start gap-3">
+              <h3 className="font-bold text-base text-ink dark:text-white leading-snug flex items-start gap-3">
                 <HelpCircle className="w-5 h-5 text-ink shrink-0 mt-0.5" />
-                <h3 className="font-bold text-base text-ink dark:text-white leading-snug">
+                <span>
                   {locale === 'hi'
                     ? 'बोधAI क्या है और यह सीखने की कमियों की पहचान कैसे करता है?'
                     : 'What is BodhAI and how does it diagnose student learning gaps?'}
-                </h3>
-              </div>
+                </span>
+              </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'बोधAI कक्षा 6 से 10 के लिए एक अनुकूली महारत मंच है। यह बेयसियन नॉलेज ट्रेसिंग (BKT) का उपयोग करता है। जब कोई छात्र प्रश्न हल करता है, तो प्रणाली केवल सही/गलत नहीं देखती, बल्कि संकेत के प्रकार, समय और त्रुटि विकल्पों का विश्लेषण कर ठीक वही अवधारणात्मक कमी उजागर करती है जहां छात्र अटक रहा है।'
-                  : 'BodhAI is an open-source adaptive mastery platform for Classes 6 to 10. It utilizes Bayesian Knowledge Tracing (BKT) to dynamically calculate mastery probabilities per skill. Rather than recording flat percentage scores, it analyzes response patterns and distractor selections to isolate exact foundational misconceptions.'}
+                  : 'BodhAI is an open-source adaptive mastery platform for Classes 6 to 10 that utilizes Bayesian Knowledge Tracing (BKT) to dynamically calculate mastery probabilities per skill, analyzing response patterns and distractor selections to isolate exact foundational misconceptions.'}
               </p>
             </div>
 
             {/* FAQ 2: How to get started */}
             <div className="rounded-2xl border-2 border-ink bg-surface-yellow/30 dark:bg-card p-6 space-y-3 shadow-xs">
-              <div className="flex items-start gap-3">
+              <h3 className="font-bold text-base text-ink dark:text-white leading-snug flex items-start gap-3">
                 <HelpCircle className="w-5 h-5 text-ink shrink-0 mt-0.5" />
-                <h3 className="font-bold text-base text-ink dark:text-white leading-snug">
+                <span>
                   {locale === 'hi'
                     ? 'कक्षा 6 से 10 के NCERT अभ्यास के लिए बोधAI का उपयोग कैसे करें?'
                     : 'How to use BodhAI for Class 6 to 10 NCERT practice?'}
-                </h3>
-              </div>
+                </span>
+              </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'शुरुआत करने के लिए किसी खाते की अनिवार्यता नहीं है। बस अपनी कक्षा और विषय चुनें, 10 प्रश्नों की त्वरित निदान परीक्षा पूरी करें, और अपने व्यक्तिगत दक्षता ग्राफ के आधार पर सोक्रेटिक संकेतों के साथ अभ्यास शुरू करें।'
-                  : 'Getting started is friction-free. Students simply select their class (6–10) and subject, complete a rapid 10-question baseline diagnostic, and immediately begin targeted adaptive practice with 3-tier Socratic hint scaffolding.'}
+                  : 'To practice on BodhAI, students select their class (6–10) and subject, complete a rapid 10-question baseline diagnostic, and immediately begin targeted adaptive practice with 3-tier Socratic hint ladders that work online or offline.'}
               </p>
             </div>
 
             {/* FAQ 3: Should schools replace exams */}
             <div className="rounded-2xl border-2 border-ink bg-surface-blue/30 dark:bg-card p-6 space-y-3 shadow-xs">
-              <div className="flex items-start gap-3">
+              <h3 className="font-bold text-base text-ink dark:text-white leading-snug flex items-start gap-3">
                 <HelpCircle className="w-5 h-5 text-ink shrink-0 mt-0.5" />
-                <h3 className="font-bold text-base text-ink dark:text-white leading-snug">
+                <span>
                   {locale === 'hi'
                     ? 'क्या विद्यालयों को पारंपरिक परीक्षाओं के स्थान पर बोधAI अपनाना चाहिए?'
                     : 'Should schools replace conventional exams with BodhAI?'}
-                </h3>
-              </div>
+                </span>
+              </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'नहीं, बोधAI योगात्मक बोर्ड परीक्षाओं का विकल्प नहीं बल्कि उनका पूरक है। यह शिक्षकों को सप्ताह-दर-सप्ताह यह देखने की सुविधा देता है कि कौन-से विद्यार्थी किन दक्षताओं में संघर्ष कर रहे हैं, जिससे मुख्य परीक्षा से हफ़्तों पहले उपचारात्मक शिक्षण संभव हो सके।'
-                  : 'No. BodhAI is not designed to replace high-stakes summative exams, but to empower ongoing formative assessment. It provides teachers with continuous competency heatmaps, allowing timely pedagogical interventions long before term-end examinations.'}
+                  : 'No, schools should not replace summative board examinations with BodhAI. Instead, BodhAI serves as a continuous formative diagnostic tool that enables teachers to pinpoint and remediate student learning gaps weeks before high-stakes exams.'}
               </p>
             </div>
 
             {/* FAQ 4: How does it work offline */}
             <div className="rounded-2xl border-2 border-ink bg-surface-pink/30 dark:bg-card p-6 space-y-3 shadow-xs">
-              <div className="flex items-start gap-3">
+              <h3 className="font-bold text-base text-ink dark:text-white leading-snug flex items-start gap-3">
                 <HelpCircle className="w-5 h-5 text-ink shrink-0 mt-0.5" />
-                <h3 className="font-bold text-base text-ink dark:text-white leading-snug">
+                <span>
                   {locale === 'hi'
                     ? 'क्या बोधAI बिना इंटरनेट के ऑफ़लाइन कार्य कर सकता है?'
                     : 'How does BodhAI work offline without high-speed internet?'}
-                </h3>
-              </div>
+                </span>
+              </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'हाँ। बोधAI एक प्रोग्रेसिव वेब ऐप (PWA) है। छात्र अथवा शिक्षक विद्यालय में वाई-फाई मिलने पर अध्याय अभ्यास पैक डाउनलोड कर सकते हैं। इसके बाद बिना किसी इंटरनेट कनेक्शन के पूरा अभ्यास किया जा सकता है और डेटा स्वतः सिंक हो जाता है।'
-                  : 'Yes. BodhAI is engineered as an offline-first PWA. Chapter practice packs and conceptual study guides can be pre-downloaded over 2G, 3G, or school Wi-Fi. Students practice fully offline, with telemetry syncing automatically once connection is re-established.'}
+                  : 'Yes. BodhAI operates completely offline as a Progressive Web App (PWA). Students and teachers download chapter packs over school Wi-Fi or 2G/3G mobile data, practice disconnected, and automatically synchronize telemetry when connectivity resumes.'}
               </p>
             </div>
 
             {/* FAQ 5: Is it aligned with NCERT */}
             <div className="rounded-2xl border-2 border-ink bg-surface-peach/30 dark:bg-card p-6 space-y-3 shadow-xs">
-              <div className="flex items-start gap-3">
+              <h3 className="font-bold text-base text-ink dark:text-white leading-snug flex items-start gap-3">
                 <HelpCircle className="w-5 h-5 text-ink shrink-0 mt-0.5" />
-                <h3 className="font-bold text-base text-ink dark:text-white leading-snug">
+                <span>
                   {locale === 'hi'
                     ? 'क्या बोधAI पाठ्यक्रम NCERT एवं CBSE मानकों के अनुरूप है?'
                     : 'Is BodhAI curriculum aligned with NCERT and CBSE standards?'}
-                </h3>
-              </div>
+                </span>
+              </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'हाँ, बोधAI में कक्षा 6 से 10 तक के गणित, विज्ञान, सामाजिक विज्ञान, अंग्रेजी और हिन्दी के सभी 319 आधिकारिक NCERT अध्यायों को 639 सूक्ष्म दक्षताओं में मैप किया गया है, जो राष्ट्रीय शिक्षा नीति (NEP 2020) के अनुरूप हैं।'
-                  : 'Yes. BodhAI covers all 319 official NCERT chapters across Mathematics, Science, Social Science, English, and Hindi for Classes 6 to 10, mapped to 639 atomic competencies in strict accordance with NEP 2020 pedagogical guidelines.'}
+                  : 'Yes. BodhAI is 100% aligned with the official NCERT and CBSE curricula for Classes 6 through 10, covering 319 chapters and 639 atomic competencies across Mathematics, Science, Social Science, English, and Hindi in accordance with NEP 2020.'}
               </p>
             </div>
 
             {/* FAQ 6: DPDP Act compliance */}
             <div className="rounded-2xl border-2 border-ink bg-surface-cream/50 dark:bg-card p-6 space-y-3 shadow-xs">
-              <div className="flex items-start gap-3">
+              <h3 className="font-bold text-base text-ink dark:text-white leading-snug flex items-start gap-3">
                 <HelpCircle className="w-5 h-5 text-ink shrink-0 mt-0.5" />
-                <h3 className="font-bold text-base text-ink dark:text-white leading-snug">
+                <span>
                   {locale === 'hi'
                     ? 'बोधAI छात्र डेटा सुरक्षा और DPDP अधिनियम 2023 का पालन कैसे करता है?'
                     : 'How does BodhAI comply with the DPDP Act 2023 for child privacy?'}
-                </h3>
-              </div>
+                </span>
+              </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
+                <strong>
+                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                </strong>{' '}
                 {locale === 'hi'
                   ? 'हम शून्य विज्ञापन नीति का पालन करते हैं। किसी भी छात्र की व्यक्तिगत पहचान का व्यावसायिक उपयोग नहीं होता। डेटा केवल शिक्षण सुधार के लिए छात्र और शिक्षक के बीच सुरक्षित रहता है और अभिभावक सहमति के सिद्धांतों का पूर्ण पालन होता है।'
-                  : 'BodhAI operates with zero commercial ad trackers, zero behavioral profiling, and strict purpose limitation under India’s Digital Personal Data Protection (DPDP) Act 2023. Student learning telemetry is strictly quarantined and accessible only to authorized educators.'}
+                  : 'BodhAI complies with India’s Digital Personal Data Protection (DPDP) Act 2023 through strict data minimization, zero advertising trackers, zero commercial behavioral profiling, and complete isolation of student competency records.'}
               </p>
             </div>
           </div>
