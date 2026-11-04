@@ -799,25 +799,25 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
         {/* Main Tabbed Interface */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="mb-6">
-            <TabsList className="h-auto w-full flex flex-wrap items-center gap-2 rounded-[22px] border-2 border-ink bg-surface-cream/40 dark:bg-card p-2.5 shadow-xs">
+          <div className="mb-6 overflow-x-auto pb-1">
+            <TabsList className="h-auto w-full min-w-max flex flex-nowrap items-center gap-1.5 rounded-full border-2 border-ink bg-surface-cream/40 dark:bg-card p-1.5 shadow-xs">
               <TabsTrigger
                 value="overview"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                📊 Overview & Heatmap
+                Overview & Heatmap
               </TabsTrigger>
               <TabsTrigger
                 value="curriculum"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                📚 Curriculum & Content Hub
+                Curriculum Hub
               </TabsTrigger>
               <TabsTrigger
                 value="clusters"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                🎯 Gaps & Clusters
+                Gaps & Clusters
                 {clusters && clusters.clusters.length > 0 && (
                   <span className="ml-1.5 px-2 py-0.5 rounded-full bg-primary-orange text-white text-[10px] font-black border border-ink shadow-xs">
                     {clusters.clusters.length}
@@ -826,9 +826,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               </TabsTrigger>
               <TabsTrigger
                 value="warnings"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                ⚠️ Early Warnings
+                Early Warnings
                 {warnings && warnings.warnings.length > 0 && (
                   <span className="ml-1.5 px-2 py-0.5 rounded-full bg-surface-pink text-ink text-[10px] font-black border border-ink shadow-xs">
                     {warnings.warnings.length}
@@ -837,9 +837,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               </TabsTrigger>
               <TabsTrigger
                 value="suggestions"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                💡 Suggestions
+                Suggestions
                 {suggestions && suggestions.suggestions.length > 0 && (
                   <span className="ml-1.5 px-2 py-0.5 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink shadow-xs">
                     {suggestions.suggestions.length}
@@ -848,15 +848,15 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                🏫 My Classes ({classesList.length})
+                My Classes ({classesList.length})
               </TabsTrigger>
               <TabsTrigger
                 value="roster"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                👥 Students ({enrolledStudents.length})
+                Students ({enrolledStudents.length})
                 {pendingStudents.length > 0 && (
                   <span className="ml-1.5 px-2 py-0.5 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink shadow-xs">
                     {pendingStudents.length} pending
@@ -865,15 +865,15 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               </TabsTrigger>
               <TabsTrigger
                 value="assignments"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                📝 Assignments ({assignments.length})
+                Assignments ({assignments.length})
               </TabsTrigger>
               <TabsTrigger
                 value="progress"
-                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
+                className="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
-                📈 Reports
+                Reports
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1210,7 +1210,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               <div className="rounded-[24px] border-2 border-ink bg-surface-yellow/20 p-6 shadow-xs space-y-4">
                 <div className="space-y-1">
                   <h3 className="text-base font-black text-ink flex items-center gap-2">
-                    <span>⏳</span> Pending Join Requests ({pendingStudents.length})
+                    Pending Join Requests ({pendingStudents.length})
                   </h3>
                   <p className="text-xs text-text-secondary">
                     Review and approve students who requested to join with class code{' '}
@@ -1294,8 +1294,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
               {activeStudents.length === 0 ? (
                 <div className="rounded-[20px] border-2 border-dashed border-ink/30 bg-surface-cream/30 p-8 sm:p-12 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full border-2 border-ink bg-surface-cream flex items-center justify-center mx-auto shadow-xs text-xl">
-                    👥
+                  <div className="w-12 h-12 rounded-full border-2 border-ink bg-surface-cream flex items-center justify-center mx-auto shadow-xs">
+                    <Users className="w-5 h-5 text-ink" />
                   </div>
                   <h4 className="font-bold text-base text-ink dark:text-white">
                     No active students enrolled in this class yet.
