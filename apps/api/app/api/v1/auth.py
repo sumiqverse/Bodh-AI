@@ -431,11 +431,13 @@ async def student_join(
     audit_repo = AuditRepository(session)
     client_ip = request.client.host if request.client else None
 
-    # 1. Validate join code
-    clean_code = payload.join_code.strip().upper()
-    school_class = await class_repo.get_by_join_code(clean_code)
-    if school_class is None:
-        raise NotFoundError("Class with join code", clean_code)
+    # 1. Validate join code if provided
+    school_class = None
+    if payload.join_code and payload.join_code.strip():
+        clean_code = payload.join_code.strip().upper()
+        school_class = await class_repo.get_by_join_code(clean_code)
+        if school_class is None:
+            raise NotFoundError("Class with join code", clean_code)
 
     # 2. Check if student already exists
     existing = await user_repo.get_by_username(payload.username.strip())
@@ -455,26 +457,27 @@ async def student_join(
             )
             raise AuthenticationError("Invalid username or PIN.")
         student = existing
-        # Check enrollment in target class
-        existing_enr = await class_repo.get_enrollment(school_class.id, student.id)
-        if existing_enr is None:
-            await class_repo.add_enrollment(
-                class_id=school_class.id,
-                student_id=student.id,
-                status="pending",
-            )
-            await audit_repo.log_action(
-                action="student_joined_class",
-                resource_type="enrollment",
-                resource_id=f"{school_class.id}:{student.id}",
-                changes={"class_id": str(school_class.id), "username": student.username},
-                user_id=student.id,
-                ip_address=client_ip,
-            )
-        elif existing_enr.status == "removed":
-            existing_enr.status = "pending"
-            session.add(existing_enr)
-            await session.flush()
+        # Check enrollment in target class if join code was provided
+        if school_class is not None:
+            existing_enr = await class_repo.get_enrollment(school_class.id, student.id)
+            if existing_enr is None:
+                await class_repo.add_enrollment(
+                    class_id=school_class.id,
+                    student_id=student.id,
+                    status="pending",
+                )
+                await audit_repo.log_action(
+                    action="student_joined_class",
+                    resource_type="enrollment",
+                    resource_id=f"{school_class.id}:{student.id}",
+                    changes={"class_id": str(school_class.id), "username": student.username},
+                    user_id=student.id,
+                    ip_address=client_ip,
+                )
+            elif existing_enr.status == "removed":
+                existing_enr.status = "pending"
+                session.add(existing_enr)
+                await session.flush()
     else:
         # 3. Create student user account
         student_role = await user_repo.get_or_create_default_role("student")
@@ -492,21 +495,22 @@ async def student_join(
         await session.flush()
         await session.refresh(student, ["role"])
 
-        # 4. Create pending enrollment for teacher approval
-        await class_repo.add_enrollment(
-            class_id=school_class.id,
-            student_id=student.id,
-            status="pending",
-        )
+        # 4. Create pending enrollment for teacher approval if join code provided
+        if school_class is not None:
+            await class_repo.add_enrollment(
+                class_id=school_class.id,
+                student_id=student.id,
+                status="pending",
+            )
 
-        await audit_repo.log_action(
-            action="student_joined_class",
-            resource_type="enrollment",
-            resource_id=f"{school_class.id}:{student.id}",
-            changes={"class_id": str(school_class.id), "username": student.username},
-            user_id=student.id,
-            ip_address=client_ip,
-        )
+            await audit_repo.log_action(
+                action="student_joined_class",
+                resource_type="enrollment",
+                resource_id=f"{school_class.id}:{student.id}",
+                changes={"class_id": str(school_class.id), "username": student.username},
+                user_id=student.id,
+                ip_address=client_ip,
+            )
 
     await user_repo.record_login_success(student)
     access_token, refresh_token, csrf_token = await _issue_session(

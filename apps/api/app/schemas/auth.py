@@ -57,7 +57,11 @@ class StudentLoginRequest(BaseModel):
 class StudentJoinRequest(BaseModel):
     """Self-registration payload for students joining a class with code."""
 
-    join_code: str = Field(min_length=4, max_length=12, description="Teacher-issued class code")
+    join_code: str | None = Field(
+        default=None,
+        max_length=12,
+        description="Teacher-issued class code (optional for self-study students)",
+    )
     username: str = Field(min_length=3, max_length=50, description="Unique username")
     pin: str = Field(min_length=4, max_length=8, description="4 to 8 digit secret PIN")
     full_name: str = Field(min_length=2, max_length=150, description="Student display name")

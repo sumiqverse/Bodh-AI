@@ -296,7 +296,9 @@ export interface NextItemResponse {
 export type TeacherSignupRequest = components['schemas']['TeacherSignupRequest'];
 export type TeacherLoginRequest = components['schemas']['TeacherLoginRequest'];
 export type StudentLoginRequest = components['schemas']['StudentLoginRequest'];
-export type StudentJoinRequest = components['schemas']['StudentJoinRequest'];
+export type StudentJoinRequest = Omit<components['schemas']['StudentJoinRequest'], 'join_code'> & {
+  join_code?: string | null;
+};
 export type SupabaseAuthRequest = components['schemas']['SupabaseAuthRequest'];
 export type TokenResponse = components['schemas']['TokenResponse'];
 export type UserResponse = components['schemas']['UserResponse'];
