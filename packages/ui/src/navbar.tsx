@@ -61,7 +61,7 @@ export function Navbar({
         <div className="flex items-center gap-6">
           <LinkElement
             href={brandHref}
-            className="flex items-center gap-2.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-1 py-0.5"
+            className="flex items-center gap-2.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-1 py-0.5 min-h-[44px]"
           >
             <BrandMark name={brandName} />
           </LinkElement>
@@ -73,7 +73,7 @@ export function Navbar({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'rounded-full px-3.5 py-1.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap shrink-0',
+                  'inline-flex items-center justify-center min-h-[44px] rounded-full px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap shrink-0',
                   item.isActive
                     ? 'bg-surface-cream text-ink font-bold border-2 border-ink shadow-xs'
                     : 'text-text-secondary hover:bg-surface-cream/60 hover:text-ink font-semibold',
@@ -102,7 +102,7 @@ export function Navbar({
             aria-controls={menuId}
             aria-label="Toggle navigation menu"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
           >
             {mobileMenuOpen ? (
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,7 +140,7 @@ export function Navbar({
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  'rounded-lg px-3 py-2.5 text-base font-medium transition-colors',
+                  'flex items-center min-h-[44px] rounded-lg px-3.5 py-2.5 text-base font-medium transition-colors',
                   item.isActive
                     ? 'bg-muted text-foreground font-semibold'
                     : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',

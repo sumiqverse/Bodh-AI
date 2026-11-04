@@ -209,7 +209,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
       position: idx + 1,
       name: s.title,
       text: s.desc,
-      url: `https://bodhai.org.in/${locale}#how-it-works`,
+      url: `https://bodhai-two.vercel.app/${locale}#how-it-works`,
     })),
   };
 
@@ -278,7 +278,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
             <Link
               key={item.grade}
               href={`/diagnostic?curriculum=NCERT-MATH-C${item.grade}`}
-              className="rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream px-5 py-2 text-sm font-bold text-ink shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
+              className="inline-flex items-center justify-center min-h-[44px] rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream px-5 py-2.5 text-sm font-bold text-ink shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
             >
               {item.label}
             </Link>
@@ -1299,7 +1299,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                       </span>
                       <Link
                         href={`/diagnostic?curriculum=${item.curriculumPrefix}-C8`}
-                        className="rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink font-bold px-4 py-2 text-xs shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-1.5 shrink-0"
+                        className="inline-flex items-center justify-center min-h-[44px] rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink font-bold px-4 py-2.5 text-xs shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-1.5 shrink-0"
                       >
                         <span>{locale === 'hi' ? 'दक्षताएं देखें' : 'View Skills'}</span>
                         <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1324,7 +1324,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
                         <Link
                           key={grade}
                           href={`/diagnostic?curriculum=${item.curriculumPrefix}-C${grade}`}
-                          className="rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-xs font-bold text-ink px-3 py-1 shadow-xs transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-xs font-bold text-ink px-3.5 py-2 shadow-xs transition-transform hover:-translate-y-0.5 active:translate-y-0"
                           title={`Class ${grade} ${item.subject}`}
                         >
                           Class {grade}

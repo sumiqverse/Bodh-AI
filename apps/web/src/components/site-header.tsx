@@ -595,7 +595,7 @@ export function SiteHeader(): React.JSX.Element {
                 onClick={handleAuthButtonClick}
                 aria-expanded={isAuthDropdownOpen}
                 aria-haspopup="menu"
-                className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink font-black text-xs sm:text-sm px-4 py-1.5 shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer whitespace-nowrap shrink-0 select-none ${
+                className={`inline-flex items-center gap-1.5 min-h-[44px] rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink font-black text-xs sm:text-sm px-5 py-2.5 shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer whitespace-nowrap shrink-0 select-none ${
                   isAuthDropdownOpen ? 'bg-primary-orange-dark' : ''
                 }`}
               >

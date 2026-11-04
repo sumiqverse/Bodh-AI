@@ -31,73 +31,90 @@ const notoDevanagari = Noto_Sans_Devanagari({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  manifest: '/manifest.json',
-  metadataBase: new URL('https://bodhai.org.in'),
-  icons: {
-    icon: [
-      { url: '/icons/image.png', type: 'image/png' },
-      { url: '/favicon.ico', sizes: 'any' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: [{ url: '/icons/image.png', sizes: '180x180', type: 'image/png' }],
-  },
-  title: {
-    default: 'BodhAI (बोधAI) — Adaptive Mastery Learning for Classes 6–10 in India',
-    template: '%s | BodhAI',
-  },
-  description:
-    'BodhAI is an adaptive diagnostic and mastery learning platform built specifically for Classes 6–10 across India, aligned with NCERT curriculum frameworks.',
-  keywords: [
-    'BodhAI',
-    'Adaptive Learning',
-    'NCERT',
-    'Class 6',
-    'Class 7',
-    'Class 8',
-    'Class 9',
-    'Class 10',
-    'Education India',
-    'CBSE',
-    'Diagnostic Assessment',
-  ],
-  authors: [{ name: 'BodhAI Pedagogical Engineering Team' }],
-  creator: 'BodhAI Foundation',
-  openGraph: {
-    type: 'website',
-    locale: 'en_IN',
-    url: 'https://bodhai.org.in',
-    siteName: 'BodhAI (बोधAI)',
-    title: 'BodhAI — Adaptive Mastery Learning for Classes 6–10',
-    description:
-      'Personalized diagnostic assessments and mastery learning for middle and high school students in India.',
-    images: [
-      {
-        url: 'https://bodhai.org.in/icons/image.png',
-        width: 1200,
-        height: 630,
-        alt: 'BodhAI — Adaptive Mastery Learning for Classes 6 to 10 in India',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'BodhAI — Adaptive Learning for Classes 6–10',
-    description: 'Bilingual adaptive diagnostic learning for Indian schools.',
-    images: ['https://bodhai.org.in/icons/image.png'],
-  },
-  alternates: {
-    canonical: '/',
-    languages: {
-      en: '/en',
-      hi: '/hi',
+import { getBaseUrl } from '@/lib/site-url';
+
+export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = getBaseUrl();
+  const canonicalPath = `/${locale}`;
+
+  return {
+    manifest: '/manifest.json',
+    metadataBase: new URL(baseUrl),
+    icons: {
+      icon: [
+        { url: '/icons/image.webp', type: 'image/webp' },
+        { url: '/icons/image.png', type: 'image/png' },
+        { url: '/favicon.ico', sizes: 'any' },
+      ],
+      shortcut: '/favicon.ico',
+      apple: [{ url: '/icons/image.webp', sizes: '180x180', type: 'image/webp' }],
     },
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+    title: {
+      default: 'BodhAI (बोधAI) — Adaptive Mastery Learning for Classes 6–10 in India',
+      template: '%s | BodhAI',
+    },
+    description:
+      locale === 'hi'
+        ? 'कक्षा 6 से 10 के छात्रों के लिए NCERT संरेखित व्यक्तिगत अनुकूली नैदानिक मूल्यांकन और महारत शिक्षण मंच।'
+        : 'BodhAI is an adaptive diagnostic and mastery learning platform built specifically for Classes 6–10 across India, aligned with NCERT curriculum frameworks.',
+    keywords: [
+      'BodhAI',
+      'Adaptive Learning',
+      'NCERT',
+      'Class 6',
+      'Class 7',
+      'Class 8',
+      'Class 9',
+      'Class 10',
+      'Education India',
+      'CBSE',
+      'Diagnostic Assessment',
+    ],
+    authors: [{ name: 'BodhAI Pedagogical Engineering Team' }],
+    creator: 'BodhAI Foundation',
+    openGraph: {
+      type: 'website',
+      locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
+      url: `${baseUrl}/${locale}`,
+      siteName: 'BodhAI (बोधAI)',
+      title: 'BodhAI — Adaptive Mastery Learning for Classes 6–10',
+      description:
+        locale === 'hi'
+          ? 'कक्षा 6 से 10 के छात्रों के लिए व्यक्तिगत अनुकूली नैदानिक मूल्यांकन और महारत शिक्षण मंच।'
+          : 'Personalized diagnostic assessments and mastery learning for middle and high school students in India.',
+      images: [
+        {
+          url: `${baseUrl}/icons/image.png`,
+          width: 1200,
+          height: 630,
+          alt: 'BodhAI — Adaptive Mastery Learning for Classes 6 to 10 in India',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'BodhAI — Adaptive Learning for Classes 6–10',
+      description:
+        locale === 'hi'
+          ? 'भारतीय विद्यालयों के लिए द्विभाषी अनुकूली नैदानिक शिक्षण।'
+          : 'Bilingual adaptive diagnostic learning for Indian schools.',
+      images: [`${baseUrl}/icons/image.png`],
+    },
+    alternates: {
+      canonical: canonicalPath,
+      languages: {
+        en: '/en',
+        hi: '/hi',
+        'x-default': '/en',
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export function generateStaticParams(): { locale: string }[] {
   return routing.locales.map((locale) => ({ locale }));
@@ -120,17 +137,18 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
   const messages = await getMessages();
+  const baseUrl = getBaseUrl();
 
   // Comprehensive JSON-LD Schemas for SEO & Semantic Web
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': ['Organization', 'EducationalOrganization'],
-    '@id': 'https://bodhai.org.in/#organization',
+    '@id': `${baseUrl}/#organization`,
     name: 'BodhAI Foundation',
     alternateName: ['बोधAI', 'BodhAI Educational Technologies'],
-    url: 'https://bodhai.org.in',
-    logo: 'https://bodhai.org.in/icons/image.png',
-    image: 'https://bodhai.org.in/icons/image.png',
+    url: baseUrl,
+    logo: `${baseUrl}/icons/image.webp`,
+    image: `${baseUrl}/icons/image.webp`,
     description:
       'Open-source adaptive diagnostic mastery learning platform for Classes 6 to 10 across India, aligned with NCERT curriculum frameworks.',
     areaServed: {
@@ -155,8 +173,8 @@ export default async function LocaleLayout({
   const webPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    '@id': `https://bodhai.org.in/${locale}#webpage`,
-    url: `https://bodhai.org.in/${locale}`,
+    '@id': `${baseUrl}/${locale}#webpage`,
+    url: `${baseUrl}/${locale}`,
     name:
       locale === 'hi'
         ? 'बोधAI — कक्षा 6 से 10 के लिए अनुकूली महारत अधिगम'
@@ -166,30 +184,30 @@ export default async function LocaleLayout({
     inLanguage: locale === 'hi' ? 'hi-IN' : 'en-IN',
     isPartOf: {
       '@type': 'WebSite',
-      '@id': 'https://bodhai.org.in/#website',
+      '@id': `${baseUrl}/#website`,
       name: 'BodhAI',
-      url: 'https://bodhai.org.in',
+      url: baseUrl,
     },
     about: {
       '@type': 'Organization',
-      '@id': 'https://bodhai.org.in/#organization',
+      '@id': `${baseUrl}/#organization`,
       name: 'BodhAI Foundation',
-      url: 'https://bodhai.org.in',
+      url: baseUrl,
     },
     publisher: {
       '@type': 'Organization',
-      '@id': 'https://bodhai.org.in/#organization',
+      '@id': `${baseUrl}/#organization`,
       name: 'BodhAI Foundation',
-      url: 'https://bodhai.org.in',
+      url: baseUrl,
       logo: {
         '@type': 'ImageObject',
-        url: 'https://bodhai.org.in/icons/image.png',
+        url: `${baseUrl}/icons/image.webp`,
       },
     },
     author: {
       '@type': 'Organization',
       name: 'BodhAI Foundation',
-      url: 'https://bodhai.org.in',
+      url: baseUrl,
     },
     datePublished: '2026-01-15T00:00:00+05:30',
     dateModified: '2026-11-04T00:00:00+05:30',
@@ -203,13 +221,13 @@ export default async function LocaleLayout({
         '@type': 'ListItem',
         position: 1,
         name: locale === 'hi' ? 'गृह' : 'Home',
-        item: 'https://bodhai.org.in',
+        item: baseUrl,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: locale === 'hi' ? 'दक्षता अधिगम' : 'Mastery Learning',
-        item: `https://bodhai.org.in/${locale}`,
+        item: `${baseUrl}/${locale}`,
       },
     ],
   };
@@ -227,6 +245,7 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${lora.variable} ${notoDevanagari.variable}`}
     >
       <head>
+        <link rel="preload" as="image" href="/icons/image.webp" type="image/webp" />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"

@@ -81,7 +81,7 @@ export function Footer({
                   <li key={link.href}>
                     <LinkElement
                       href={link.href}
-                      className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground hover:text-ink dark:hover:text-white transition-colors font-medium hover:underline inline-flex items-center gap-1"
+                      className="text-xs sm:text-sm text-text-secondary dark:text-muted-foreground hover:text-ink dark:hover:text-white transition-colors font-medium hover:underline inline-flex items-center min-h-[44px] py-1"
                     >
                       {link.label}
                     </LinkElement>
