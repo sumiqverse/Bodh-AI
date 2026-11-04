@@ -5,16 +5,10 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
   Button,
   buttonVariants,
   Input,
   Select,
-  Badge,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -48,7 +42,18 @@ import { AssignmentsView } from '@/components/teacher/AssignmentsView';
 import { ProgressReassessmentView } from '@/components/teacher/ProgressReassessmentView';
 import { StudentProfileModal } from '@/components/teacher/StudentProfileModal';
 import { CurriculumContentHub } from '@/components/teacher/CurriculumContentHub';
-import { Sparkles, RefreshCw, Copy, Check, FileSpreadsheet, Printer } from 'lucide-react';
+import {
+  Sparkles,
+  RefreshCw,
+  Copy,
+  Check,
+  FileSpreadsheet,
+  Printer,
+  Users,
+  BookOpen,
+  Target,
+  Lightbulb,
+} from 'lucide-react';
 
 export default function TeacherDashboardPage(): React.JSX.Element {
   const t = useTranslations('classes');
@@ -432,41 +437,45 @@ export default function TeacherDashboardPage(): React.JSX.Element {
   // If teacher has 0 classes, render the onboarding / create class view directly
   if (classesList.length === 0) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-12 space-y-8">
-        <div className="text-center space-y-3">
-          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-            Teacher Onboarding
-          </Badge>
-          <h1 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            Create Your First Classroom
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-            Set up your class to automatically import official NCERT curriculum, generate a unique
-            student join code, and track student competency mastery in real-time.
-          </p>
-        </div>
+      <div className="min-h-screen bg-canvas-gradient py-10 px-3 sm:px-6 flex justify-center text-ink selection:bg-surface-cream selection:text-ink">
+        <div className="w-full max-w-4xl rounded-[28px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-10 shadow-shell space-y-8 relative overflow-hidden">
+          {/* Decorative corner accent circles (design.md Section 5) */}
+          <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-surface-cream pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full bg-surface-butter/50 pointer-events-none" />
 
-        {errorMessage && (
-          <div
-            role="alert"
-            className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-4 text-sm text-ink dark:text-pink-100 font-bold flex items-center gap-2.5 shadow-xs"
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
-              !
+          <div className="relative z-10 text-center space-y-3">
+            <span className="inline-block text-xs font-black uppercase tracking-wider rounded-full border-2 border-ink bg-surface-cream px-3.5 py-1 text-ink shadow-xs">
+              Teacher Onboarding
             </span>
-            <span className="leading-snug">{errorMessage}</span>
+            <h1 className="font-serif text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white">
+              Create Your First Classroom
+            </h1>
+            <p className="text-xs sm:text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
+              Set up your class to automatically import official NCERT curriculum, generate a unique
+              student join code, and track student competency mastery in real-time.
+            </p>
           </div>
-        )}
 
-        <Card className="shadow-md border-border/80">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">{t('createNewClass')}</CardTitle>
-            <CardDescription className="text-xs">
-              Choose your grade and subject to import NCERT topics and skills. You can add, edit, or
-              customize chapters at any time.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          {errorMessage && (
+            <div
+              role="alert"
+              className="relative z-10 rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-4 text-sm text-ink dark:text-pink-100 font-bold flex items-center gap-2.5 shadow-xs"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
+                !
+              </span>
+              <span className="leading-snug">{errorMessage}</span>
+            </div>
+          )}
+
+          <div className="relative z-10 rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-card space-y-6">
+            <div className="space-y-1 border-b-2 border-dashed border-ink/20 pb-4">
+              <h2 className="text-xl font-black text-ink dark:text-white">{t('createNewClass')}</h2>
+              <p className="text-xs text-text-secondary">
+                Choose your grade and subject to import NCERT topics and skills. You can add, edit,
+                or customize chapters at any time.
+              </p>
+            </div>
             <form
               onSubmit={handleCreateClass}
               className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end"
@@ -474,7 +483,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
                 <label
                   htmlFor="new-class-name-empty"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-xs font-black uppercase tracking-wider text-text-secondary"
                 >
                   {t('className')} (or auto-generates)
                 </label>
@@ -489,7 +498,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               <div className="space-y-1.5 lg:col-span-2">
                 <label
                   htmlFor="new-class-grade-empty"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-xs font-black uppercase tracking-wider text-text-secondary"
                 >
                   {t('grade')}
                 </label>
@@ -504,7 +513,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               <div className="space-y-1.5 lg:col-span-3">
                 <label
                   htmlFor="new-class-subject-empty"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-xs font-black uppercase tracking-wider text-text-secondary"
                 >
                   Subject
                 </label>
@@ -519,7 +528,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               <div className="space-y-1.5 lg:col-span-1">
                 <label
                   htmlFor="new-class-section-empty"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-xs font-black uppercase tracking-wider text-text-secondary"
                 >
                   {t('section')}
                 </label>
@@ -535,15 +544,15 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full cursor-pointer py-2 font-semibold text-xs min-h-[40px]"
+                  className="w-full cursor-pointer py-2 font-bold text-xs min-h-[44px] rounded-full border-2 border-ink shadow-xs"
                   disabled={isCreating}
                 >
                   {isCreating ? t('creating') : '+ Create Class'}
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -556,17 +565,17 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     <div className="min-h-screen bg-canvas-gradient py-6 px-3 sm:px-6 flex justify-center text-ink selection:bg-surface-cream selection:text-ink">
       <div className="w-full max-w-[1360px] rounded-[28px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-shell space-y-6">
         {/* Top Header & Classroom Switcher */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b-2 border-dashed border-ink/40 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b-2 border-dashed border-ink/30 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-black uppercase tracking-wider rounded-full border-2 border-ink bg-surface-cream px-3 py-0.5 text-ink shadow-xs">
                 Teacher Dashboard
               </span>
-              <span className="text-xs font-bold rounded-full border-2 border-ink bg-surface-white px-3 py-0.5 text-text-secondary shadow-xs">
+              <span className="text-xs font-bold rounded-full border-2 border-ink bg-surface-white dark:bg-card px-3 py-0.5 text-text-secondary shadow-xs">
                 DPDP Act 2023 Compliant
               </span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white">
+            <h1 className="font-serif text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white capitalize">
               {activeClass?.name || t('title')}
             </h1>
             <p className="text-xs font-bold text-text-secondary mt-1">
@@ -587,7 +596,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 aria-label="Select Classroom"
                 value={selectedClassId}
                 onChange={(e) => handleSelectClass(e.target.value)}
-                className="w-full text-xs font-bold rounded-xl border-2 border-ink bg-surface-white px-3.5 py-2 text-ink focus:outline-hidden focus:ring-2 focus:ring-primary shadow-xs cursor-pointer"
+                className="w-full text-xs font-bold rounded-full border-2 border-ink bg-surface-white dark:bg-card px-4 py-2 text-ink dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary shadow-xs cursor-pointer"
               >
                 {classesList.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -599,7 +608,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
             {/* Join Code Card */}
             {activeClass && (
-              <div className="flex items-center gap-2 rounded-xl border-2 border-ink bg-surface-cream p-2 shadow-xs">
+              <div className="flex items-center gap-2.5 rounded-2xl border-2 border-ink bg-surface-cream px-3 py-1.5 shadow-xs">
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary block">
                     Join Code
@@ -608,18 +617,19 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                     {activeClass.join_code}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleCopyCode}
-                    className="h-6 text-[10px] px-2 cursor-pointer rounded-md border-2 border-ink bg-surface-white"
+                    className="h-7 w-7 p-0 cursor-pointer rounded-lg border-2 border-ink bg-surface-white hover:bg-surface-yellow shadow-xs"
+                    aria-label="Copy Join Code"
                   >
                     {codeCopied ? (
-                      <Check className="w-3 h-3 text-emerald-600" />
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                     ) : (
-                      <Copy className="w-3 h-3" />
+                      <Copy className="w-3.5 h-3.5 text-ink" />
                     )}
                   </Button>
                   <Button
@@ -628,10 +638,11 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                     size="sm"
                     onClick={() => handleRotateCode(activeClass.id)}
                     disabled={rotatingId === activeClass.id}
-                    className="h-6 text-[10px] px-2 text-ink cursor-pointer hover:bg-surface-yellow"
+                    className="h-7 w-7 p-0 text-ink cursor-pointer hover:bg-surface-yellow rounded-lg"
+                    aria-label="Rotate Join Code"
                   >
                     <RefreshCw
-                      className={`w-3 h-3 ${rotatingId === activeClass.id ? 'animate-spin' : ''}`}
+                      className={`w-3.5 h-3.5 ${rotatingId === activeClass.id ? 'animate-spin' : ''}`}
                     />
                   </Button>
                 </div>
@@ -643,7 +654,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               variant="outline"
               size="sm"
               onClick={handleExportCsv}
-              className="text-xs font-bold gap-1.5 cursor-pointer rounded-full border-2 border-ink"
+              className="text-xs font-bold gap-1.5 cursor-pointer rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream shadow-xs px-3.5 py-2"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-ink" />
               CSV
@@ -654,11 +665,124 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               variant="outline"
               size="sm"
               onClick={() => window.print()}
-              className="text-xs gap-1.5 cursor-pointer rounded-full border-2 border-ink"
+              className="text-xs gap-1.5 cursor-pointer rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream shadow-xs px-3 py-2"
+              aria-label="Print Classroom Summary"
             >
               <Printer className="w-3.5 h-3.5 text-ink" />
             </Button>
           </div>
+        </div>
+
+        {/* Four Neo-Brutalist Stat Tiles (design.md Section 6.4) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* Tile 1: Enrolled Students (Surface Cream #FDEFC3) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('roster')}
+            className="group text-left rounded-[20px] border-2 border-ink bg-surface-cream p-4 shadow-card hover:-translate-y-0.5 transition-all relative overflow-hidden cursor-pointer"
+          >
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-surface-yellow/40 pointer-events-none" />
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary block">
+                  Learners
+                </span>
+                <div className="font-serif text-2xl sm:text-3xl font-black text-ink mt-0.5">
+                  {activeStudents.length}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-ink bg-surface-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <Users className="w-4 h-4 text-ink" />
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] font-bold text-text-secondary flex items-center gap-1.5 relative z-10">
+              <span>{enrolledStudents.length} total enrolled</span>
+              {pendingStudents.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-surface-yellow border border-ink text-ink text-[10px] font-black">
+                  +{pendingStudents.length}
+                </span>
+              )}
+            </div>
+          </button>
+
+          {/* Tile 2: Curriculum / Class (Surface Blue #DCE8FB) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('curriculum')}
+            className="group text-left rounded-[20px] border-2 border-ink bg-surface-blue p-4 shadow-card hover:-translate-y-0.5 transition-all relative overflow-hidden cursor-pointer"
+          >
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-surface-white/40 pointer-events-none" />
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary block">
+                  Curriculum
+                </span>
+                <div className="font-serif text-xl sm:text-2xl font-black text-ink mt-0.5 truncate max-w-[150px]">
+                  {activeClass ? `Class ${activeClass.grade}` : 'NCERT'}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-ink bg-surface-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <BookOpen className="w-4 h-4 text-ink" />
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] font-bold text-text-secondary relative z-10 truncate">
+              Official NCERT Curriculum
+            </div>
+          </button>
+
+          {/* Tile 3: Skill Gaps (Surface Pink #F9B9B9) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('clusters')}
+            className="group text-left rounded-[20px] border-2 border-ink bg-surface-pink p-4 shadow-card hover:-translate-y-0.5 transition-all relative overflow-hidden cursor-pointer"
+          >
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-surface-cream/50 pointer-events-none" />
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary block">
+                  Skill Gaps
+                </span>
+                <div className="font-serif text-2xl sm:text-3xl font-black text-ink mt-0.5">
+                  {clusters?.clusters.length ?? 0}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-ink bg-surface-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <Target className="w-4 h-4 text-ink" />
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] font-bold text-text-secondary relative z-10">
+              {clusters && clusters.clusters.length > 0
+                ? 'Prerequisite clusters'
+                : 'No active gap alerts'}
+            </div>
+          </button>
+
+          {/* Tile 4: AI Suggestions (Surface Butter / Yellow #FFF4B5) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('suggestions')}
+            className="group text-left rounded-[20px] border-2 border-ink bg-surface-butter p-4 shadow-card hover:-translate-y-0.5 transition-all relative overflow-hidden cursor-pointer"
+          >
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-surface-yellow/40 pointer-events-none" />
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary block">
+                  Suggestions
+                </span>
+                <div className="font-serif text-2xl sm:text-3xl font-black text-ink mt-0.5">
+                  {suggestions?.suggestions.length ?? 0}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-ink bg-surface-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <Lightbulb className="w-4 h-4 text-ink" />
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] font-bold text-text-secondary relative z-10">
+              {suggestions && suggestions.suggestions.length > 0
+                ? 'Decisions pending'
+                : 'Class on track'}
+            </div>
+          </button>
         </div>
 
         {errorMessage && (
@@ -676,78 +800,78 @@ export default function TeacherDashboardPage(): React.JSX.Element {
         {/* Main Tabbed Interface */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="mb-6">
-            <TabsList className="flex flex-wrap gap-1.5 bg-surface-cream/50 p-2 rounded-full border-2 border-ink shadow-xs overflow-x-auto">
+            <TabsList className="h-auto w-full flex flex-wrap items-center gap-2 rounded-[22px] border-2 border-ink bg-surface-cream/40 dark:bg-card p-2.5 shadow-xs">
               <TabsTrigger
                 value="overview"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 📊 Overview & Heatmap
               </TabsTrigger>
               <TabsTrigger
                 value="curriculum"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 📚 Curriculum & Content Hub
               </TabsTrigger>
               <TabsTrigger
                 value="clusters"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 🎯 Gaps & Clusters
                 {clusters && clusters.clusters.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-primary-orange text-white text-[10px] font-black border border-ink">
+                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-primary-orange text-white text-[10px] font-black border border-ink shadow-xs">
                     {clusters.clusters.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="warnings"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 ⚠️ Early Warnings
                 {warnings && warnings.warnings.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-surface-pink text-ink text-[10px] font-black border border-ink">
+                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-surface-pink text-ink text-[10px] font-black border border-ink shadow-xs">
                     {warnings.warnings.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="suggestions"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 💡 Suggestions
                 {suggestions && suggestions.suggestions.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink">
+                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink shadow-xs">
                     {suggestions.suggestions.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="classes"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 🏫 My Classes ({classesList.length})
               </TabsTrigger>
               <TabsTrigger
                 value="roster"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 👥 Students ({enrolledStudents.length})
                 {pendingStudents.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-black border border-ink">
+                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink shadow-xs">
                     {pendingStudents.length} pending
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="assignments"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 📝 Assignments ({assignments.length})
               </TabsTrigger>
               <TabsTrigger
                 value="progress"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all border-2 data-[state=active]:border-ink data-[state=active]:bg-surface-white data-[state=active]:text-ink data-[state=active]:shadow-xs data-[state=inactive]:border-transparent data-[state=inactive]:text-text-secondary hover:text-ink hover:bg-surface-white/70"
               >
                 📈 Reports
               </TabsTrigger>
@@ -769,7 +893,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                     className={buttonVariants({
                       variant: 'outline',
                       size: 'sm',
-                      className: 'text-xs h-7 inline-flex items-center',
+                      className:
+                        'text-xs h-7 inline-flex items-center rounded-full border-2 border-ink',
                     })}
                   >
                     Full Screen View ↗
@@ -782,32 +907,71 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                 />
               </div>
             ) : (
-              <Card className="p-8 sm:p-12 text-center border-dashed border-2 border-border/80 bg-muted/10 space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                  <Sparkles className="w-7 h-7" />
+              <div className="rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-8 sm:p-12 text-center shadow-card relative overflow-hidden max-w-2xl mx-auto space-y-6">
+                {/* Decorative corner accent circles (design.md Section 5) */}
+                <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-surface-cream pointer-events-none" />
+                <div className="absolute -bottom-10 -left-10 w-28 h-28 rounded-full bg-surface-butter/50 pointer-events-none" />
+
+                {/* Mascot badge */}
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-full border-2 border-ink bg-surface-cream flex items-center justify-center mx-auto shadow-xs">
+                    <Sparkles className="w-8 h-8 text-primary-orange" />
+                  </div>
                 </div>
-                <div className="space-y-2 max-w-md mx-auto">
-                  <h3 className="text-base font-bold text-foreground">No Enrolled Students Yet</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Students join using code{' '}
-                    <strong className="font-mono text-primary font-bold">
-                      {activeClass?.join_code}
-                    </strong>
-                    . Once they submit join requests and you accept them in the Students tab, their
-                    real-time competency heatmap will appear here.
+
+                <div className="relative z-10 space-y-3 max-w-lg mx-auto">
+                  <h3 className="font-serif text-2xl sm:text-3xl font-black text-ink dark:text-white tracking-tight">
+                    No Enrolled Students Yet
+                  </h3>
+                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                    Students join this classroom using the unique join code below. Once they join,
+                    their real-time Bayesian competency heatmap will appear right here.
                   </p>
+
+                  {/* Join Code Highlight Pill */}
                   <div className="pt-2">
+                    <div className="inline-flex items-center gap-3 rounded-2xl border-2 border-ink bg-surface-butter px-5 py-2.5 shadow-xs">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary">
+                        Student Join Code:
+                      </span>
+                      <span className="font-mono text-xl font-black text-ink tracking-widest">
+                        {activeClass?.join_code}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyCode}
+                        className="h-7 px-2.5 text-xs font-bold rounded-lg border-2 border-ink bg-surface-white cursor-pointer shadow-xs"
+                      >
+                        {codeCopied ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-ink" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* CTA Buttons */}
+                  <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="primary"
                       onClick={() => setActiveTab('roster')}
-                      className="text-xs cursor-pointer"
+                      className="rounded-full px-6 py-2.5 text-xs font-bold shadow-xs cursor-pointer border-2 border-ink"
                     >
                       View Class Roster & Pending Requests →
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCopyCode}
+                      className="rounded-full px-6 py-2.5 text-xs font-bold shadow-xs cursor-pointer border-2 border-ink bg-surface-white hover:bg-surface-cream"
+                    >
+                      {codeCopied ? 'Join Code Copied!' : 'Copy Join Code'}
+                    </Button>
                   </div>
                 </div>
-              </Card>
+              </div>
             )}
           </TabsContent>
 
@@ -871,134 +1035,135 @@ export default function TeacherDashboardPage(): React.JSX.Element {
 
           {/* Tab 5: My Classes & Create Class */}
           <TabsContent value="classes" className="space-y-6">
-            <Card className="shadow-xs border-border/80">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">{t('createNewClass')}</CardTitle>
-                <CardDescription className="text-xs">
+            <div className="rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 shadow-card space-y-4 relative overflow-hidden">
+              <div className="space-y-1 border-b-2 border-dashed border-ink/20 pb-4">
+                <h3 className="text-lg font-black text-ink dark:text-white">
+                  {t('createNewClass')}
+                </h3>
+                <p className="text-xs text-text-secondary">
                   Create a new section to automatically generate a student join code and assign
                   NCERT curriculum.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form
-                  onSubmit={handleCreateClass}
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 items-end"
-                >
-                  <div className="space-y-1.5 lg:col-span-2">
-                    <label
-                      htmlFor="new-class-name"
-                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      {t('className')} (or auto-generates)
-                    </label>
-                    <Input
-                      id="new-class-name"
-                      placeholder={`e.g. Class ${grade}-${section} ${subject}`}
-                      value={className}
-                      onChange={(e) => setClassName(e.target.value)}
-                    />
-                  </div>
+                </p>
+              </div>
+              <form
+                onSubmit={handleCreateClass}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end"
+              >
+                <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
+                  <label
+                    htmlFor="new-class-name"
+                    className="text-xs font-black uppercase tracking-wider text-text-secondary"
+                  >
+                    {t('className')} (or auto-generates)
+                  </label>
+                  <Input
+                    id="new-class-name"
+                    placeholder={`e.g. Class ${grade}-${section} ${subject}`}
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                  />
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="new-class-grade"
-                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      {t('grade')}
-                    </label>
-                    <Select
-                      id="new-class-grade"
-                      options={gradeOptions}
-                      value={grade}
-                      onChange={(e) => setGrade(e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label
+                    htmlFor="new-class-grade"
+                    className="text-xs font-black uppercase tracking-wider text-text-secondary"
+                  >
+                    {t('grade')}
+                  </label>
+                  <Select
+                    id="new-class-grade"
+                    options={gradeOptions}
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                  />
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="new-class-subject"
-                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      Subject
-                    </label>
-                    <Select
-                      id="new-class-subject"
-                      options={subjectOptions}
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-1.5 lg:col-span-3">
+                  <label
+                    htmlFor="new-class-subject"
+                    className="text-xs font-black uppercase tracking-wider text-text-secondary"
+                  >
+                    Subject
+                  </label>
+                  <Select
+                    id="new-class-subject"
+                    options={subjectOptions}
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="new-class-section"
-                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      {t('section')}
-                    </label>
-                    <Input
-                      id="new-class-section"
-                      placeholder={t('sectionPlaceholder')}
-                      value={section}
-                      onChange={(e) => setSection(e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-1.5 lg:col-span-1">
+                  <label
+                    htmlFor="new-class-section"
+                    className="text-xs font-black uppercase tracking-wider text-text-secondary"
+                  >
+                    {t('section')}
+                  </label>
+                  <Input
+                    id="new-class-section"
+                    placeholder={t('sectionPlaceholder')}
+                    value={section}
+                    onChange={(e) => setSection(e.target.value)}
+                  />
+                </div>
 
-                  <div>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      className="w-full cursor-pointer py-2 font-semibold text-xs"
-                      disabled={isCreating}
-                    >
-                      {isCreating ? t('creating') : t('createButton')}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+                <div className="sm:col-span-2 lg:col-span-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    className="w-full cursor-pointer py-2 font-bold text-xs min-h-[44px] rounded-full border-2 border-ink shadow-xs"
+                    disabled={isCreating}
+                  >
+                    {isCreating ? t('creating') : '+ Create Class'}
+                  </Button>
+                </div>
+              </form>
+            </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {classesList.map((cls) => {
                 const isSelected = cls.id === selectedClassId;
                 return (
-                  <Card
+                  <div
                     key={cls.id}
-                    className={`flex flex-col justify-between shadow-xs transition-all ${
-                      isSelected ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'
+                    className={`flex flex-col justify-between rounded-[22px] border-2 border-ink p-5 shadow-xs transition-all ${
+                      isSelected
+                        ? 'bg-surface-cream/40 ring-2 ring-primary-orange'
+                        : 'bg-surface-white dark:bg-card hover:shadow-card'
                     }`}
                   >
-                    <CardHeader>
+                    <div className="space-y-1 pb-4">
                       <div className="flex items-center justify-between gap-2">
-                        <CardTitle className="text-base font-bold truncate">{cls.name}</CardTitle>
-                        <Badge
-                          variant={isSelected ? 'default' : 'outline'}
-                          className="shrink-0 text-xs font-medium"
-                        >
+                        <h4 className="text-base font-black truncate text-ink dark:text-white capitalize">
+                          {cls.name}
+                        </h4>
+                        <span className="shrink-0 text-xs font-black rounded-full border-2 border-ink bg-surface-yellow px-2.5 py-0.5 text-ink shadow-xs">
                           Class {cls.grade}
                           {cls.section ? `-${cls.section}` : ''}
-                        </Badge>
+                        </span>
                       </div>
-                      <CardDescription className="text-xs text-muted-foreground">
+                      <p className="text-xs font-bold text-text-secondary">
                         {cls.academic_year || '2024-2025'}
-                      </CardDescription>
-                    </CardHeader>
+                      </p>
+                    </div>
 
-                    <CardContent className="space-y-3 pt-0">
-                      <div className="flex items-center justify-between rounded-lg bg-muted/50 p-2.5">
+                    <div className="space-y-3 pt-0">
+                      <div className="flex items-center justify-between rounded-xl border-2 border-ink bg-surface-cream/70 p-3 shadow-xs">
                         <div>
-                          <span className="text-[10px] font-medium text-muted-foreground block">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary block">
                             Join Code
                           </span>
-                          <div className="font-mono text-base font-extrabold text-primary">
+                          <div className="font-mono text-lg font-black text-ink tracking-widest">
                             {cls.join_code}
                           </div>
                         </div>
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="cursor-pointer text-xs"
+                          className="cursor-pointer text-xs font-bold rounded-lg border-2 border-ink bg-surface-white shadow-xs"
                           onClick={() => handleRotateCode(cls.id)}
                           disabled={rotatingId === cls.id}
                         >
@@ -1011,7 +1176,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                           type="button"
                           variant={isSelected ? 'primary' : 'outline'}
                           size="sm"
-                          className="flex-1 text-xs cursor-pointer"
+                          className="flex-1 text-xs font-bold rounded-full border-2 border-ink cursor-pointer shadow-xs"
                           onClick={() => {
                             handleSelectClass(cls.id);
                             setActiveTab('overview');
@@ -1022,16 +1187,17 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                         <Link
                           href={`/classes/${cls.id}`}
                           className={buttonVariants({
-                            variant: 'ghost',
+                            variant: 'outline',
                             size: 'sm',
-                            className: 'text-xs shrink-0 inline-flex items-center',
+                            className:
+                              'text-xs shrink-0 inline-flex items-center rounded-full border-2 border-ink bg-surface-white shadow-xs font-bold',
                           })}
                         >
                           Dashboard →
                         </Link>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -1041,39 +1207,44 @@ export default function TeacherDashboardPage(): React.JSX.Element {
           <TabsContent value="roster" className="space-y-6">
             {/* Pending Requests Section */}
             {pendingStudents.length > 0 && (
-              <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <div className="rounded-[24px] border-2 border-ink bg-surface-yellow/20 p-6 shadow-xs space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <span>⏳</span> Pending Join Requests ({pendingStudents.length})
-                  </CardTitle>
-                  <CardDescription className="text-xs">
+                  </h3>
+                  <p className="text-xs text-text-secondary">
                     Review and approve students who requested to join with class code{' '}
-                    {activeClass?.join_code}.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+                    <strong className="font-mono text-ink font-bold">
+                      {activeClass?.join_code}
+                    </strong>
+                    .
+                  </p>
+                </div>
+                <div className="overflow-x-auto rounded-xl border-2 border-ink bg-surface-white">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('studentName')}</TableHead>
-                        <TableHead>{t('studentUsername')}</TableHead>
-                        <TableHead>{t('rollNumber')}</TableHead>
-                        <TableHead>{t('status')}</TableHead>
-                        <TableHead className="text-right">{t('actions')}</TableHead>
+                      <TableRow className="border-b-2 border-ink bg-surface-cream/50">
+                        <TableHead className="font-black text-ink">{t('studentName')}</TableHead>
+                        <TableHead className="font-black text-ink">
+                          {t('studentUsername')}
+                        </TableHead>
+                        <TableHead className="font-black text-ink">{t('rollNumber')}</TableHead>
+                        <TableHead className="font-black text-ink">{t('status')}</TableHead>
+                        <TableHead className="text-right font-black text-ink">
+                          {t('actions')}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {pendingStudents.map((st) => (
-                        <TableRow key={st.student_id}>
-                          <TableCell className="font-semibold text-foreground">
-                            {st.full_name}
-                          </TableCell>
+                        <TableRow key={st.student_id} className="border-b border-ink/20">
+                          <TableCell className="font-bold text-ink">{st.full_name}</TableCell>
                           <TableCell className="font-mono text-xs">{st.username}</TableCell>
                           <TableCell>{st.roll_number || '—'}</TableCell>
                           <TableCell>
-                            <Badge variant="warning" className="text-xs">
+                            <span className="text-xs font-bold rounded-full border-2 border-ink bg-surface-yellow px-2.5 py-0.5 text-ink shadow-xs">
                               {t('pending')}
-                            </Badge>
+                            </span>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -1082,7 +1253,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                                 variant="primary"
                                 disabled={actionInProgressId === st.student_id}
                                 onClick={() => handleApprove(st.student_id)}
-                                className="text-xs font-semibold cursor-pointer"
+                                className="text-xs font-bold rounded-full border-2 border-ink cursor-pointer shadow-xs"
                               >
                                 {actionInProgressId === st.student_id
                                   ? t('approving')
@@ -1090,10 +1261,10 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                               </Button>
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 disabled={actionInProgressId === st.student_id}
                                 onClick={() => handleRemove(st.student_id)}
-                                className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+                                className="text-xs font-bold rounded-full border-2 border-ink text-destructive hover:bg-surface-pink/30 cursor-pointer shadow-xs"
                               >
                                 ✕ {t('reject')}
                               </Button>
@@ -1103,59 +1274,66 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
 
             {/* Active Students Section */}
-            <Card className="shadow-xs">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-bold">
-                      Class Roster & Individual Profiles ({activeStudents.length})
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Enrolled students in {activeClass?.name}. Click any student to inspect their
-                      Bayesian competency matrix.
-                    </CardDescription>
-                  </div>
+            <div className="rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b-2 border-dashed border-ink/20 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-ink dark:text-white">
+                    Class Roster & Individual Profiles ({activeStudents.length})
+                  </h3>
+                  <p className="text-xs text-text-secondary">
+                    Enrolled students in {activeClass?.name}. Click any student to inspect their
+                    Bayesian competency matrix.
+                  </p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {activeStudents.length === 0 ? (
-                  <div className="py-12 text-center space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      No active students enrolled in this class yet.
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Ask students to visit <strong className="text-foreground">/join</strong> and
-                      enter join code{' '}
-                      <strong className="font-mono text-primary font-bold">
-                        {activeClass?.join_code}
-                      </strong>
-                      .
-                    </p>
+              </div>
+
+              {activeStudents.length === 0 ? (
+                <div className="rounded-[20px] border-2 border-dashed border-ink/30 bg-surface-cream/30 p-8 sm:p-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full border-2 border-ink bg-surface-cream flex items-center justify-center mx-auto shadow-xs text-xl">
+                    👥
                   </div>
-                ) : (
+                  <h4 className="font-bold text-base text-ink dark:text-white">
+                    No active students enrolled in this class yet.
+                  </h4>
+                  <p className="text-xs text-text-secondary max-w-sm mx-auto">
+                    Ask students to visit{' '}
+                    <strong className="text-ink dark:text-white font-mono">/join</strong> and enter
+                    join code{' '}
+                    <strong className="font-mono text-primary-orange font-black">
+                      {activeClass?.join_code}
+                    </strong>
+                    .
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border-2 border-ink bg-surface-white">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('studentName')}</TableHead>
-                        <TableHead>{t('studentUsername')}</TableHead>
-                        <TableHead>{t('rollNumber')}</TableHead>
-                        <TableHead>{t('status')}</TableHead>
-                        <TableHead className="text-right">{t('actions')}</TableHead>
+                      <TableRow className="border-b-2 border-ink bg-surface-cream/40">
+                        <TableHead className="font-black text-ink">{t('studentName')}</TableHead>
+                        <TableHead className="font-black text-ink">
+                          {t('studentUsername')}
+                        </TableHead>
+                        <TableHead className="font-black text-ink">{t('rollNumber')}</TableHead>
+                        <TableHead className="font-black text-ink">{t('status')}</TableHead>
+                        <TableHead className="text-right font-black text-ink">
+                          {t('actions')}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {activeStudents.map((st) => (
-                        <TableRow key={st.student_id}>
-                          <TableCell className="font-medium text-foreground">
+                        <TableRow key={st.student_id} className="border-b border-ink/20">
+                          <TableCell className="font-bold text-ink">
                             <button
                               type="button"
                               onClick={() => setSelectedStudentId(st.student_id)}
-                              className="hover:underline text-left cursor-pointer font-semibold text-primary"
+                              className="hover:underline text-left cursor-pointer font-bold text-primary-orange"
                             >
                               {st.full_name}
                             </button>
@@ -1163,26 +1341,26 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                           <TableCell className="font-mono text-xs">{st.username}</TableCell>
                           <TableCell>{st.roll_number ? `#${st.roll_number}` : '—'}</TableCell>
                           <TableCell>
-                            <Badge variant="success" className="text-xs">
+                            <span className="text-xs font-bold rounded-full border-2 border-ink bg-emerald-100 text-emerald-800 px-2.5 py-0.5 shadow-xs">
                               {t('active')}
-                            </Badge>
+                            </span>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="cursor-pointer text-xs"
+                                className="cursor-pointer text-xs font-bold rounded-full border-2 border-ink bg-surface-white shadow-xs"
                                 onClick={() => setSelectedStudentId(st.student_id)}
                               >
                                 {t('viewRoster')} →
                               </Button>
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 disabled={actionInProgressId === st.student_id}
                                 onClick={() => handleRemove(st.student_id)}
-                                className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+                                className="text-xs font-bold rounded-full border-2 border-ink text-destructive hover:bg-surface-pink/30 cursor-pointer shadow-xs"
                               >
                                 {actionInProgressId === st.student_id ? t('removing') : t('remove')}
                               </Button>
@@ -1192,9 +1370,9 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                       ))}
                     </TableBody>
                   </Table>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           {/* Tab 7: Assignments */}
