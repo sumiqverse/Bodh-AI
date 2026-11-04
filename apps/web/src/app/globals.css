@@ -175,6 +175,29 @@
   .katex .mfrac .frac-line {
     border-bottom-color: currentColor !important;
   }
+
+  /* Let nested dashboard panels shrink without forcing page-wide overflow. */
+  :where(.grid, .flex) > :where(div, section, main, article) {
+    min-width: 0;
+  }
+
+  :where(img, video, canvas) {
+    max-width: 100%;
+  }
+
+  .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25rem;
+  }
+}
+
+@media (max-width: 639px) and (pointer: coarse) {
+  /* Avoid automatic form-field zoom on mobile browsers. */
+  input:not([type='checkbox']):not([type='radio']), select, textarea {
+    font-size: 16px;
+  }
 }
 
 /* Reduced motion preference */

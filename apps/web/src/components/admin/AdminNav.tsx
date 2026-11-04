@@ -30,8 +30,11 @@ export function AdminNav(): React.JSX.Element {
     <div className="space-y-4 border-b border-border pb-4 mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs font-semibold">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className="bg-primary/10 text-primary border-primary/30 text-xs font-semibold"
+            >
               Admin & Content Portal
             </Badge>
             <Badge variant="outline" className="text-xs text-muted-foreground">
@@ -44,7 +47,10 @@ export function AdminNav(): React.JSX.Element {
         </div>
       </div>
 
-      <nav className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" aria-label="Admin Navigation Tabs">
+      <nav
+        className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none"
+        aria-label="Admin Navigation Tabs"
+      >
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;
@@ -67,4 +73,3 @@ export function AdminNav(): React.JSX.Element {
     </div>
   );
 }
-

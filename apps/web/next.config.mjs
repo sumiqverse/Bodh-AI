@@ -12,6 +12,7 @@ const isStandalone = process.env.OUTPUT_STANDALONE === 'true' || process.platfor
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.NEXT_BUILD_DIR || '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   outputFileTracingRoot: path.resolve(__dirname, '../../'),

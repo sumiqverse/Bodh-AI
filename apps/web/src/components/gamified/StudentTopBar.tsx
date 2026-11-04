@@ -29,9 +29,9 @@ export function StudentTopBar({
   }, []);
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-divider">
+    <header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-divider">
       {/* Left: Page Title & Classroom switcher */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-ink dark:text-white">{pageTitle}</h1>
 
         {enrolledClasses.length > 1 && (
@@ -39,7 +39,7 @@ export function StudentTopBar({
             aria-label="Select Enrolled Classroom"
             value={selectedClass?.classId}
             onChange={(e) => onSelectClass && onSelectClass(e.target.value)}
-            className="rounded-full border-2 border-ink bg-surface-cream px-3 py-1 text-xs font-bold text-ink shadow-xs focus:outline-none focus:ring-2 focus:ring-primary-orange cursor-pointer"
+            className="min-w-0 max-w-full min-h-11 rounded-full border-2 border-ink bg-surface-cream px-3 py-1 text-xs font-bold text-ink shadow-xs focus:outline-none focus:ring-2 focus:ring-primary-orange cursor-pointer"
           >
             {enrolledClasses.map((cls) => (
               <option key={cls.classId} value={cls.classId}>
@@ -51,12 +51,13 @@ export function StudentTopBar({
       </div>
 
       {/* Right Controls: Search Pill, Notification Bell, Dark-Mode Toggle */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 w-full items-center gap-3">
         {/* Search Pill */}
-        <div className="relative flex-1 sm:w-64">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
           <input
             type="search"
+            aria-label="Search learning content"
             value={searchQuery}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
             placeholder="Search something..."
@@ -68,7 +69,7 @@ export function StudentTopBar({
         <button
           type="button"
           aria-label="Notifications"
-          className="relative h-10 w-10 flex items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card text-ink dark:text-white hover:bg-surface-cream transition-colors cursor-pointer"
+          className="relative h-11 w-11 shrink-0 flex items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card text-ink dark:text-white hover:bg-surface-cream transition-colors cursor-pointer"
         >
           <Bell className="h-4 w-4" />
           <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-orange" />
@@ -79,7 +80,7 @@ export function StudentTopBar({
           type="button"
           aria-label="Toggle Dark Mode"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="h-10 w-10 flex items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card text-ink dark:text-white hover:bg-surface-cream transition-colors cursor-pointer"
+          className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card text-ink dark:text-white hover:bg-surface-cream transition-colors cursor-pointer"
         >
           {mounted && theme === 'dark' ? (
             <Sun className="h-4 w-4 text-amber-400" />

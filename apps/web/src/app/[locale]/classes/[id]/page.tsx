@@ -312,7 +312,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
 
   return (
     <div className="min-h-screen bg-canvas-gradient py-6 px-3 sm:px-6 flex justify-center text-ink selection:bg-surface-cream selection:text-ink">
-      <div className="w-full max-w-[1360px] rounded-[28px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-shell space-y-6">
+      <div className="w-full min-w-0 max-w-[1360px] rounded-[28px] border-2 border-ink bg-surface-white dark:bg-card p-3 sm:p-6 lg:p-8 shadow-shell space-y-6">
         {/* Header bar: breadcrumb, title, code, export & print */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b-2 border-dashed border-ink/40 pb-6">
           <div>
@@ -425,7 +425,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
         {/* Main Tabbed Interface */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="mb-6 print:hidden">
-            <TabsList className="flex flex-wrap gap-1.5 bg-surface-cream/50 p-2 rounded-full border-2 border-ink shadow-xs overflow-x-auto">
+            <TabsList className="flex h-auto min-h-12 flex-wrap gap-1.5 bg-surface-cream/50 p-2 rounded-2xl border-2 border-ink shadow-xs overflow-x-auto">
               <TabsTrigger
                 value="heatmap"
                 className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"

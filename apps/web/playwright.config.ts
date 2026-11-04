@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://localhost:3000';
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 120 * 1000,
@@ -12,7 +14,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://localhost:3000',
+    baseURL,
     viewport: { width: 360, height: 740 },
     trace: 'on-first-retry',
   },
@@ -41,8 +43,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm run start',
-    url: 'http://localhost:3000',
+    command: `node node_modules/next/dist/bin/next start --port ${new URL(baseURL).port || '3000'}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

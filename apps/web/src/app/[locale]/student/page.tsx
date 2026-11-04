@@ -323,11 +323,11 @@ function StudentHomeContent(): React.JSX.Element {
     <div className="min-h-screen bg-canvas-gradient py-4 sm:py-8 px-2 sm:px-4 flex justify-center text-ink selection:bg-surface-cream selection:text-ink">
       {/* APP SHELL: ~1320px container, 28px radius, 2px border, soft diffuse shadow */}
       <div className="w-full max-w-[1320px] rounded-[28px] border-2 border-ink bg-surface-white dark:bg-[#15171C] shadow-shell overflow-hidden">
-        <div className="flex flex-col lg:flex-row min-h-[850px]">
+        <div className="flex flex-col xl:flex-row min-h-[850px]">
           {/* ============================================================= */}
           {/* 1. LEFT SIDEBAR (~230px, separated by dashed vertical border) */}
           {/* ============================================================= */}
-          <div className="lg:w-[230px] shrink-0 border-b-2 lg:border-b-0 lg:border-r-2 border-dashed border-ink/40 bg-surface-white dark:bg-[#15171C]">
+          <div className="xl:w-[230px] shrink-0 border-b-2 xl:border-b-0 xl:border-r-2 border-dashed border-ink/40 bg-surface-white dark:bg-[#15171C]">
             <StudentSidebar
               studentName={studentName}
               roleCaption={rollNumber ? `Roll #${rollNumber} • Trainee` : 'Student • Trainee'}
@@ -344,7 +344,7 @@ function StudentHomeContent(): React.JSX.Element {
           {/* ============================================================= */}
           {/* 2. MAIN CONTENT COLUMN (~630px desktop)                        */}
           {/* ============================================================= */}
-          <div className="flex-1 lg:max-w-[700px] xl:max-w-[720px] p-4 sm:p-6 lg:p-7 space-y-6 border-b-2 lg:border-b-0 lg:border-r-2 border-dashed border-ink/40 overflow-y-auto">
+          <div className="flex-1 min-w-0 w-full p-4 sm:p-6 lg:p-7 space-y-6 border-b-2 xl:border-b-0 xl:border-r-2 border-dashed border-ink/40 overflow-y-auto">
             {/* Top Bar */}
             <StudentTopBar
               pageTitle={activeTab === 'learning' ? 'My Learning' : 'Dashboard'}
@@ -780,7 +780,7 @@ function StudentHomeContent(): React.JSX.Element {
           {/* ============================================================= */}
           {/* 3. RIGHT COLUMN (~330px desktop): Calendar & Leaderboard       */}
           {/* ============================================================= */}
-          <div className="w-full lg:w-[330px] xl:w-[340px] shrink-0 p-4 sm:p-6 space-y-6 bg-surface-white dark:bg-[#15171C]">
+          <div className="w-full xl:w-[300px] shrink-0 min-w-0 p-4 sm:p-6 space-y-6 bg-surface-white dark:bg-[#15171C]">
             {/* Monthly Activity Calendar in Butter-Yellow */}
             <MonthlyCalendarCard
               monthName={gamification.currentMonthName}

@@ -26,7 +26,7 @@ interface StudentSidebarProps {
 }
 
 export function StudentSidebar({
-  studentName = 'Karan Mehra',
+  studentName = 'Student',
   roleCaption = 'Student • Trainee',
   activeTab = 'dashboard',
   onSelectTab,
@@ -54,7 +54,7 @@ export function StudentSidebar({
 
   return (
     <aside
-      className="w-full lg:w-[230px] shrink-0 flex flex-col justify-between py-6 px-4 select-none"
+      className="w-full xl:w-[230px] shrink-0 flex flex-col justify-between py-6 px-4 select-none"
       aria-label="Student Navigation Sidebar"
     >
       <div className="space-y-6">
