@@ -112,4 +112,65 @@ describe('useSolve hook', () => {
     expect(result.current.submissionResult?.explanation).toContain('Subtracting 2x');
     expect(res).toBeDefined();
   });
+
+  it('marks practice completed when recommendation flags all_completed', async () => {
+    mockGetNextItem.mockResolvedValueOnce({
+      question_id: 'q-solve-001',
+      code: 'NCERT-MATH-C8-SOLVE-01',
+      skill_id: '10000000-0000-0000-0000-000000000001',
+      difficulty: 1,
+      prompt: 'Solve for x: 5x - 8 = 2x + 7',
+      options: [],
+      hints: [],
+      all_completed: true,
+    });
+
+    const { result } = renderHookWithProviders(() =>
+      useSolve({ skillId: '10000000-0000-0000-0000-000000000001' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isPracticeCompleted).toBe(true);
+    });
+
+    expect(result.current.question).toBeNull();
+    expect(result.current.completedSkillId).toBe('10000000-0000-0000-0000-000000000001');
+  });
+
+  it('marks practice completed when next item repeats an attempted question in session', async () => {
+    mockSubmitAttempt.mockResolvedValueOnce({
+      attempt_id: 'att-123',
+      is_correct: true,
+      p_mastery_after: 0.75,
+      explanation: 'Correct',
+      rationale: 'Done',
+      is_duplicate: false,
+    });
+
+    const { result } = renderHookWithProviders(() =>
+      useSolve({ skillId: '10000000-0000-0000-0000-000000000001' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.question?.id).toBe('q-solve-001');
+    });
+
+    // Answer the question
+    await act(async () => {
+      await result.current.submitAnswer('B');
+    });
+
+    expect(result.current.hasSubmitted).toBe(true);
+
+    // Request next question (which mocks the same question ID again)
+    act(() => {
+      result.current.resetForNextQuestion();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isPracticeCompleted).toBe(true);
+    });
+
+    expect(result.current.question).toBeNull();
+  });
 });

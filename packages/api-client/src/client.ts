@@ -296,6 +296,7 @@ export interface NextItemResponse {
   hint_ladder: number;
   is_test_gate: boolean;
   is_skip_ahead: boolean;
+  all_completed?: boolean;
   rationale: string;
 }
 

@@ -196,6 +196,10 @@ class NextItemResponse(BaseModel):
         default=False, description="Flag indicating 3-item hint-free test gate verification"
     )
     is_skip_ahead: bool = Field(default=False, description="Flag indicating skip-ahead triggered")
+    all_completed: bool = Field(
+        default=False,
+        description="Flag indicating all practice items for this skill have been attempted",
+    )
     rationale: str = Field(
         description="Transparent pedagogical rationale explaining why this item was selected"
     )

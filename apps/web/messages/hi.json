@@ -603,6 +603,10 @@
     "consentRequiredTitle": "अभिभावक सहमति आवश्यक है",
     "consentRequiredDescription": "इस खाते से अभ्यास उत्तर सबमिट करने से पहले माता-पिता या अभिभावक को DPDP सहमति दर्ज करनी होगी। इसमें केवल एक मिनट लगता है।",
     "completeConsentButton": "अभिभावक सहमति पूरी करें",
+    "practiceCompletedTitle": "अभ्यास पूरा हुआ!",
+    "practiceCompletedSubtitle": "आपने इस विषय के सभी उपलब्ध अभ्यास प्रश्न हल कर लिए हैं। क्या आप अपनी दक्षता प्रमाणित करने के लिए तैयार हैं?",
+    "redirectingMessage": "{count} सेकंड में डैशबोर्ड पर पुनः निर्देशित किया जा रहा है...",
+    "doneDashboardButton": "पूर्ण • डैशबोर्ड पर जाएं",
     "emptyState": "कोई अभ्यास प्रश्न उपलब्ध नहीं है।"
   },
   "test": {

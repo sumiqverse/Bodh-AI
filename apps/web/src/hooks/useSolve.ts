@@ -37,6 +37,8 @@ export interface UseSolveReturn {
   isSubmitting: boolean;
   submissionResult: AttemptResponse | null;
   hasSubmitted: boolean;
+  isPracticeCompleted: boolean;
+  completedSkillId?: string;
   error: Error | null;
   submitAnswer: (selectedOption: string) => Promise<AttemptResponse | undefined>;
   resetForNextQuestion: () => void;
@@ -52,6 +54,11 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const [hasSubmitted, setHasSubmitted] = React.useState<boolean>(false);
   const [skipInitialQuestionId, setSkipInitialQuestionId] = React.useState<boolean>(false);
   const [questionCycle, setQuestionCycle] = React.useState<number>(0);
+  const [isPracticeCompleted, setIsPracticeCompleted] = React.useState<boolean>(false);
+  const [completedSkillId, setCompletedSkillId] = React.useState<string | undefined>(
+    options?.skillId,
+  );
+  const attemptedIdsRef = React.useRef<Set<string>>(new Set());
   const startTime = React.useRef(Date.now());
 
   // Fetch authentic practice question by questionId or skillId
@@ -63,13 +70,16 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
       questionCycle,
       locale,
     ],
-    queryFn: async (): Promise<SolveQuestionData> => {
+    queryFn: async (): Promise<SolveQuestionData | null> => {
       const isHindi = locale === 'hi';
       if (!skipInitialQuestionId && options?.questionId) {
         try {
           const token = getAuthToken() ?? undefined;
           const q = await apiClient.getQuestion(options.questionId, token, locale);
           if (q) {
+            if (q.skill_id) {
+              setCompletedSkillId(q.skill_id);
+            }
             return {
               id: q.id,
               code: q.code ?? 'NCERT-PRACTICE',
@@ -95,6 +105,21 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
           localStorage.getItem('bodhai_selected_class_id') || undefined,
           targetSkillId,
         );
+
+        if (recommendation.skill_id) {
+          setCompletedSkillId(recommendation.skill_id);
+        }
+
+        // If backend marks all_completed OR if this question was already answered in this session,
+        // then the student has completed all available practice questions!
+        if (
+          recommendation.all_completed ||
+          attemptedIdsRef.current.has(recommendation.question_id)
+        ) {
+          setIsPracticeCompleted(true);
+          return null;
+        }
+
         return {
           id: recommendation.question_id,
           code: recommendation.code,
@@ -152,6 +177,9 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
     onSuccess: (data: AttemptResponse) => {
       setSubmissionResult(data);
       setHasSubmitted(true);
+      if (question?.id) {
+        attemptedIdsRef.current.add(question.id);
+      }
       void queryClient.invalidateQueries({ queryKey: ['student-mastery'] });
       void queryClient.invalidateQueries({ queryKey: ['class-leaderboard'] });
       void queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
@@ -201,6 +229,8 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
     isSubmitting: submitMutation.isPending,
     submissionResult,
     hasSubmitted,
+    isPracticeCompleted,
+    completedSkillId,
     error: (questionQuery.error as Error) || (submitMutation.error as Error) || null,
     submitAnswer,
     resetForNextQuestion,

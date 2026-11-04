@@ -22,7 +22,7 @@ import {
 import { useSolve, solveSubmissionSchema, type SolveSubmissionFormValues } from '@/hooks/useSolve';
 import { KatexRenderer } from '@/components/katex-renderer';
 import { isGuardianConsentError } from '@/lib/api-errors';
-import { Check, Info, ArrowRight } from 'lucide-react';
+import { Check, Info, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 function SolveSkeleton(): React.JSX.Element {
   return (
@@ -55,10 +55,31 @@ function SolveContent(): React.JSX.Element {
     isSubmitting,
     submissionResult,
     hasSubmitted,
+    isPracticeCompleted,
+    completedSkillId,
     error,
     submitAnswer,
     resetForNextQuestion,
   } = useSolve({ skillId, questionId });
+
+  const [redirectCountdown, setRedirectCountdown] = React.useState<number>(5);
+
+  React.useEffect(() => {
+    if (!isPracticeCompleted) return;
+
+    const timer = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          router.push('/student');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isPracticeCompleted, router]);
 
   const form = useForm<SolveSubmissionFormValues>({
     resolver: zodResolver(solveSubmissionSchema),
@@ -139,6 +160,57 @@ function SolveContent(): React.JSX.Element {
               </Link>
             )}
           </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isPracticeCompleted) {
+    const targetTestSkillId = skillId || completedSkillId;
+    return (
+      <div className="min-h-[calc(100vh-8rem)] bg-canvas-gradient flex flex-col items-center justify-center px-4 py-8">
+        <Card className="w-full max-w-lg rounded-card border-2 border-ink bg-surface-white dark:bg-card shadow-card text-center p-6 sm:p-8 space-y-6">
+          <div className="w-16 h-16 rounded-full border-2 border-ink bg-accent-green/20 text-accent-green flex items-center justify-center mx-auto shadow-xs">
+            <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-serif text-2xl sm:text-3xl font-black text-ink dark:text-white">
+              {t('practiceCompletedTitle')}
+            </h2>
+            <p className="text-sm sm:text-base text-ink/80 dark:text-gray-300 max-w-sm mx-auto leading-relaxed">
+              {t('practiceCompletedSubtitle')}
+            </p>
+          </div>
+
+          <div className="rounded-full border-2 border-ink bg-surface-cream px-4 py-1.5 text-xs font-mono font-bold text-ink inline-flex items-center gap-2 mx-auto shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
+            <span>{t('redirectingMessage', { count: redirectCountdown })}</span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button
+              type="button"
+              variant="orange"
+              size="md"
+              onClick={() =>
+                router.push(targetTestSkillId ? `/test?skillId=${targetTestSkillId}` : '/test')
+              }
+              className="flex-1 min-h-[48px] cursor-pointer font-black text-sm shadow-card rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
+            >
+              <span>{t('readyForTestButton')}</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => router.push('/student')}
+              className="flex-1 min-h-[48px] cursor-pointer font-bold text-sm rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
+            >
+              <span>{t('doneDashboardButton')}</span>
+            </Button>
+          </div>
         </Card>
       </div>
     );

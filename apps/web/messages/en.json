@@ -603,6 +603,10 @@
     "consentRequiredTitle": "Guardian consent required",
     "consentRequiredDescription": "A parent or guardian must record DPDP consent before this account can submit practice answers. It only takes a minute.",
     "completeConsentButton": "Complete guardian consent",
+    "practiceCompletedTitle": "Practice Complete!",
+    "practiceCompletedSubtitle": "You have answered all available practice problems for this topic. Ready to verify your mastery?",
+    "redirectingMessage": "Redirecting to dashboard in {count}s...",
+    "doneDashboardButton": "Done • Go to Dashboard",
     "emptyState": "No practice question available."
   },
   "test": {

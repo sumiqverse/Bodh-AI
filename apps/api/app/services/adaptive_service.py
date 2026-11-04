@@ -410,8 +410,10 @@ class AdaptiveService:
             recent_history=recent_history,
         )
 
+        all_completed = False
         if decision is None:
-            # If all attempted, reset attempted filter
+            # If all attempted, flag all_completed=True so client knows student practiced all
+            all_completed = True
             ranked = self.ranker.rank_items(
                 candidates=candidates,
                 skill_states=skill_states,
@@ -462,6 +464,7 @@ class AdaptiveService:
             hint_ladder=decision.hint_ladder.value,
             is_test_gate=decision.is_test_gate,
             is_skip_ahead=decision.is_skip_ahead,
+            all_completed=all_completed,
             rationale=rationale,
         )
 
