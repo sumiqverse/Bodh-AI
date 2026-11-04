@@ -348,7 +348,7 @@ export function DesignShowcase(): React.JSX.Element {
           8. Table (Accessible Semantic Data)
         </h2>
         <Table>
-          <TableCaption>Official NCERT Framework Alignment for BodhAI (Classes 6–10)</TableCaption>
+          <TableCaption>NCERT Framework Alignment for BodhAI (Classes 6–10)</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Class</TableHead>

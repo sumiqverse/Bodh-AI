@@ -461,8 +461,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               Create Your First Classroom
             </h1>
             <p className="text-xs sm:text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
-              Set up your class to automatically import official NCERT curriculum, generate a unique
-              student join code, and track student competency mastery in real-time.
+              Set up your class to automatically load the NCERT-aligned curriculum map, generate a
+              unique student join code, and track student competency mastery in real-time.
             </p>
           </div>
 
@@ -736,7 +736,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               </div>
             </div>
             <div className="mt-2 text-[11px] font-bold text-text-secondary relative z-10 truncate">
-              Official NCERT Curriculum
+              NCERT-aligned Curriculum
             </div>
           </button>
 
@@ -1051,8 +1051,8 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                   {t('createNewClass')}
                 </h3>
                 <p className="text-xs text-text-secondary">
-                  Create a new section to automatically generate a student join code and assign
-                  NCERT curriculum.
+                  Create a new section to automatically generate a student join code and assign an
+                  NCERT-aligned curriculum.
                 </p>
               </div>
               <form

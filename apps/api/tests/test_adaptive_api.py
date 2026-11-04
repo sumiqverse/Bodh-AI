@@ -916,6 +916,8 @@ async def test_adaptive_lessons_are_owned_and_selected_by_class_mastery(
     first_skill = content_response.json()["topics"][0]["skills"][0]
     assert first_skill["default_lesson"]["body"]
     assert first_skill["default_lesson"]["title"]
+    assert first_skill["default_lesson_hi"]["body"]
+    assert "सीखने का लक्ष्य" in first_skill["default_lesson_hi"]["body"]
 
     student_url = f"{url}/{data['skill1'].id}"
     default_lesson = await client.get(student_url, headers=data["headers"])
@@ -923,6 +925,15 @@ async def test_adaptive_lessons_are_owned_and_selected_by_class_mastery(
     assert default_lesson.json()["is_default"] is True
     assert default_lesson.json()["title"] == data["skill1"].name
     assert "DRAFT_ONLY_PROMPT" not in default_lesson.json()["body"]
+
+    hindi_default = await client.get(
+        student_url, params={"language": "hi"}, headers=data["headers"]
+    )
+    assert hindi_default.status_code == 200
+    assert hindi_default.json()["is_default"] is True
+    assert "सीखने का लक्ष्य" in hindi_default.json()["body"]
+    assert "सही उत्तर" in hindi_default.json()["body"]
+    assert "DRAFT_ONLY_PROMPT" not in hindi_default.json()["body"]
 
     base = {"skill_id": str(data["skill1"].id), "language": "en"}
     for level in (1, 4):

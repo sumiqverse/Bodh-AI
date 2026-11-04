@@ -71,11 +71,20 @@ export const metadata: Metadata = {
     title: 'BodhAI — Adaptive Mastery Learning for Classes 6–10',
     description:
       'Personalized diagnostic assessments and mastery learning for middle and high school students in India.',
+    images: [
+      {
+        url: 'https://bodhai.org.in/icons/image.png',
+        width: 1200,
+        height: 630,
+        alt: 'BodhAI — Adaptive Mastery Learning for Classes 6 to 10 in India',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'BodhAI — Adaptive Learning for Classes 6–10',
     description: 'Bilingual adaptive diagnostic learning for Indian schools.',
+    images: ['https://bodhai.org.in/icons/image.png'],
   },
   alternates: {
     canonical: '/',
@@ -112,18 +121,86 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
 
-  // JSON-LD Organization Structured Data
-  const jsonLd = {
+  // Comprehensive JSON-LD Schemas for SEO & Semantic Web
+  const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'EducationalOrganization',
+    '@id': 'https://bodhai.org.in/#organization',
     name: 'BodhAI Foundation',
-    alternateName: 'बोधAI',
+    alternateName: ['बोधAI', 'BodhAI Educational Technologies'],
     url: 'https://bodhai.org.in',
-    logo: 'https://bodhai.org.in/logo.png',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://bodhai.org.in/icons/image.png',
+      width: 512,
+      height: 512,
+    },
     description:
-      'Adaptive diagnostic learning platform for Classes 6 to 10 in India aligned with NCERT standards.',
-    areaServed: 'IN',
-    educationalCredentialAwarded: 'Curriculum Competency Mastery',
+      'Open-source adaptive diagnostic mastery learning platform for Classes 6 to 10 across India, aligned with NCERT curriculum frameworks.',
+    areaServed: {
+      '@type': 'Country',
+      name: 'India',
+    },
+    sameAs: [
+      'https://en.wikipedia.org/wiki/National_Council_of_Educational_Research_and_Training',
+      'https://www.wikidata.org/wiki/Q11068875',
+      'https://github.com/bodhai-org/bodhai',
+      'https://twitter.com/bodhai_edu',
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Pedagogical & Technical Inquiries',
+      email: 'contact@bodhai.org.in',
+      availableLanguage: ['English', 'Hindi'],
+    },
+    educationalCredentialAwarded: 'NCERT Competency Mastery Evaluation',
+  };
+
+  const webPageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `https://bodhai.org.in/${locale}#webpage`,
+    url: `https://bodhai.org.in/${locale}`,
+    name:
+      locale === 'hi'
+        ? 'बोधAI — कक्षा 6 से 10 के लिए अनुकूली महारत अधिगम'
+        : 'BodhAI — Adaptive Mastery Learning for Middle & Secondary School',
+    description:
+      'BodhAI is an open-source, NCERT-aligned adaptive diagnostic and mastery learning platform for Classes 6–10 across India.',
+    inLanguage: locale === 'hi' ? 'hi-IN' : 'en-IN',
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': 'https://bodhai.org.in/#website',
+      name: 'BodhAI',
+      url: 'https://bodhai.org.in',
+    },
+    about: {
+      '@id': 'https://bodhai.org.in/#organization',
+    },
+    publisher: {
+      '@id': 'https://bodhai.org.in/#organization',
+    },
+    datePublished: '2026-01-15T00:00:00+05:30',
+    dateModified: '2026-11-04T00:00:00+05:30',
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: locale === 'hi' ? 'गृह' : 'Home',
+        item: 'https://bodhai.org.in',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: locale === 'hi' ? 'दक्षता अधिगम' : 'Mastery Learning',
+        item: `https://bodhai.org.in/${locale}`,
+      },
+    ],
   };
 
   return (
@@ -141,7 +218,15 @@ export default async function LocaleLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       </head>
       <body className="min-h-screen font-sans bg-background text-foreground antialiased flex flex-col">

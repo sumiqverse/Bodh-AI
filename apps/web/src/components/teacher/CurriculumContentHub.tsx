@@ -294,7 +294,7 @@ export function CurriculumContentHub({
           <p className="text-xs text-muted-foreground mt-0.5">
             {activeClass
               ? `NCERT-aligned ${formatSubjectLabel(classContent?.subject || classSubject)} curriculum and competencies for Class ${activeClass.grade}.`
-              : 'Explore authentic NCERT chapter sequences and upload custom questions for your classroom.'}
+              : 'Explore NCERT-aligned chapter sequences and upload custom questions for your classroom.'}
           </p>
         </div>
 

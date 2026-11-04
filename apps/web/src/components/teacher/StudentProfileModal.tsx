@@ -259,7 +259,26 @@ export function StudentProfileModal({
 
             {/* Tab 3: Hint Ladder Usage */}
             {activeTab === 'hints' && (
-              <p className="text-sm text-muted-foreground">Hint usage is not recorded yet.</p>
+              <div className="space-y-3">
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('independentCount')}
+                  </p>
+                  <p className="mt-1 font-serif text-2xl font-bold text-foreground">
+                    {profile.hint_usage.independent_attempts_count}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {profile.hint_usage.total_hints_requested} total hints requested
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  {t('hintLevelBreakdown', {
+                    h1: profile.hint_usage.hint_1_count,
+                    h2: profile.hint_usage.hint_2_count,
+                    h3: profile.hint_usage.hint_3_count,
+                  })}
+                </p>
+              </div>
             )}
 
             {/* Tab 4: Trend Over Time */}

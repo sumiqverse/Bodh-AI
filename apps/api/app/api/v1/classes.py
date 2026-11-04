@@ -593,7 +593,7 @@ async def get_class_lesson(
         school_class = await ClassRepository(session).get_by_id(class_id)
         if school_class is None:
             raise NotFoundError("Class", class_id)
-        default_lesson = await _load_default_lesson(session, school_class, skill_id)
+        default_lesson = await _load_default_lesson(session, school_class, skill_id, language)
         if default_lesson is None:
             raise NotFoundError("Lesson at student's current level", skill_id)
         return {
@@ -1030,9 +1030,11 @@ def _detect_subject_from_class_name(name: str) -> str:
     return "mathematics"
 
 
-def _question_preview(q: Question, skill_name: str) -> ClassroomQuestionItem:
-    """Build the teacher-facing preview for one question."""
-    trans = next((tr for tr in q.translations if tr.language == "en"), None)
+def _question_preview(q: Question, skill_name: str, language: str = "en") -> ClassroomQuestionItem:
+    """Build a question preview in the requested language, with English fallback."""
+    trans = next((tr for tr in q.translations if tr.language == language), None)
+    if not trans:
+        trans = next((tr for tr in q.translations if tr.language == "en"), None)
     if not trans and q.translations:
         trans = q.translations[0]
 
@@ -1056,6 +1058,7 @@ async def _load_default_lesson(
     session: AsyncSession,
     school_class: SchoolClass,
     skill_id: uuid.UUID,
+    language: str = "en",
 ) -> dict[str, str] | None:
     """Build the default lesson for a skill that belongs to this class curriculum."""
     curriculum_code = resolve_curriculum_code(
@@ -1094,7 +1097,7 @@ async def _load_default_lesson(
         .scalars()
         .all()
     )
-    previews = [_question_preview(q, skill.name) for q in questions]
+    previews = [_question_preview(q, skill.name, language) for q in questions]
     return build_default_lesson(
         topic_name=topic.name,
         topic_description=topic.description,
@@ -1102,6 +1105,7 @@ async def _load_default_lesson(
         skill_description=skill.description,
         blooms_level=skill.blooms_level,
         questions=[preview.model_dump() for preview in previews],
+        language=language,
     )
 
 
@@ -1199,6 +1203,18 @@ async def get_classroom_content(
                 blooms_level=s.blooms_level,
                 questions=[question.model_dump() for question in skill_questions],
             )
+            hindi_questions = [
+                _question_preview(q, s.name, "hi") for q in questions_by_skill.get(s.id, [])
+            ]
+            default_lesson_hi = build_default_lesson(
+                topic_name=t.name,
+                topic_description=t.description,
+                skill_name=s.name,
+                skill_description=s.description,
+                blooms_level=s.blooms_level,
+                questions=[question.model_dump() for question in hindi_questions],
+                language="hi",
+            )
 
             topic_skills.append(
                 ClassroomSkillItem(
@@ -1210,6 +1226,7 @@ async def get_classroom_content(
                     blooms_level=s.blooms_level,
                     questions=skill_questions,
                     default_lesson=default_lesson,
+                    default_lesson_hi=default_lesson_hi,
                 )
             )
 

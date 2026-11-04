@@ -209,6 +209,7 @@ class ClassroomSkillItem(BaseModel):
     blooms_level: str
     questions: list[ClassroomQuestionItem] = Field(default_factory=list)
     default_lesson: ClassroomDefaultLesson | None = None
+    default_lesson_hi: ClassroomDefaultLesson | None = None
 
 
 class ClassroomTopicItem(BaseModel):

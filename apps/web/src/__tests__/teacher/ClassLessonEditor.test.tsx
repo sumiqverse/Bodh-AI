@@ -17,6 +17,9 @@ vi.mock('@/lib/api-client', () => ({
 const defaultTitle = 'Kinetic Theory of Matter and Phase Changes';
 const defaultBody =
   'Chapter: Matter in Our Surroundings\n\nLearning outcome\nExplain phase changes.';
+const defaultHindiTitle = 'पदार्थ की गतिज अवधारणा और अवस्था परिवर्तन';
+const defaultHindiBody =
+  'अध्याय: हमारे आस-पास के पदार्थ\n\nसीखने का लक्ष्य\nअवस्था परिवर्तन समझाएँ।';
 
 const content: ClassroomContentResponse = {
   class_id: 'class-9-science',
@@ -44,6 +47,10 @@ const content: ClassroomContentResponse = {
           default_lesson: {
             title: defaultTitle,
             body: defaultBody,
+          },
+          default_lesson_hi: {
+            title: defaultHindiTitle,
+            body: defaultHindiBody,
           },
         },
       ],
@@ -121,6 +128,19 @@ describe('ClassLessonEditor', () => {
       'Teacher-authored explanation.',
     );
     expect(screen.getByText('Your class version')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Restore NCERT default' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Restore default lesson' })).toBeTruthy();
+  });
+
+  it('preloads the Hindi default when Hindi is selected', async () => {
+    renderEditor();
+
+    await screen.findByDisplayValue(defaultTitle);
+    fireEvent.change(screen.getByLabelText('Lesson language'), { target: { value: 'hi' } });
+
+    await screen.findByDisplayValue(defaultHindiTitle);
+    expect((screen.getByLabelText('Lesson content') as HTMLTextAreaElement).value).toBe(
+      defaultHindiBody,
+    );
+    expect(screen.queryByText(/A Hindi default is not available/)).toBeNull();
   });
 });

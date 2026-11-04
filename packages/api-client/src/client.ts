@@ -104,6 +104,7 @@ export interface ClassroomSkillItem {
   blooms_level: string;
   questions: ClassroomQuestionItem[];
   default_lesson?: ClassroomDefaultLesson | null;
+  default_lesson_hi?: ClassroomDefaultLesson | null;
 }
 
 export interface ClassroomDefaultLesson {

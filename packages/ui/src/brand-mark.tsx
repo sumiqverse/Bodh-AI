@@ -21,7 +21,13 @@ export function BrandMark({
         className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card overflow-hidden shadow-xs shrink-0"
         aria-hidden="true"
       >
-        <img src={iconSrc} alt={name} className="h-full w-full object-contain select-none" />
+        <img
+          src={iconSrc}
+          alt={name}
+          width={40}
+          height={40}
+          className="h-full w-full object-contain select-none"
+        />
       </span>
       <span
         className="font-serif text-[22px] font-black tracking-tight text-ink dark:text-white sm:text-2xl"

@@ -58,7 +58,11 @@ export function ClassLessonEditor({
     () => options.find((option) => option.skill.id === skillId) ?? options[0] ?? null,
     [options, skillId],
   );
-  const defaultLesson = selected?.skill.default_lesson ?? null;
+  const defaultLesson =
+    language === 'hi'
+      ? (selected?.skill.default_lesson_hi ?? selected?.skill.default_lesson ?? null)
+      : (selected?.skill.default_lesson ?? null);
+  const hasHindiDefault = Boolean(selected?.skill.default_lesson_hi);
   const savedLesson = lessons.find(
     (item) =>
       item.skill_id === skillId && item.language === language && item.difficulty === difficulty,
@@ -127,9 +131,10 @@ export function ClassLessonEditor({
         </select>
       </div>
 
-      {!isTeacherVersion && language === 'hi' && defaultLesson && (
+      {!isTeacherVersion && language === 'hi' && defaultLesson && !hasHindiDefault && (
         <p className="text-xs text-text-secondary">
-          The default guide is in English. Edit and save this level to add a Hindi version.
+          A Hindi default is not available for this skill. Showing the English guide; edit and save
+          this level to add a Hindi version.
         </p>
       )}
 
@@ -179,11 +184,11 @@ export function ClassLessonEditor({
               setTitle(defaultLesson.title);
               setBody(defaultLesson.body);
               setMessage(
-                'NCERT default restored in the editor. Save to replace your class version.',
+                'Default lesson restored in the editor. Save to replace your class version.',
               );
             }}
           >
-            Restore NCERT default
+            Restore default lesson
           </button>
         )}
       </div>

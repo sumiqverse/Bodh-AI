@@ -1,11 +1,28 @@
 import { test, expect } from '@playwright/test';
 
+type MockLesson = {
+  id: string;
+  skill_id: string;
+  language: string;
+  difficulty: number;
+  title: string;
+  body: string;
+};
+
 test.describe('Teacher Journey E2E Dashboard', () => {
   const classId = '11111111-1111-1111-1111-111111111111';
   const studentId = '22222222-2222-2222-2222-222222222222';
   const teacherId = '33333333-3333-3333-3333-333333333333';
+  const lessonTitle = 'Rational Numbers on the Number Line';
+  const lessonBody =
+    'Chapter: Rational Numbers\n\nLearning outcome\nPlace rational numbers on a number line.';
+  const hindiLessonTitle = 'संख्या रेखा पर परिमेय संख्याएँ';
+  const hindiLessonBody =
+    'अध्याय: परिमेय संख्याएँ\n\nसीखने का लक्ष्य\nपरिमेय संख्याओं को संख्या रेखा पर दर्शाएँ।';
+  let savedLesson: MockLesson | null = null;
 
   test.beforeEach(async ({ page }) => {
+    savedLesson = null;
     // Inject mock teacher session in localStorage
     await page.addInitScript(
       ({ teacherToken, userObj }) => {
@@ -31,6 +48,86 @@ test.describe('Teacher Journey E2E Dashboard', () => {
       const url = request.url();
       const method = request.method();
 
+      // Classroom lesson content and editor endpoints
+      if (url.includes(`/api/v1/classes/${classId}/content`) && method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            class_id: classId,
+            class_name: 'Class 8-A Mathematics',
+            grade: 8,
+            subject: 'mathematics',
+            curriculum_code: 'NCERT-MATH-C8',
+            custom_questions_count: 0,
+            topics: [
+              {
+                id: 'topic-1',
+                code: 'TOPIC-RATIONAL',
+                name: 'Rational Numbers',
+                description: 'Properties and representation of rational numbers.',
+                sequence_order: 1,
+                skills: [
+                  {
+                    id: 'skill-1',
+                    code: 'MATH-C8-RAT-01',
+                    name: lessonTitle,
+                    description: 'Represent rational numbers on the number line.',
+                    difficulty: 0.5,
+                    blooms_level: 'understand',
+                    questions: [],
+                    default_lesson: { title: lessonTitle, body: lessonBody },
+                    default_lesson_hi: {
+                      title: hindiLessonTitle,
+                      body: hindiLessonBody,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+        return;
+      }
+
+      if (url.includes(`/api/v1/classes/${classId}/lessons/skill-1`) && method === 'GET') {
+        const language = new URL(url).searchParams.get('language') === 'hi' ? 'hi' : 'en';
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: `default-${language}`,
+            skill_id: 'skill-1',
+            language,
+            difficulty: 1,
+            title: language === 'hi' ? hindiLessonTitle : lessonTitle,
+            body: language === 'hi' ? hindiLessonBody : lessonBody,
+            is_default: true,
+          }),
+        });
+        return;
+      }
+
+      if (url.includes(`/api/v1/classes/${classId}/lessons`) && method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(savedLesson ? [savedLesson] : []),
+        });
+        return;
+      }
+
+      if (url.includes(`/api/v1/classes/${classId}/lessons`) && method === 'PUT') {
+        const payload = request.postDataJSON() as Omit<MockLesson, 'id'>;
+        savedLesson = { id: 'lesson-1', ...payload };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(savedLesson),
+        });
+        return;
+      }
+
       // Class Details
       if (
         url.includes(`/api/v1/classes/${classId}`) &&
@@ -41,6 +138,7 @@ test.describe('Teacher Journey E2E Dashboard', () => {
         !url.includes('/assignments') &&
         !url.includes('/progress-summary') &&
         !url.includes('/export/csv') &&
+        !url.includes('/students') &&
         method === 'GET'
       ) {
         await route.fulfill({
@@ -371,7 +469,7 @@ test.describe('Teacher Journey E2E Dashboard', () => {
 
     // Verify Heatmap view is default tab
     await expect(page.getByRole('heading', { name: /Class Competency Heatmap/i })).toBeVisible();
-    await expect(page.getByText(/Accessible Pattern Legend/i)).toBeVisible();
+    await expect(page.getByText(/Mastery Level Legend/i)).toBeVisible();
 
     // Verify cell with accessible pattern
     const cellBtn = page.getByRole('button', {
@@ -397,7 +495,7 @@ test.describe('Teacher Journey E2E Dashboard', () => {
     await expect(page.getByText(/Independent Solutions \(No Hints\)/i)).toBeVisible();
 
     // Close Modal
-    await page.getByRole('button', { name: '✕' }).click();
+    await page.getByRole('button', { name: 'Close dialog' }).click();
     await expect(modalHeading).not.toBeVisible();
 
     // Switch to "Group Gap Clusters" tab
@@ -435,5 +533,60 @@ test.describe('Teacher Journey E2E Dashboard', () => {
     await expect(page.getByText(/76%/i).first()).toBeVisible();
     await expect(page.getByText(/\+22%/i)).toBeVisible();
     await expect(page.getByText(/Phase 3/i)).toBeVisible();
+  });
+
+  test('teacher preloads, localizes, saves, and restores a lesson', async ({ page }) => {
+    await page.goto(`/en/classes/${classId}`);
+    await page.getByRole('tab', { name: /Curriculum & Content Hub/i }).click();
+
+    const titleInput = page.getByLabel('Lesson title');
+    const bodyInput = page.getByLabel('Lesson content');
+    await expect(titleInput).toHaveValue(lessonTitle);
+    await expect(bodyInput).toHaveValue(/Learning outcome/);
+
+    await page.getByLabel('Lesson language').selectOption('hi');
+    await expect(titleInput).toHaveValue(hindiLessonTitle);
+    await expect(bodyInput).toHaveValue(/सीखने का लक्ष्य/);
+    await expect(page.getByText(/A Hindi default is not available/)).toHaveCount(0);
+
+    await bodyInput.fill('Teacher activity: plot fractions on a classroom number line.');
+    await page.getByRole('button', { name: 'Save lesson' }).click();
+    await expect(page.getByText('Lesson saved for this class.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Restore default lesson' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Restore default lesson' }).click();
+    await expect(titleInput).toHaveValue(hindiLessonTitle);
+    await expect(bodyInput).toHaveValue(hindiLessonBody);
+  });
+
+  test('student receives a language-appropriate default lesson', async ({ page }) => {
+    await page.addInitScript(
+      ({ activeClassId }) => {
+        window.localStorage.setItem('bodhai_access_token', 'mock-student-token');
+        window.localStorage.setItem(
+          'bodhai_user',
+          JSON.stringify({
+            id: '22222222-2222-2222-2222-222222222222',
+            username: 'aarav_8a',
+            role: 'student',
+            full_name: 'Aarav Patel',
+            is_minor: true,
+            preferred_language: 'en',
+          }),
+        );
+        window.localStorage.setItem('bodhai_selected_class_id', activeClassId);
+      },
+      { activeClassId: classId },
+    );
+
+    await page.goto('/en/learn?skillId=skill-1');
+    await expect(page.getByText('NCERT-aligned lesson')).toBeVisible();
+    await expect(page.getByRole('heading', { name: lessonTitle })).toBeVisible();
+    await expect(page.getByText(/Learning outcome/)).toBeVisible();
+
+    await page.goto('/hi/learn?skillId=skill-1');
+    await expect(page.getByText('NCERT-aligned lesson')).toBeVisible();
+    await expect(page.getByRole('heading', { name: hindiLessonTitle })).toBeVisible();
+    await expect(page.getByText(/सीखने का लक्ष्य/)).toBeVisible();
   });
 });
