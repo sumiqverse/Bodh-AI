@@ -8,8 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
-  Button,
   Badge,
   Table,
   TableHeader,
@@ -86,29 +84,15 @@ export function StudentProfileModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-xl font-bold">
-                {profile ? profile.student_name : t('modalTitle')}
-              </DialogTitle>
-              {profile?.roll_number && (
-                <DialogDescription className="text-xs font-mono">
-                  Roll No: {profile.roll_number}
-                </DialogDescription>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <DialogClose asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onClose}
-                  className="cursor-pointer text-xs"
-                >
-                  ✕
-                </Button>
-              </DialogClose>
-            </div>
+          <div>
+            <DialogTitle className="text-xl font-bold">
+              {profile ? profile.student_name : t('modalTitle')}
+            </DialogTitle>
+            {profile?.roll_number && (
+              <DialogDescription className="text-xs font-mono">
+                Roll No: {profile.roll_number}
+              </DialogDescription>
+            )}
           </div>
         </DialogHeader>
 

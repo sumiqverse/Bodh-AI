@@ -100,7 +100,7 @@ export default function SettingsPage(): React.JSX.Element {
 
   const handleLogout = (): void => {
     clearAuthSession();
-    router.push('/login');
+    window.location.href = '/';
   };
 
   if (!currentUser) {

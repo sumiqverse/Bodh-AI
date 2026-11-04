@@ -75,11 +75,17 @@ function StudentHomeContent(): React.JSX.Element {
 
   React.useEffect(() => {
     setMounted(true);
-    if (typeof window !== 'undefined' && !getAuthToken()) {
-      const currentPath = window.location.pathname + window.location.search;
-      router.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
-    }
-  }, [router]);
+    const checkAuth = () => {
+      if (typeof window !== 'undefined' && !getAuthToken()) {
+        window.location.href = '/';
+      }
+    };
+    checkAuth();
+    window.addEventListener('bodhai_auth_change', checkAuth);
+    return () => {
+      window.removeEventListener('bodhai_auth_change', checkAuth);
+    };
+  }, []);
 
   const t = useTranslations('skillMap');
   const searchParams = useSearchParams();
@@ -315,7 +321,7 @@ function StudentHomeContent(): React.JSX.Element {
     }
   };
 
-  if (!mounted) {
+  if (!mounted || !token) {
     return <StudentDashboardSkeleton />;
   }
 

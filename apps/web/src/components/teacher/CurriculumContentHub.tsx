@@ -36,25 +36,70 @@ interface CurriculumContentHubProps {
   readonly onRefreshData?: () => void;
 }
 
+function detectClassSubject(name?: string, subject?: string): string {
+  if (subject && subject !== 'all') {
+    return subject.toLowerCase().replace(/\s+/g, '_');
+  }
+  if (!name) return 'mathematics';
+  const n = name.toLowerCase();
+  if (n.includes('soc') || n.includes('sst') || n.includes('hist') || n.includes('geo')) {
+    return 'social_science';
+  }
+  if (n.includes('sci')) {
+    return 'science';
+  }
+  if (n.includes('eng')) {
+    return 'english';
+  }
+  if (n.includes('hin')) {
+    return 'hindi';
+  }
+  return 'mathematics';
+}
+
+function formatSubjectLabel(subj: string): string {
+  if (subj === 'social_science') return 'Social Science';
+  if (subj === 'mathematics') return 'Mathematics';
+  if (subj === 'science') return 'Science';
+  if (subj === 'english') return 'English';
+  if (subj === 'hindi') return 'Hindi';
+  return subj.charAt(0).toUpperCase() + subj.slice(1);
+}
+
 export function CurriculumContentHub({
   activeClass,
   onRefreshData,
 }: CurriculumContentHubProps): React.JSX.Element {
   const apiClient = getWebApiClient();
 
+  const classSubject = React.useMemo(() => {
+    const rawSubj = (activeClass as unknown as { subject?: string })?.subject;
+    return detectClassSubject(activeClass?.name, rawSubj);
+  }, [activeClass]);
+
   // Search state
   const [searchQuery, setSearchQuery] = React.useState<string>('');
-  const [searchGrade, setSearchGrade] = React.useState<string>('all');
-  const [searchSubject, setSearchSubject] = React.useState<string>('all');
+  const [searchGrade, setSearchGrade] = React.useState<string>(
+    activeClass?.grade ? String(activeClass.grade) : 'all',
+  );
+  const [searchSubject, setSearchSubject] = React.useState<string>(classSubject);
   const [isSearching, setIsSearching] = React.useState<boolean>(false);
   const [searchResults, setSearchResults] = React.useState<CurriculumSearchResponse | null>(null);
 
-  // Classroom Syllabus Content state
+  // Classroom Syllabus Content state (locked to activeClass's subject)
   const [classContent, setClassContent] = React.useState<ClassroomContentResponse | null>(null);
-  const [selectedSubject, setSelectedSubject] = React.useState<string>('all');
   const [isLoadingContent, setIsLoadingContent] = React.useState<boolean>(false);
   const [expandedTopics, setExpandedTopics] = React.useState<Record<string, boolean>>({});
   const [expandedSkills, setExpandedSkills] = React.useState<Record<string, boolean>>({});
+
+  React.useEffect(() => {
+    if (activeClass) {
+      if (activeClass.grade) {
+        setSearchGrade(String(activeClass.grade));
+      }
+      setSearchSubject(classSubject);
+    }
+  }, [activeClass, classSubject]);
 
   // Upload Content Pack Dialog / State
   const [uploadJsonText, setUploadJsonText] = React.useState<string>('');
@@ -83,20 +128,17 @@ export function CurriculumContentHub({
     'syllabus',
   );
 
-  // Load classroom content
+  // Load classroom content for this specific subject
   const loadClassroomContent = React.useCallback(
     async (subj?: string) => {
       if (!activeClass) return;
       const token = getAuthToken();
       if (!token) return;
 
+      const effectiveSubj = subj && subj !== 'all' ? subj : classSubject;
       setIsLoadingContent(true);
       try {
-        const res = await apiClient.getClassroomContent(
-          activeClass.id,
-          subj === 'all' ? undefined : subj,
-          token,
-        );
+        const res = await apiClient.getClassroomContent(activeClass.id, effectiveSubj, token);
         setClassContent(res);
         // Expand first 2 topics by default
         if (res.topics.length > 0) {
@@ -112,14 +154,14 @@ export function CurriculumContentHub({
         setIsLoadingContent(false);
       }
     },
-    [activeClass, apiClient],
+    [activeClass, apiClient, classSubject],
   );
 
   React.useEffect(() => {
     if (activeClass) {
-      void loadClassroomContent(selectedSubject);
+      void loadClassroomContent(classSubject);
     }
-  }, [activeClass, loadClassroomContent, selectedSubject]);
+  }, [activeClass, loadClassroomContent, classSubject]);
 
   // Execute Search across Classes 6-10
   const handleSearch = async (e?: React.FormEvent) => {
@@ -172,7 +214,7 @@ export function CurriculumContentHub({
       const res = await apiClient.uploadClassroomContent(activeClass.id, parsed, token);
       setUploadStatus(`✅ ${res.message}`);
       setUploadJsonText('');
-      void loadClassroomContent(selectedSubject);
+      void loadClassroomContent(classSubject);
       if (onRefreshData) onRefreshData();
     } catch (err: unknown) {
       setUploadStatus(
@@ -228,7 +270,7 @@ export function CurriculumContentHub({
       setHint1('');
       setHint2('');
       setHint3('');
-      void loadClassroomContent(selectedSubject);
+      void loadClassroomContent(classSubject);
       if (onRefreshData) onRefreshData();
     } catch (err: unknown) {
       setCreateSuccessMsg(
@@ -247,11 +289,12 @@ export function CurriculumContentHub({
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-primary" />
-            Curriculum & Content Hub (Classes 6 to 10)
+            Curriculum & Content Hub{activeClass ? ` • ${activeClass.name}` : ' (Classes 6 to 10)'}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Explore authentic NCERT chapter sequences, search competencies across all 5 core
-            subjects, and upload custom questions for your classroom.
+            {activeClass
+              ? `Official NCERT ${formatSubjectLabel(classContent?.subject || classSubject)} curriculum and competencies for Class ${activeClass.grade}.`
+              : 'Explore authentic NCERT chapter sequences and upload custom questions for your classroom.'}
           </p>
         </div>
 
@@ -276,7 +319,7 @@ export function CurriculumContentHub({
             className="text-xs gap-1.5 cursor-pointer"
           >
             <Search className="w-3.5 h-3.5" />
-            Search Classes 6-10
+            Search Curriculum
           </Button>
 
           <Button
@@ -308,15 +351,19 @@ export function CurriculumContentHub({
         </div>
       </div>
 
-      {/* SEARCH INTERFACE ACROSS CLASSES 6 TO 10 */}
+      {/* SEARCH INTERFACE */}
       <Card className="border-border">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Search className="w-4 h-4 text-primary" />
-            Multi-Subject NCERT Repository Search
+            NCERT Curriculum Search
           </CardTitle>
           <CardDescription className="text-xs">
-            Query any topic, chapter, or competency across Class 6, 7, 8, 9, and 10.
+            Query any topic, chapter, or competency for{' '}
+            {activeClass
+              ? `Class ${activeClass.grade} ${formatSubjectLabel(classSubject)}`
+              : 'your classroom'}
+            .
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-2">
@@ -372,23 +419,57 @@ export function CurriculumContentHub({
 
           {/* Quick Filter Badges */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-            <span className="text-[11px] text-muted-foreground mr-1">Popular:</span>
-            {[
-              'Linear Equations',
-              'Fractions',
-              'Acids & Bases',
-              'Electricity',
-              'Light',
-              'Grammar Tenses',
-              'Polynomials',
-            ].map((term) => (
+            <span className="text-[11px] text-muted-foreground mr-1">
+              Popular in {formatSubjectLabel(classSubject)}:
+            </span>
+            {(classSubject === 'science'
+              ? [
+                  'Matter in Our Surroundings',
+                  'Acids & Bases',
+                  'Photosynthesis',
+                  'Electricity',
+                  'Light',
+                  'Atoms & Molecules',
+                ]
+              : classSubject === 'social_science'
+                ? [
+                    'Resources & Development',
+                    'French Revolution',
+                    'Democracy',
+                    'Indian Constitution',
+                    'Climate',
+                  ]
+                : classSubject === 'english'
+                  ? [
+                      'Grammar Tenses',
+                      'Active & Passive Voice',
+                      'Direct & Indirect Speech',
+                      'Reading Comprehension',
+                    ]
+                  : classSubject === 'hindi'
+                    ? ['व्याकरण', 'समास', 'मुहावरे', 'संधि', 'अलंकार']
+                    : [
+                        'Linear Equations',
+                        'Fractions',
+                        'Polynomials',
+                        'Quadratic Equations',
+                        'Coordinate Geometry',
+                      ]
+            ).map((term) => (
               <button
                 key={term}
                 type="button"
                 onClick={() => {
                   setSearchQuery(term);
                   void apiClient
-                    .searchCurriculumContent(term, undefined, getAuthToken() || undefined)
+                    .searchCurriculumContent(
+                      term,
+                      {
+                        grade: activeClass?.grade,
+                        subject: classSubject,
+                      },
+                      getAuthToken() || undefined,
+                    )
                     .then((res) => {
                       setSearchResults(res);
                       setHubTab('search');
@@ -577,29 +658,14 @@ export function CurriculumContentHub({
               </h3>
             </div>
 
-            {/* Subject Selector Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-              {[
-                { id: 'all', label: 'All Subjects' },
-                { id: 'mathematics', label: 'Mathematics' },
-                { id: 'science', label: 'Science' },
-                { id: 'social_science', label: 'Social Science' },
-                { id: 'english', label: 'English' },
-                { id: 'hindi', label: 'Hindi' },
-              ].map((subj) => (
-                <button
-                  key={subj.id}
-                  type="button"
-                  onClick={() => setSelectedSubject(subj.id)}
-                  className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                    selectedSubject === subj.id
-                      ? 'bg-primary text-primary-foreground font-semibold'
-                      : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {subj.label}
-                </button>
-              ))}
+            {/* Classroom Subject Pill */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                Subject:
+              </span>
+              <span className="text-xs font-black uppercase tracking-wider rounded-full border-2 border-ink bg-surface-cream px-3 py-1 text-ink shadow-xs">
+                {formatSubjectLabel(classContent?.subject || classSubject)}
+              </span>
             </div>
           </div>
 

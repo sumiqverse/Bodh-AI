@@ -35,7 +35,7 @@ function setCookie(name: string, value: string, days = 30): void {
 
 function deleteCookie(name: string): void {
   if (typeof document === 'undefined') return;
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+  document.cookie = `${name}=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
 }
 
 function getCsrfHeaders(): Record<string, string> {

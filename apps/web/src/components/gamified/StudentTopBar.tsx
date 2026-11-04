@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Bell, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Search } from 'lucide-react';
 
 interface StudentTopBarProps {
   pageTitle?: string;
@@ -21,13 +20,6 @@ export function StudentTopBar({
   enrolledClasses = [],
   onSelectClass,
 }: StudentTopBarProps): React.JSX.Element {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-divider">
       {/* Left: Page Title & Classroom switcher */}
@@ -50,8 +42,8 @@ export function StudentTopBar({
         )}
       </div>
 
-      {/* Right Controls: Search Pill, Notification Bell, Dark-Mode Toggle */}
-      <div className="flex min-w-0 w-full items-center gap-3">
+      {/* Right Controls: Search Pill */}
+      <div className="flex min-w-0 w-full items-center">
         {/* Search Pill */}
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
@@ -64,30 +56,6 @@ export function StudentTopBar({
             className="w-full h-10 pl-10 pr-4 rounded-full border-2 border-ink bg-surface-white dark:bg-card text-xs font-medium text-ink dark:text-white placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-orange transition-all"
           />
         </div>
-
-        {/* Notification Bell */}
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative h-11 w-11 shrink-0 flex items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card text-ink dark:text-white hover:bg-surface-cream transition-colors cursor-pointer"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-orange" />
-        </button>
-
-        {/* Dark Mode Toggle */}
-        <button
-          type="button"
-          aria-label="Toggle Dark Mode"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full border-2 border-ink bg-surface-white dark:bg-card text-ink dark:text-white hover:bg-surface-cream transition-colors cursor-pointer"
-        >
-          {mounted && theme === 'dark' ? (
-            <Sun className="h-4 w-4 text-amber-400" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-        </button>
       </div>
     </header>
   );

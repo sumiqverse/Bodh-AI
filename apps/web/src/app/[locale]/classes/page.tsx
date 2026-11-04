@@ -207,7 +207,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
   React.useEffect(() => {
     const token = getAuthToken();
     if (!token) {
-      router.push('/login?redirect=%2Fclasses');
+      window.location.href = '/';
       return;
     }
     const user = getCurrentUser();
@@ -221,6 +221,16 @@ export default function TeacherDashboardPage(): React.JSX.Element {
     }
     setIsAuthenticated(true);
     void fetchClasses(token);
+
+    const checkAuth = () => {
+      if (!getAuthToken()) {
+        window.location.href = '/';
+      }
+    };
+    window.addEventListener('bodhai_auth_change', checkAuth);
+    return () => {
+      window.removeEventListener('bodhai_auth_change', checkAuth);
+    };
   }, [fetchClasses, router]);
 
   // When selected class changes, load telemetry

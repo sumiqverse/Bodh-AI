@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { usePathname, useRouter, Link } from '@/i18n/routing';
+import { usePathname, Link } from '@/i18n/routing';
 import { Navbar } from '@bodhai/ui';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
@@ -31,7 +31,6 @@ export function SiteHeader(): React.JSX.Element {
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const pathname = usePathname();
-  const router = useRouter();
   const currentLocale = useLocale() as 'en' | 'hi';
 
   const [currentUser, setCurrentUser] = React.useState<UserResponse | null>(null);
@@ -81,7 +80,7 @@ export function SiteHeader(): React.JSX.Element {
     clearAuthSession();
     setCurrentUser(null);
     setUserAvatar(null);
-    router.push('/');
+    window.location.href = currentLocale === 'hi' ? '/hi' : '/';
   };
 
   const navItems = React.useMemo(() => {

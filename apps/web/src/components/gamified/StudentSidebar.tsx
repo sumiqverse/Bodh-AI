@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { clearAuthSession } from '@/lib/api-client';
 import { BrandMark } from '@bodhai/ui';
-import { useRouter } from '@/i18n/routing';
 
 interface StudentSidebarProps {
   studentName?: string;
@@ -31,11 +30,9 @@ export function StudentSidebar({
   activeTab = 'dashboard',
   onSelectTab,
 }: StudentSidebarProps): React.JSX.Element {
-  const router = useRouter();
-
   const handleSignOut = () => {
     clearAuthSession();
-    router.push('/login');
+    window.location.href = '/';
   };
 
   const navLearning = [
