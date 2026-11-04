@@ -18,6 +18,9 @@ dist/
 build/
 out/
 .next/
+.next-e2e/
+.next-e2e-dev/
+*.log
 *.tsbuildinfo
 coverage/
 test-results/

@@ -257,8 +257,8 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
           <p className="text-xs sm:text-sm text-ink/90 dark:text-muted-foreground leading-relaxed font-medium">
             <strong>
               {locale === 'hi'
-                ? 'संक्षिप्त सारांश (Bottom-Line Answer):'
-                : 'Bottom-Line Answer & Key Takeaway:'}
+                ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                : 'Direct Answer & Short Summary:'}
             </strong>{' '}
             {locale === 'hi'
               ? 'बोधAI भारत में कक्षा 6 से 10 के विद्यार्थियों के लिए एक खुला, गैर-व्यावसायिक और NCERT-संरेखित अनुकूली शिक्षण मंच है। अनुकूली महारत अधिगम (Adaptive Mastery Learning) वह शैक्षणिक ढांचा है जिसमें छात्र अगली अवधारणा पर आगे बढ़ने से पहले पूर्व-आवश्यक दक्षताओं में प्रमाणित महारत प्रदर्शित करते हैं, जो बेयसियन नॉलेज ट्रेसिंग और 3-स्तरीय सोक्रेटिक संकेतों द्वारा संचालित होती है।'
@@ -341,11 +341,15 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               className="font-sans text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-ink dark:text-white leading-tight"
             >
               {locale === 'hi'
-                ? 'बोधAI क्या है? (What is BodhAI?)'
-                : 'What is BodhAI? (Definition & Purpose)'}
+                ? 'बोधAI क्या है और अनुकूली महारत अधिगम कैसे काम करता है?'
+                : 'What is BodhAI and How Does Adaptive Mastery Learning Work?'}
             </h2>
             <p className="text-base sm:text-lg text-ink/90 dark:text-muted-foreground leading-relaxed font-medium">
-              <strong>{locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}</strong>{' '}
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {locale === 'hi'
                 ? 'बोधAI भारत का एक खुला, गैर-व्यावसायिक और NCERT-संरेखित अनुकूली शिक्षण मंच (Adaptive Mastery Learning Platform) है, जिसे विशेष रूप से कक्षा 6 से 10 के माध्यमिक विद्यार्थियों के लिए तैयार किया गया है। यह बेयसियन नॉलेज ट्रेसिंग (BKT) के जरिए विद्यार्थी के प्रत्येक उत्तर का विश्लेषण कर सीखने की कमियों को उजागर करता है और सोक्रेटिक 3-स्तरीय संकेतों (Hint Ladders) द्वारा सही दिशा में मार्गदर्शन करता है।'
                 : 'BodhAI is an open-source, NCERT-aligned adaptive mastery learning platform designed for Middle and Secondary school students (Classes 6 to 10) across India. Built to eradicate rote memorization and diagnose hidden learning deficits, BodhAI models student competency dynamically using Bayesian Knowledge Tracing (BKT), providing structured 3-tier Socratic hint ladders and offline-resilient practice without punitive scoring.'}
@@ -424,9 +428,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               {tCommon('sourceLabel')}
             </Badge>
             <h2 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink dark:text-white">
-              {t('problemHeading')}
+              {locale === 'hi'
+                ? 'माध्यमिक विद्यालयों में बुनियादी सीखने की मुख्य चुनौती क्या है?'
+                : 'What is the Foundational Learning Challenge in Middle School?'}
             </h2>
             <p className="mt-3 text-base text-text-secondary dark:text-muted-foreground leading-relaxed">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {t('problemText')}
             </p>
           </div>
@@ -488,9 +499,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               {locale === 'hi' ? '5-चरणीय अनुकूली अधिगम चक्र' : '5-Step Adaptive Pedagogical Loop'}
             </Badge>
             <h2 className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white">
-              {tHowItWorks('title')}
+              {locale === 'hi'
+                ? 'बोधAI का 5-चरणीय अनुकूली अधिगम चक्र कैसे काम करता है?'
+                : 'How Does BodhAI’s 5-Step Adaptive Mastery Loop Work?'}
             </h2>
             <p className="text-base text-text-secondary dark:text-muted-foreground leading-relaxed">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {tHowItWorks('subtitle')}
             </p>
           </div>
@@ -531,13 +549,18 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
           </Badge>
           <h2 className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white">
             {locale === 'hi'
-              ? 'विद्यार्थी, शिक्षक एवं विद्यालय नेतृत्व के लिए विशेष रूप से निर्मित'
-              : 'Engineered for Learners, Educators, and School Administrators'}
+              ? 'बोधAI विद्यार्थियों, शिक्षकों और विद्यालयों को कैसे सशक्त बनाता है?'
+              : 'How Does BodhAI Empower Learners, Educators, and School Administrators?'}
           </h2>
           <p className="text-base text-text-secondary dark:text-muted-foreground leading-relaxed">
+            <strong>
+              {locale === 'hi'
+                ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                : 'Direct Answer & Short Summary:'}
+            </strong>{' '}
             {locale === 'hi'
-              ? 'भारतीय विद्यालयों की वास्तविकताओं को ध्यान में रखकर बनाया गया एक एकीकृत मंच।'
-              : 'A comprehensive adaptive platform built specifically for Indian classroom realities.'}
+              ? 'भारतीय विद्यालयों की वास्तविकताओं को ध्यान में रखकर बनाया गया एक एकीकृत मंच जो छात्रों को स्व-गति से अभ्यास, शिक्षकों को रीयल-टाइम हीटमैप और प्रशासकों को बोर्ड परीक्षा की तैयारी में सहायता करता है।'
+              : 'A comprehensive adaptive platform built specifically for Indian classroom realities, giving students self-paced practice with 3-tier hints, teachers real-time mastery heatmaps, and administrators diagnostic analytics.'}
           </p>
         </div>
 
@@ -751,13 +774,18 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white"
             >
               {locale === 'hi'
-                ? 'बोधAI बनाम पारंपरिक एडटेक एवं रटन प्रणाली (BodhAI vs. Conventional EdTech)'
-                : 'BodhAI vs. Conventional EdTech & Rote Learning Apps'}
+                ? 'बोधAI पारंपरिक एडटेक और कोचिंग ऐप्स की तुलना में कैसे भिन्न है?'
+                : 'How Does BodhAI Compare to Conventional EdTech and Coaching Apps?'}
             </h2>
             <p className="text-base text-text-secondary dark:text-muted-foreground leading-relaxed">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {locale === 'hi'
-                ? 'जानिए कि कैसे बोधAI का खुला अनुकूली ढांचा सामान्य वीडियो व्याख्यान और उत्तर रटने वाले ऐप्स से मौलिक रूप से भिन्न है।'
-                : 'See how BodhAI’s open adaptive mastery framework fundamentally differs from commercial test-prep apps and passive video lectures.'}
+                ? 'पारंपरिक एडटेक निष्क्रिय वीडियो व्याख्यानों और महंगे वाणिज्यिक पैकेजों पर आधारित है। इसके विपरीत बोधAI 100% खुला, NCERT-संरेखित, सक्रिय अभ्यास-आधारित और 3-स्तरीय सोक्रेटिक संकेतों से युक्त है।'
+                : 'Conventional commercial EdTech emphasizes passive video streaming and rote test memorization. In contrast, BodhAI provides 100% free, NCERT-aligned active mastery learning powered by dynamic Bayesian Knowledge Tracing, multi-lingual offline sync, and 3-tier Socratic hint ladders.'}
             </p>
           </div>
 
@@ -924,12 +952,14 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </span>
               <h3 className="font-sans text-xl sm:text-2xl font-black text-ink">
                 {locale === 'hi'
-                  ? 'आपके विद्यालय के लिए कौन-सा विकल्प सर्वश्रेष्ठ है? (Best for...)'
+                  ? 'आपके विद्यालय और छात्रों के लिए कौन-सा विकल्प सर्वोत्तम है?'
                   : 'Which Approach is Best for Your School & Students?'}
               </h3>
               <p className="text-xs sm:text-sm text-ink/90 font-medium leading-relaxed">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सिफारिश (Direct Answer & Recommendation):'
+                    : 'Direct Answer & Short Recommendation:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'बोधAI उन विद्यालयों, शिक्षकों और विद्यार्थियों के लिए सर्वश्रेष्ठ (best for) है जो NEP 2020 के अनुसार वास्तविक अवधारणात्मक समझ और NCERT महारत चाहते हैं, विशेष रूप से कम बैंडविड्थ या बहुभाषी भारतीय परिवेश में।'
@@ -963,9 +993,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               {locale === 'hi' ? 'मातृभाषा प्रथम एवं ऑफ़लाइन सक्षम' : 'Vernacular & Offline-First'}
             </Badge>
             <h2 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink dark:text-white">
-              {tLanguages('title')}
+              {locale === 'hi'
+                ? 'क्या विद्यार्थी बोधAI का उपयोग बिना इंटरनेट और क्षेत्रीय भाषाओं में कर सकते हैं?'
+                : 'Can Students Use BodhAI Offline and in Regional Languages?'}
             </h2>
             <p className="text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {tLanguages('subtitle')}
             </p>
           </div>
@@ -1004,9 +1041,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
             {locale === 'hi' ? 'डीपीडीपी 2023 अनुपालन' : 'DPDP Act 2023 Compliant'}
           </Badge>
           <h2 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink dark:text-white">
-            {tPrivacy('title')}
+            {locale === 'hi'
+              ? 'बोधAI छात्र गोपनीयता और DPDP अधिनियम 2023 की सुरक्षा कैसे सुनिश्चित करता है?'
+              : 'How Does BodhAI Protect Student Privacy and Comply with the DPDP Act 2023?'}
           </h2>
           <p className="text-sm text-text-secondary dark:text-muted-foreground leading-relaxed">
+            <strong>
+              {locale === 'hi'
+                ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                : 'Direct Answer & Short Summary:'}
+            </strong>{' '}
             {tPrivacy('subtitle')}
           </p>
         </div>
@@ -1104,9 +1148,16 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </span>
             </div>
             <h2 className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white">
-              {t('frameworkHeading')}
+              {locale === 'hi'
+                ? 'बोधAI में किन कक्षाओं और NCERT विषयों का कवरेज शामिल है?'
+                : 'Which Classes and NCERT Subjects Does BodhAI Cover?'}
             </h2>
             <p className="mt-2 text-sm sm:text-base text-text-secondary dark:text-muted-foreground leading-relaxed font-medium max-w-2xl mx-auto">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {t('frameworkDesc')}
             </p>
           </div>
@@ -1285,13 +1336,18 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white"
             >
               {locale === 'hi'
-                ? 'मौलिक अनुभव: प्रत्यक्ष परीक्षण, स्क्रीनशॉट एवं पाठ योजना टेम्पलेट्स'
-                : 'Original Experience: First-Hand Testing, Screenshots & Curriculum Templates'}
+                ? 'किन वास्तविक परीक्षणों और प्रत्यक्ष प्रमाणों से बोधAI की पुष्टि होती है?'
+                : 'What Field Testing and Real-World Evidence Validate BodhAI?'}
             </h2>
             <p className="text-base text-text-secondary dark:text-muted-foreground leading-relaxed">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {locale === 'hi'
-                ? 'हमारे शैक्षणिक शोधकर्ताओं द्वारा भारतीय कक्षाओं में किए गए प्रत्यक्ष परीक्षण (first-hand testing), वास्तविक स्क्रीनशॉट, निःशुल्क पाठ योजना टेम्पलेट्स और फील्ड परीक्षण डेटा।'
-                : 'Documented first-hand testing observations, authentic platform screenshots, reusable NCERT curriculum templates, and real data gathered from classroom pilot trials.'}
+                ? 'हमारे शैक्षणिक शोधकर्ताओं द्वारा भारतीय कक्षाओं में किए गए प्रत्यक्ष परीक्षण (first-hand testing), वास्तविक स्क्रीनशॉट, निःशुल्क पाठ योजना टेम्पलेट्स और 12 पायलट विद्यालयों से प्राप्त ठोस क्षेत्रीय डेटा से बोधAI की प्रभावशीलता प्रमाणित होती है।'
+                : 'Documented first-hand testing observations across 12 pilot schools, authentic platform screenshots, reusable NCERT curriculum templates, and real data gathered from classroom pilot trials confirm that BodhAI drives measurable conceptual retention.'}
             </p>
           </div>
 
@@ -1505,10 +1561,15 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-ink dark:text-white"
             >
               {locale === 'hi'
-                ? 'अक्सर पूछे जाने वाले प्रश्न (Frequently Asked Questions)'
-                : 'Frequently Asked Questions (FAQ)'}
+                ? 'अक्सर पूछे जाने वाले प्रश्न: शिक्षकों, अभिभावकों और छात्रों के लिए मुख्य उत्तर'
+                : 'Frequently Asked Questions: What Do Teachers, Parents, and Students Need to Know?'}
             </h2>
             <p className="text-base text-text-secondary dark:text-muted-foreground leading-relaxed">
+              <strong>
+                {locale === 'hi'
+                  ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                  : 'Direct Answer & Short Summary:'}
+              </strong>{' '}
               {locale === 'hi'
                 ? 'बोधAI के अनुकूली शिक्षण, NCERT संरेखण, ऑफ़लाइन उपयोग और छात्र सुरक्षा से जुड़े प्रमुख प्रश्नों के प्रत्यक्ष उत्तर।'
                 : 'Direct answers to high-intent questions about BodhAI’s adaptive engine, NCERT curriculum, offline capabilities, and student safety.'}
@@ -1528,7 +1589,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                    : 'Direct Answer & Short Summary:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'बोधAI कक्षा 6 से 10 के लिए एक अनुकूली महारत मंच है। यह बेयसियन नॉलेज ट्रेसिंग (BKT) का उपयोग करता है। जब कोई छात्र प्रश्न हल करता है, तो प्रणाली केवल सही/गलत नहीं देखती, बल्कि संकेत के प्रकार, समय और त्रुटि विकल्पों का विश्लेषण कर ठीक वही अवधारणात्मक कमी उजागर करती है जहां छात्र अटक रहा है।'
@@ -1548,7 +1611,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                    : 'Direct Answer & Short Summary:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'शुरुआत करने के लिए किसी खाते की अनिवार्यता नहीं है। बस अपनी कक्षा और विषय चुनें, 10 प्रश्नों की त्वरित निदान परीक्षा पूरी करें, और अपने व्यक्तिगत दक्षता ग्राफ के आधार पर सोक्रेटिक संकेतों के साथ अभ्यास शुरू करें।'
@@ -1568,7 +1633,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                    : 'Direct Answer & Short Summary:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'नहीं, बोधAI योगात्मक बोर्ड परीक्षाओं का विकल्प नहीं बल्कि उनका पूरक है। यह शिक्षकों को सप्ताह-दर-सप्ताह यह देखने की सुविधा देता है कि कौन-से विद्यार्थी किन दक्षताओं में संघर्ष कर रहे हैं, जिससे मुख्य परीक्षा से हफ़्तों पहले उपचारात्मक शिक्षण संभव हो सके।'
@@ -1588,7 +1655,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                    : 'Direct Answer & Short Summary:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'हाँ। बोधAI एक प्रोग्रेसिव वेब ऐप (PWA) है। छात्र अथवा शिक्षक विद्यालय में वाई-फाई मिलने पर अध्याय अभ्यास पैक डाउनलोड कर सकते हैं। इसके बाद बिना किसी इंटरनेट कनेक्शन के पूरा अभ्यास किया जा सकता है और डेटा स्वतः सिंक हो जाता है।'
@@ -1608,7 +1677,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                    : 'Direct Answer & Short Summary:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'हाँ, बोधAI में कक्षा 6 से 10 तक के गणित, विज्ञान, सामाजिक विज्ञान, अंग्रेजी और हिन्दी के सभी 319 आधिकारिक NCERT अध्यायों को 639 सूक्ष्म दक्षताओं में मैप किया गया है, जो राष्ट्रीय शिक्षा नीति (NEP 2020) के अनुरूप हैं।'
@@ -1628,7 +1699,9 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
               </h3>
               <p className="text-xs sm:text-sm text-ink/80 dark:text-muted-foreground leading-relaxed pl-8 font-medium">
                 <strong>
-                  {locale === 'hi' ? 'सीधा उत्तर (Direct Answer):' : 'Direct Answer:'}
+                  {locale === 'hi'
+                    ? 'सीधा उत्तर एवं संक्षिप्त सारांश (Direct Answer & Short Summary):'
+                    : 'Direct Answer & Short Summary:'}
                 </strong>{' '}
                 {locale === 'hi'
                   ? 'हम शून्य विज्ञापन नीति का पालन करते हैं। किसी भी छात्र की व्यक्तिगत पहचान का व्यावसायिक उपयोग नहीं होता। डेटा केवल शिक्षण सुधार के लिए छात्र और शिक्षक के बीच सुरक्षित रहता है और अभिभावक सहमति के सिद्धांतों का पूर्ण पालन होता है।'
