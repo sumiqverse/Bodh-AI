@@ -80,8 +80,8 @@ jobs:
 
       - name: Run Staging Migrations (Zero Downtime)
         run: |
-          echo "Executing expand-contract migrations against staging database..."
-          # cd apps/api && uv run alembic upgrade head
+          echo "::error::Staging deployment is not configured. Set up authenticated hosting, a direct migration connection, and real readiness probes before enabling delivery."
+          exit 1
 
       - name: Deploy to Cloud Run / Container Host (Staging)
         run: |
@@ -128,8 +128,8 @@ jobs:
 
       - name: Run Production Pre-flight Migrations (Expand Phase)
         run: |
-          echo "Executing backward-compatible schema migrations (expand phase)..."
-          # cd apps/api && uv run alembic upgrade head
+          echo "::error::Production deployment is not configured. Migration 0012 also withdraws unreviewed questions; this is not an expand-only release. Configure and review the real deployment before enabling delivery."
+          exit 1
 
       - name: Deploy Production Containers (Zero Downtime Rolling Update)
         run: |

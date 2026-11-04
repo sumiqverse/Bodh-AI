@@ -22,7 +22,7 @@ target_metadata = Base.metadata
 def get_url() -> str:
     """Read database connection URL dynamically from Pydantic settings."""
     settings = get_settings()
-    return settings.database_url
+    return settings.database_url_unpooled or settings.database_url
 
 
 def run_migrations_offline() -> None:
