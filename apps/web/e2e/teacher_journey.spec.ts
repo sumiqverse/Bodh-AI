@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://localhost:3000';
+
 type MockLesson = {
   id: string;
   skill_id: string;
@@ -26,6 +28,7 @@ test.describe('Teacher Journey E2E Dashboard', () => {
     // Inject mock teacher session in localStorage
     await page.addInitScript(
       ({ teacherToken, userObj }) => {
+        window.localStorage.setItem('bodhai_access_token', teacherToken);
         window.localStorage.setItem('bodhai_token', teacherToken);
         window.localStorage.setItem('bodhai_user', JSON.stringify(userObj));
       },
@@ -41,6 +44,11 @@ test.describe('Teacher Journey E2E Dashboard', () => {
         },
       },
     );
+
+    await page.context().addCookies([
+      { name: 'bodhai_logged_in', value: 'true', url: baseURL },
+      { name: 'bodhai_user_role', value: 'teacher', url: baseURL },
+    ]);
 
     // Mock backend API routes
     await page.route('**/api/v1/**', async (route) => {
@@ -531,7 +539,7 @@ test.describe('Teacher Journey E2E Dashboard', () => {
     // Switch to "Progress & Reassessment" tab
     await page.getByRole('tab', { name: /Progress & Reassessment/i }).click();
     await expect(page.getByText(/76%/i).first()).toBeVisible();
-    await expect(page.getByText(/\+22%/i)).toBeVisible();
+    await expect(page.getByText('+22%', { exact: true })).toBeVisible();
     await expect(page.getByText(/Phase 3/i)).toBeVisible();
   });
 

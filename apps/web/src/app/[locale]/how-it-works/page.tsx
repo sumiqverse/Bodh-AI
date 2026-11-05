@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { MarketingAnswer } from '@/components/marketing-answer';
+import { PublicPageFaq } from '@/components/public-page-faq';
+import { publicPageMetadata } from '@/lib/seo';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookOpen, CheckCircle2, PencilRuler, RefreshCw, Search } from 'lucide-react';
 
@@ -10,10 +13,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'howItWorks' });
 
-  return {
+  return publicPageMetadata({
+    locale,
+    path: 'how-it-works',
     title: t('title'),
     description: t('subtitle'),
-  };
+  });
 }
 
 export default async function HowItWorksPage({ params }: PageProps): Promise<React.JSX.Element> {
@@ -105,6 +110,10 @@ export default async function HowItWorksPage({ params }: PageProps): Promise<Rea
           </div>
         </div>
 
+        <div className="mx-auto mt-10 max-w-5xl">
+          <MarketingAnswer question={t('answerQuestion')} answer={t('answerText')} />
+        </div>
+
         <section className="relative mx-auto mt-12 max-w-5xl sm:mt-16" aria-label={t('title')}>
           <div className="relative overflow-hidden rounded-3xl border-2 border-ink bg-surface-white p-4 shadow-shell dark:bg-card sm:p-7 md:p-9">
             <div
@@ -165,6 +174,24 @@ export default async function HowItWorksPage({ params }: PageProps): Promise<Rea
             </div>
           </div>
         </section>
+
+        <div className="mx-auto max-w-5xl">
+          <PublicPageFaq
+            locale={locale}
+            path="how-it-works"
+            pageName={t('title')}
+            pageDescription={t('subtitle')}
+            howTo={{
+              name: t('title'),
+              description: t('subtitle'),
+              steps: steps.map((step) => ({
+                name: step.title.replace(/^\d+\.\s*/, ''),
+                text: step.desc,
+              })),
+              totalTime: 'PT15M',
+            }}
+          />
+        </div>
       </div>
     </div>
   );

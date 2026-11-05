@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { MarketingAnswer } from '@/components/marketing-answer';
+import { PublicPageFaq } from '@/components/public-page-faq';
+import { publicPageMetadata } from '@/lib/seo';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ChapterDownloadManager } from '@/components/offline';
 
@@ -48,10 +51,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'languagesOffline' });
 
-  return {
+  return publicPageMetadata({
+    locale,
+    path: 'languages-offline',
     title: t('title'),
     description: t('subtitle'),
-  };
+  });
 }
 
 export default async function LanguagesOfflinePage({
@@ -77,6 +82,8 @@ export default async function LanguagesOfflinePage({
             {t('subtitle')}
           </p>
         </div>
+
+        <MarketingAnswer question={t('answerQuestion')} answer={t('answerText')} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="rounded-[24px] border-2 border-ink bg-surface-white dark:bg-card p-6 sm:p-8 shadow-card relative overflow-hidden space-y-4 hover:-translate-y-0.5 transition-transform">
@@ -105,6 +112,13 @@ export default async function LanguagesOfflinePage({
         </div>
 
         <ChapterDownloadManager chapters={OFFLINE_SAMPLE_CHAPTERS} locale={typedLocale} />
+
+        <PublicPageFaq
+          locale={locale}
+          path="languages-offline"
+          pageName={t('title')}
+          pageDescription={t('subtitle')}
+        />
       </div>
     </main>
   );

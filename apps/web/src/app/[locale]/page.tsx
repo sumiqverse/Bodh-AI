@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/seo';
+import { getBaseUrl } from '@/lib/site-url';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { HomeAuthRedirect } from '@/components/home-auth-redirect';
@@ -38,10 +40,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'home' });
 
-  return {
+  return publicPageMetadata({
+    locale,
+    path: '',
     title: t('heroTitle'),
     description: t('heroSubtitle'),
-  };
+  });
 }
 
 export default async function HomePage({ params }: PageProps): Promise<React.JSX.Element> {
@@ -56,6 +60,18 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
   const tSchools = await getTranslations({ locale, namespace: 'schools' });
   const tLanguages = await getTranslations({ locale, namespace: 'languagesOffline' });
   const tPrivacy = await getTranslations({ locale, namespace: 'privacySafety' });
+  const baseUrl = getBaseUrl();
+  const homePageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${baseUrl}/${locale}#webpage`,
+    url: `${baseUrl}/${locale}`,
+    name: t('heroTitle'),
+    description: t('heroSubtitle'),
+    inLanguage: locale === 'hi' ? 'hi-IN' : 'en-IN',
+    isPartOf: { '@id': `${baseUrl}/#website` },
+    publisher: { '@id': `${baseUrl}/#organization` },
+  };
 
   const grades = [
     { grade: 6, label: locale === 'hi' ? 'कक्षा 6' : 'Class 6' },
@@ -106,6 +122,8 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
+    url: `${baseUrl}/${locale}#faq`,
+    inLanguage: locale === 'hi' ? 'hi-IN' : 'en-IN',
     mainEntity: [
       {
         '@type': 'Question',
@@ -209,7 +227,7 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
       position: idx + 1,
       name: s.title,
       text: s.desc,
-      url: `https://bodhai-two.vercel.app/${locale}#how-it-works`,
+      url: `${baseUrl}/${locale}#how-it-works`,
     })),
   };
 
@@ -219,6 +237,10 @@ export default async function HomePage({ params }: PageProps): Promise<React.JSX
       className="flex flex-col gap-16 sm:gap-24 py-8 sm:py-16 bg-canvas-gradient"
     >
       <HomeAuthRedirect />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homePageJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}

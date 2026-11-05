@@ -28,6 +28,25 @@ export function SuggestionsDecisionHub({
   const [inProgressId, setInProgressId] = React.useState<string | null>(null);
   const [statusMap, setStatusMap] = React.useState<Record<string, string>>({});
 
+  const statusLabel = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case 'accept':
+      case 'accepted':
+        return t('statusAccepted');
+      case 'edit':
+      case 'edited':
+        return t('statusEdited');
+      case 'ignore':
+      case 'ignored':
+        return t('statusIgnored');
+      case 'override':
+      case 'overridden':
+        return t('statusOverridden');
+      default:
+        return t('statusPending');
+    }
+  };
+
   const handleSimpleDecision = async (
     suggestionId: string,
     decision: 'accept' | 'ignore',
@@ -116,8 +135,8 @@ export function SuggestionsDecisionHub({
                           </span>
                         )}
                         {currentStatus !== 'pending' && (
-                          <span className="text-xs font-bold capitalize rounded-full border-2 border-ink bg-surface-yellow px-2 py-0.5 text-ink shadow-xs">
-                            {currentStatus}
+                          <span className="text-xs font-bold rounded-full border-2 border-ink bg-surface-yellow px-2 py-0.5 text-ink shadow-xs">
+                            {statusLabel(currentStatus)}
                           </span>
                         )}
                       </div>

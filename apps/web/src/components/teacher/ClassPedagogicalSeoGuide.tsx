@@ -316,7 +316,7 @@ export function ClassPedagogicalSeoGuide({
           <span className="px-3 py-0.5 rounded-full border border-ink text-[11px] font-black uppercase tracking-wider bg-surface-cream text-ink">
             {isHindi ? 'सामान्य प्रश्नोत्तर' : 'Frequently Asked Questions'}
           </span>
-          <span className="text-xs font-bold text-text-secondary">AEO / Search Answers</span>
+          <span className="text-xs font-bold text-text-secondary"> Search Answers</span>
         </div>
 
         <h2 className="font-serif text-xl sm:text-2xl font-black text-ink dark:text-white tracking-tight leading-snug">

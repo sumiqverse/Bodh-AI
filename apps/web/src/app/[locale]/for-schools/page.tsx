@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { MarketingAnswer } from '@/components/marketing-answer';
+import { PublicPageFaq } from '@/components/public-page-faq';
+import { publicPageMetadata } from '@/lib/seo';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { GraduationCap, LayoutDashboard, RefreshCw, Shield } from 'lucide-react';
 import {
@@ -16,10 +19,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'schools' });
 
-  return {
+  return publicPageMetadata({
+    locale,
+    path: 'for-schools',
     title: t('title'),
     description: t('subtitle'),
-  };
+  });
 }
 
 export default async function ForSchoolsPage({ params }: PageProps): Promise<React.JSX.Element> {
@@ -68,8 +73,17 @@ export default async function ForSchoolsPage({ params }: PageProps): Promise<Rea
       locale={locale}
       dots={['bg-surface-yellow', 'bg-surface-blue', 'bg-surface-peach', 'bg-surface-pink']}
     >
+      <div className="mb-8">
+        <MarketingAnswer question={t('answerQuestion')} answer={t('answerText')} />
+      </div>
       <MarketingFeatureGrid features={features} columns={2} />
       <MarketingActions actions={[{ href: '/contact', label: tCommon('contactUs') }]} />
+      <PublicPageFaq
+        locale={locale}
+        path="for-schools"
+        pageName={t('title')}
+        pageDescription={t('subtitle')}
+      />
     </MarketingPageShell>
   );
 }

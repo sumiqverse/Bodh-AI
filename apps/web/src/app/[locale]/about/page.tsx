@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { MarketingAnswer } from '@/components/marketing-answer';
+import { PublicPageFaq } from '@/components/public-page-faq';
+import { publicPageMetadata } from '@/lib/seo';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@bodhai/ui';
 
@@ -10,10 +13,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'about' });
 
-  return {
+  return publicPageMetadata({
+    locale,
+    path: 'about',
     title: t('title'),
     description: t('subtitle'),
-  };
+  });
 }
 
 export default async function AboutPage({ params }: PageProps): Promise<React.JSX.Element> {
@@ -36,6 +41,10 @@ export default async function AboutPage({ params }: PageProps): Promise<React.JS
         </p>
       </div>
 
+      <div className="mb-8">
+        <MarketingAnswer question={t('answerQuestion')} answer={t('answerText')} />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="p-4 hover:border-primary/40 transition-colors">
           <CardHeader>
@@ -55,6 +64,14 @@ export default async function AboutPage({ params }: PageProps): Promise<React.JS
           </CardHeader>
         </Card>
       </div>
+
+      <PublicPageFaq
+        locale={locale}
+        path="about"
+        pageName={t('title')}
+        pageDescription={t('subtitle')}
+        type="AboutPage"
+      />
     </div>
   );
 }

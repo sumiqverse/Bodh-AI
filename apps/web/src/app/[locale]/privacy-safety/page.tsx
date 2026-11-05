@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { MarketingAnswer } from '@/components/marketing-answer';
+import { PublicPageFaq } from '@/components/public-page-faq';
+import { publicPageMetadata } from '@/lib/seo';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ShieldCheck, Ban, FileCheck2, ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/routing';
@@ -11,10 +14,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'privacySafety' });
 
-  return {
+  return publicPageMetadata({
+    locale,
+    path: 'privacy-safety',
     title: t('title'),
     description: t('subtitle'),
-  };
+  });
 }
 
 export default async function PrivacySafetyPage({ params }: PageProps): Promise<React.JSX.Element> {
@@ -51,6 +56,10 @@ export default async function PrivacySafetyPage({ params }: PageProps): Promise<
             <p className="mt-4 text-base sm:text-lg text-text-secondary dark:text-muted-foreground leading-relaxed font-medium">
               {t('subtitle')}
             </p>
+          </div>
+
+          <div className="mb-8">
+            <MarketingAnswer question={t('answerQuestion')} answer={t('answerText')} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -93,16 +102,27 @@ export default async function PrivacySafetyPage({ params }: PageProps): Promise<
               </p>
             </div>
           </div>
+
+          <PublicPageFaq
+            locale={locale}
+            path="privacy-safety"
+            pageName={t('title')}
+            pageDescription={t('subtitle')}
+          />
         </div>
 
         {/* Footer compliance note */}
         <div className="mt-12 pt-6 border-t-2 border-dashed border-ink/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-secondary dark:text-muted-foreground">
-          <span>Digital Personal Data Protection Act (DPDP) 2023 · Compliance Verified</span>
+          <span>
+            {locale === 'hi'
+              ? 'विद्यार्थी गोपनीयता और डेटा संरक्षण के हमारे सिद्धांत'
+              : 'Our principles for student privacy and data protection'}
+          </span>
           <Link
             href="/contact"
             className="font-bold text-ink dark:text-white hover:underline flex items-center gap-1"
           >
-            {locale === 'hi' ? 'गोपनीयता अधिकारी से संपर्क करें →' : 'Contact Grievance Officer →'}
+            {locale === 'hi' ? 'हमारी टीम से संपर्क करें →' : 'Contact our team →'}
           </Link>
         </div>
       </div>
