@@ -150,7 +150,11 @@ export function useTest(options?: UseTestOptions): UseTestReturn {
     async (selectedOption: string) => {
       if (!currentQuestion || submitMutation.isPending || isCompleted) return;
       setErrorMessage(null);
-      await submitMutation.mutateAsync({ question: currentQuestion, option: selectedOption });
+      try {
+        await submitMutation.mutateAsync({ question: currentQuestion, option: selectedOption });
+      } catch {
+        // Handled through submitMutation.error state and onError callback
+      }
     },
     [currentQuestion, isCompleted, submitMutation],
   );

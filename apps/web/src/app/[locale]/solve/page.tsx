@@ -105,7 +105,11 @@ function SolveContent(): React.JSX.Element {
 
   const onSubmit = async (values: SolveSubmissionFormValues): Promise<void> => {
     if (isSubmitting || hasSubmitted) return;
-    await submitAnswer(values.selectedAnswer);
+    try {
+      await submitAnswer(values.selectedAnswer);
+    } catch {
+      // Handled in submitMutation
+    }
   };
 
   const handleNextProblem = (): void => {

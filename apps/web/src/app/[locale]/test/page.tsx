@@ -14,6 +14,7 @@ import {
   CardContent,
   CardFooter,
   Button,
+  buttonVariants,
   Badge,
   Skeleton,
 } from '@bodhai/ui';
@@ -76,7 +77,11 @@ function TestContent(): React.JSX.Element {
 
   const handleConfirmAnswer = async (): Promise<void> => {
     if (!selectedOption || isSubmitting) return;
-    await submitAnswer(selectedOption);
+    try {
+      await submitAnswer(selectedOption);
+    } catch {
+      // Handled in submitMutation
+    }
   };
 
   // Completed Test State — Clear 'mastery check' framing & outcome
@@ -359,12 +364,31 @@ function TestContent(): React.JSX.Element {
           {error && (
             <div
               role="alert"
-              className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-3.5 text-xs sm:text-sm text-ink dark:text-pink-100 font-bold flex items-center gap-2.5 shadow-xs"
+              className="rounded-2xl border-2 border-ink bg-surface-pink/60 dark:bg-surface-pink/20 p-4 text-xs sm:text-sm text-ink dark:text-pink-100 font-bold space-y-3 shadow-xs"
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
-                !
-              </span>
-              <span className="leading-snug">{error}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-pink border-2 border-ink text-ink font-black text-xs shadow-xs">
+                  !
+                </span>
+                <span className="leading-snug">{error}</span>
+              </div>
+              {/guardian consent/i.test(error) && (
+                <div className="pt-1">
+                  <Link
+                    href={`/consent?next=${encodeURIComponent(
+                      typeof window !== 'undefined'
+                        ? window.location.pathname + window.location.search
+                        : '/test',
+                    )}`}
+                    className={buttonVariants({
+                      variant: 'primary',
+                      className: 'w-full min-h-[44px] inline-flex items-center justify-center',
+                    })}
+                  >
+                    Complete Guardian Consent
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

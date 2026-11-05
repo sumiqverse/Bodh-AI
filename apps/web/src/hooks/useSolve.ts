@@ -201,7 +201,11 @@ export function useSolve(options?: UseSolveOptions): UseSolveReturn {
   const submitAnswer = React.useCallback(
     async (selectedOption: string): Promise<AttemptResponse | undefined> => {
       if (submitMutation.isPending || hasSubmitted) return;
-      return submitMutation.mutateAsync(selectedOption);
+      try {
+        return await submitMutation.mutateAsync(selectedOption);
+      } catch {
+        return undefined;
+      }
     },
     [hasSubmitted, submitMutation],
   );
