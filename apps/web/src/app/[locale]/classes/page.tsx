@@ -370,7 +370,24 @@ export default function TeacherDashboardPage(): React.JSX.Element {
         { action: decision, teacher_notes: notes },
         token,
       );
-      await loadActiveTelemetry(selectedClassId, token);
+      const nextStatus =
+        decision === 'accept'
+          ? 'accepted'
+          : decision === 'edit'
+            ? 'edited'
+            : decision === 'ignore'
+              ? 'ignored'
+              : 'overridden';
+      setSuggestions((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestions: prev.suggestions.map((item) =>
+                item.suggestion_id === suggestionId ? { ...item, status: nextStatus } : item,
+              ),
+            }
+          : prev,
+      );
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Could not save decision.');
     }
@@ -616,24 +633,22 @@ export default function TeacherDashboardPage(): React.JSX.Element {
               </select>
             </div>
 
-            {/* Join Code Card */}
+            {/* Join Code Card - single line */}
             {activeClass && (
-              <div className="flex items-center gap-2.5 rounded-2xl border-2 border-ink bg-surface-cream px-3 py-1.5 shadow-xs">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary block">
-                    Join Code
-                  </span>
-                  <span className="font-mono text-base font-black text-ink">
-                    {activeClass.join_code}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2 rounded-full border-2 border-ink bg-surface-cream px-3.5 h-10 shadow-xs">
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary whitespace-nowrap">
+                  Join Code:
+                </span>
+                <span className="font-mono text-base font-black text-ink tracking-wider whitespace-nowrap">
+                  {activeClass.join_code}
+                </span>
+                <div className="flex items-center gap-1 ml-1">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleCopyCode}
-                    className="h-7 w-7 p-0 cursor-pointer rounded-lg border-2 border-ink bg-surface-white hover:bg-surface-yellow shadow-xs"
+                    className="h-7 w-7 p-0 cursor-pointer rounded-full border-2 border-ink bg-surface-white hover:bg-surface-yellow shadow-xs transition-colors"
                     aria-label="Copy Join Code"
                   >
                     {codeCopied ? (
@@ -648,7 +663,7 @@ export default function TeacherDashboardPage(): React.JSX.Element {
                     size="sm"
                     onClick={() => handleRotateCode(activeClass.id)}
                     disabled={rotatingId === activeClass.id}
-                    className="h-7 w-7 p-0 text-ink cursor-pointer hover:bg-surface-yellow rounded-lg"
+                    className="h-7 w-7 p-0 text-ink cursor-pointer hover:bg-surface-yellow rounded-full transition-colors"
                     aria-label="Rotate Join Code"
                   >
                     <RefreshCw

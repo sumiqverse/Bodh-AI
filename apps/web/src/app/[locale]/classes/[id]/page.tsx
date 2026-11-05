@@ -24,6 +24,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@bodhai/ui';
+import { Printer } from 'lucide-react';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import type {
   ClassDetailResponse,
@@ -247,7 +248,24 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
         },
         token,
       );
-      await loadClassData();
+      const nextStatus =
+        decision === 'accept'
+          ? 'accepted'
+          : decision === 'edit'
+            ? 'edited'
+            : decision === 'ignore'
+              ? 'ignored'
+              : 'overridden';
+      setSuggestions((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestions: prev.suggestions.map((item) =>
+                item.suggestion_id === suggestionId ? { ...item, status: nextStatus } : item,
+              ),
+            }
+          : prev,
+      );
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Could not save decision.');
     }
@@ -342,24 +360,22 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
             </p>
           </div>
 
-          {/* Join code card & top actions */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2.5 rounded-2xl border-2 border-ink bg-surface-cream p-3 shadow-card">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary block">
-                  {tTeacher('joinCodeLabel')}
-                </span>
-                <div className="font-mono text-xl font-black text-ink leading-tight">
-                  {classDetail.join_code}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1 print:hidden">
+          {/* Join code card & top actions - unified single line */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2 rounded-full border-2 border-ink bg-surface-cream px-3.5 h-10 shadow-xs">
+              <span className="text-[11px] font-black uppercase tracking-wider text-text-secondary whitespace-nowrap">
+                {tTeacher('joinCodeLabel')}:
+              </span>
+              <span className="font-mono text-base font-black text-ink tracking-wider whitespace-nowrap">
+                {classDetail.join_code}
+              </span>
+              <div className="flex items-center gap-1.5 ml-1 print:hidden">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleCopyCode}
-                  className="cursor-pointer text-xs h-6 px-2.5 rounded-full border-2 border-ink font-bold bg-surface-white"
+                  className="cursor-pointer text-xs h-7 px-3 rounded-full border-2 border-ink font-bold bg-surface-white hover:bg-surface-yellow shadow-xs transition-colors whitespace-nowrap"
                 >
                   {codeCopied ? 'Copied!' : 'Copy'}
                 </Button>
@@ -368,7 +384,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
                   variant="ghost"
                   size="sm"
                   onClick={handleRotate}
-                  className="cursor-pointer text-[10px] h-6 px-2 text-text-secondary font-bold hover:text-ink"
+                  className="cursor-pointer text-xs h-7 px-2.5 rounded-full text-text-secondary font-bold hover:text-ink hover:bg-surface-cream/80 transition-colors whitespace-nowrap"
                 >
                   {tTeacher('rotateCode')}
                 </Button>
@@ -382,7 +398,7 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
                 size="sm"
                 disabled={isExportingCsv}
                 onClick={handleExportCsv}
-                className="cursor-pointer text-xs font-bold rounded-full border-2 border-ink shadow-xs bg-surface-white"
+                className="cursor-pointer text-xs h-10 px-4 font-bold rounded-full border-2 border-ink shadow-xs bg-surface-white hover:bg-surface-cream transition-colors whitespace-nowrap"
               >
                 {isExportingCsv ? tTeacher('export.exporting') : tTeacher('export.downloadCsv')}
               </Button>
@@ -391,9 +407,10 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
                 variant="orange"
                 size="sm"
                 onClick={handlePrint}
-                className="cursor-pointer text-xs font-bold rounded-full border-2 border-ink shadow-xs"
+                className="cursor-pointer text-xs h-10 px-4 font-bold rounded-full border-2 border-ink shadow-xs flex items-center gap-1.5 transition-colors whitespace-nowrap"
               >
-                🖨 {tTeacher('export.printView')}
+                <Printer className="w-4 h-4" />
+                <span>{tTeacher('export.printView')}</span>
               </Button>
             </div>
           </div>
