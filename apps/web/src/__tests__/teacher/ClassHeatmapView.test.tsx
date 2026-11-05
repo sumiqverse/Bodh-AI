@@ -198,4 +198,20 @@ describe('ClassHeatmapView Component', () => {
     expect(screen.getByText('Linear Expressions')).toBeDefined();
     expect(screen.queryByText('Integer Addition')).toBeNull();
   });
+
+  it('preserves textbook chapter order with chapter numbers and super-headers', () => {
+    const handleSelect = vi.fn();
+    renderWithIntl(<ClassHeatmapView heatmap={mockHeatmapData} onSelectStudent={handleSelect} />);
+
+    // Chapter options in select and super-header in table thead
+    expect(screen.getAllByText(/Ch 1: Number Systems/i).length).toBe(2);
+    expect(screen.getAllByText(/Ch 2: Algebra/i).length).toBe(2);
+
+    // Grouped super-header in table thead
+    expect(screen.getByText(/Curriculum Topics/i)).toBeDefined();
+
+    // Scroll buttons are present
+    expect(screen.getByRole('button', { name: /scroll table left/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /scroll table right/i })).toBeDefined();
+  });
 });
