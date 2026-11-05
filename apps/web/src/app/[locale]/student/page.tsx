@@ -76,8 +76,21 @@ function StudentHomeContent(): React.JSX.Element {
   React.useEffect(() => {
     setMounted(true);
     const checkAuth = () => {
-      if (typeof window !== 'undefined' && !getAuthToken()) {
-        window.location.href = '/';
+      if (typeof window !== 'undefined') {
+        const token = getAuthToken();
+        if (!token) {
+          window.location.href = '/';
+          return;
+        }
+        const user = getCurrentUser();
+        if (user?.role === 'teacher') {
+          router.replace('/classes');
+          return;
+        }
+        if (user?.role === 'admin') {
+          router.replace('/admin/stats');
+          return;
+        }
       }
     };
     checkAuth();
@@ -85,7 +98,7 @@ function StudentHomeContent(): React.JSX.Element {
     return () => {
       window.removeEventListener('bodhai_auth_change', checkAuth);
     };
-  }, []);
+  }, [router]);
 
   const t = useTranslations('skillMap');
   const searchParams = useSearchParams();
@@ -321,7 +334,7 @@ function StudentHomeContent(): React.JSX.Element {
     }
   };
 
-  if (!mounted || !token) {
+  if (!mounted || !token || currentUser?.role === 'teacher' || currentUser?.role === 'admin') {
     return <StudentDashboardSkeleton />;
   }
 

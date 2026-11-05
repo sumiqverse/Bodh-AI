@@ -23,6 +23,25 @@ const PROTECTED_PREFIXES = [
 
 export default function middleware(request: NextRequest): NextResponse {
   const apiHost = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const pathname = request.nextUrl.pathname;
+  const cleanPath = pathname.replace(/^\/(?:en|hi)(?=\/|$)/, '') || '/';
+  const isProtectedRoute = PROTECTED_PREFIXES.some(
+    (prefix) => cleanPath === prefix || cleanPath.startsWith(prefix + '/'),
+  );
+  const noIndexRoutes = [
+    '/login',
+    '/signup',
+    '/join',
+    '/consent',
+    '/language',
+    '/maintenance',
+    '/design',
+    '/privacy-policy',
+    '/terms',
+  ];
+  const shouldNoIndex =
+    isProtectedRoute ||
+    noIndexRoutes.some((route) => cleanPath === route || cleanPath.startsWith(route + '/'));
 
   const cspHeader = [
     "default-src 'self'",
@@ -42,6 +61,7 @@ export default function middleware(request: NextRequest): NextResponse {
     res.headers.set('Content-Security-Policy', cspHeader);
     res.headers.set('X-Content-Type-Options', 'nosniff');
     res.headers.set('X-Frame-Options', 'DENY');
+    if (shouldNoIndex) res.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.headers.set(
@@ -54,7 +74,6 @@ export default function middleware(request: NextRequest): NextResponse {
   // Check for maintenance mode gating
   const isMaintenance =
     process.env.MAINTENANCE_MODE === 'true' || process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
-  const pathname = request.nextUrl.pathname;
   const isBypass = request.headers.get('x-bodhai-bypass-maintenance') === 'true';
 
   if (
@@ -71,13 +90,8 @@ export default function middleware(request: NextRequest): NextResponse {
   const isLoggedIn = request.cookies.get('bodhai_logged_in')?.value === 'true';
   const isPublicBypass = request.nextUrl.searchParams.get('public') === 'true';
   const locale = pathname.startsWith('/hi') ? 'hi' : 'en';
-  const cleanPath = pathname.replace(new RegExp(`^/(?:en|hi)(?=/|$)`), '') || '/';
 
   // Unauthenticated users attempting to access protected routes -> redirect to login with redirect path
-  const isProtectedRoute = PROTECTED_PREFIXES.some(
-    (prefix) => cleanPath === prefix || cleanPath.startsWith(prefix + '/'),
-  );
-
   if (!isLoggedIn && isProtectedRoute) {
     const search = request.nextUrl.search || '';
     const targetUrl = cleanPath + search;
@@ -90,10 +104,10 @@ export default function middleware(request: NextRequest): NextResponse {
 
   // Authenticated users visiting landing page / login / signup -> redirect to their role dashboard
   if (isLoggedIn && !isPublicBypass) {
+    const role = request.cookies.get('bodhai_user_role')?.value;
     const isAuthOrLanding = cleanPath === '/' || cleanPath === '/login' || cleanPath === '/signup';
 
     if (isAuthOrLanding) {
-      const role = request.cookies.get('bodhai_user_role')?.value;
       let targetPath = `/${locale}/profile`;
       if (role === 'admin') {
         targetPath = `/${locale}/admin/stats`;
@@ -104,6 +118,31 @@ export default function middleware(request: NextRequest): NextResponse {
       }
 
       const redirectUrl = new URL(targetPath, request.url);
+      return applySecurityHeaders(NextResponse.redirect(redirectUrl, { status: 307 }));
+    }
+
+    // Role portal isolation:
+    // Teachers visiting student-only dashboard -> redirect to teacher classes
+    if (role === 'teacher' && (cleanPath === '/student' || cleanPath.startsWith('/student/'))) {
+      const redirectUrl = new URL(`/${locale}/classes`, request.url);
+      return applySecurityHeaders(NextResponse.redirect(redirectUrl, { status: 307 }));
+    }
+
+    // Admins visiting student dashboard -> redirect to admin stats
+    if (role === 'admin' && (cleanPath === '/student' || cleanPath.startsWith('/student/'))) {
+      const redirectUrl = new URL(`/${locale}/admin/stats`, request.url);
+      return applySecurityHeaders(NextResponse.redirect(redirectUrl, { status: 307 }));
+    }
+
+    // Students visiting teacher classes or admin area -> redirect to student dashboard
+    if (
+      role === 'student' &&
+      (cleanPath === '/classes' ||
+        cleanPath.startsWith('/classes/') ||
+        cleanPath === '/admin' ||
+        cleanPath.startsWith('/admin/'))
+    ) {
+      const redirectUrl = new URL(`/${locale}/student`, request.url);
       return applySecurityHeaders(NextResponse.redirect(redirectUrl, { status: 307 }));
     }
   }

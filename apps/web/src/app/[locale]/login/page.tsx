@@ -66,10 +66,29 @@ export default function LoginPage(): React.JSX.Element {
         syncSessionCookies(token, user);
         const params = new URLSearchParams(window.location.search);
         const redirectParam = params.get('redirect');
-        const safeRedirect =
-          redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
-            ? redirectParam
-            : null;
+        const cleanPath = redirectParam?.replace(/^\/(?:en|hi)(?=\/|$)/, '') || null;
+        let safeRedirect =
+          cleanPath && cleanPath.startsWith('/') && !cleanPath.startsWith('//') ? cleanPath : null;
+
+        if (
+          user.role === 'teacher' &&
+          (safeRedirect === '/student' || safeRedirect?.startsWith('/student/'))
+        ) {
+          safeRedirect = null;
+        }
+        if (
+          user.role === 'admin' &&
+          (safeRedirect === '/student' || safeRedirect?.startsWith('/student/'))
+        ) {
+          safeRedirect = null;
+        }
+        if (
+          user.role === 'student' &&
+          (safeRedirect?.startsWith('/classes') || safeRedirect?.startsWith('/admin'))
+        ) {
+          safeRedirect = null;
+        }
+
         router.replace(safeRedirect || getUserDashboardPath(user));
         return;
       }
@@ -194,8 +213,12 @@ export default function LoginPage(): React.JSX.Element {
         typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const redirectParam = params?.get('redirect');
       const cleanPath = redirectParam?.replace(/^\/(?:en|hi)(?=\/|$)/, '') || null;
-      const safeRedirect =
+      let safeRedirect =
         cleanPath && cleanPath.startsWith('/') && !cleanPath.startsWith('//') ? cleanPath : null;
+
+      if (safeRedirect === '/student' || safeRedirect?.startsWith('/student/')) {
+        safeRedirect = null;
+      }
 
       if (safeRedirect) {
         router.push(safeRedirect);
@@ -243,8 +266,12 @@ export default function LoginPage(): React.JSX.Element {
         typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const redirectParam = params?.get('redirect');
       const cleanPath = redirectParam?.replace(/^\/(?:en|hi)(?=\/|$)/, '') || null;
-      const safeRedirect =
+      let safeRedirect =
         cleanPath && cleanPath.startsWith('/') && !cleanPath.startsWith('//') ? cleanPath : null;
+
+      if (safeRedirect === '/student' || safeRedirect?.startsWith('/student/')) {
+        safeRedirect = null;
+      }
 
       if (safeRedirect) {
         router.push(safeRedirect);

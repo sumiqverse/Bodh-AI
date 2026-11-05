@@ -22,6 +22,7 @@ import {
 import { useSolve, solveSubmissionSchema, type SolveSubmissionFormValues } from '@/hooks/useSolve';
 import { KatexRenderer } from '@/components/katex-renderer';
 import { isGuardianConsentError } from '@/lib/api-errors';
+import { getCurrentUser } from '@/lib/api-client';
 import { Check, Info, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 function SolveSkeleton(): React.JSX.Element {
@@ -63,6 +64,18 @@ function SolveContent(): React.JSX.Element {
   } = useSolve({ skillId, questionId });
 
   const [redirectCountdown, setRedirectCountdown] = React.useState<number>(5);
+  const [dashboardPath, setDashboardPath] = React.useState<string>('/student');
+
+  React.useEffect(() => {
+    const user = getCurrentUser();
+    if (user?.role === 'teacher') {
+      setDashboardPath('/classes');
+    } else if (user?.role === 'admin') {
+      setDashboardPath('/admin/stats');
+    } else {
+      setDashboardPath('/student');
+    }
+  }, []);
 
   React.useEffect(() => {
     if (!isPracticeCompleted) return;
@@ -71,7 +84,7 @@ function SolveContent(): React.JSX.Element {
       setRedirectCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.push('/student');
+          router.push(dashboardPath);
           return 0;
         }
         return prev - 1;
@@ -79,7 +92,7 @@ function SolveContent(): React.JSX.Element {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isPracticeCompleted, router]);
+  }, [isPracticeCompleted, router, dashboardPath]);
 
   const form = useForm<SolveSubmissionFormValues>({
     resolver: zodResolver(solveSubmissionSchema),
@@ -139,7 +152,7 @@ function SolveContent(): React.JSX.Element {
                   {t('completeConsentButton')}
                 </Link>
                 <Link
-                  href="/student"
+                  href={dashboardPath}
                   className={buttonVariants({
                     variant: 'outline',
                     className: 'w-full min-h-[44px] inline-flex items-center justify-center',
@@ -150,7 +163,7 @@ function SolveContent(): React.JSX.Element {
               </>
             ) : (
               <Link
-                href="/student"
+                href={dashboardPath}
                 className={buttonVariants({
                   variant: 'primary',
                   className: 'w-full min-h-[44px] inline-flex items-center justify-center',
@@ -205,7 +218,7 @@ function SolveContent(): React.JSX.Element {
               type="button"
               variant="outline"
               size="md"
-              onClick={() => router.push('/student')}
+              onClick={() => router.push(dashboardPath)}
               className="flex-1 min-h-[48px] cursor-pointer font-bold text-sm rounded-full border-2 border-ink bg-surface-white hover:bg-surface-cream text-ink shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
             >
               <span>{t('doneDashboardButton')}</span>
@@ -231,7 +244,7 @@ function SolveContent(): React.JSX.Element {
       {/* Navigation header */}
       <div className="w-full max-w-2xl flex items-center justify-between mb-4">
         <Link
-          href="/student"
+          href={dashboardPath}
           className="text-xs font-bold text-ink underline underline-offset-4 hover:opacity-80 inline-flex items-center gap-1"
         >
           ← {tCommon('backToHome')}

@@ -228,4 +228,52 @@ describe('User Dashboard Helpers & Session Cookies Sync', () => {
     syncSessionCookies(null, null);
     expect(document.cookie).not.toContain('bodhai_logged_in=true');
   });
+
+  it('redirects logged-in teacher visiting /en/student to /en/classes', () => {
+    const req = new NextRequest('http://localhost:3000/en/student', {
+      headers: {
+        cookie: 'bodhai_logged_in=true; bodhai_user_role=teacher',
+      },
+    });
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/classes');
+  });
+
+  it('redirects logged-in student visiting /en/classes to /en/student', () => {
+    const req = new NextRequest('http://localhost:3000/en/classes', {
+      headers: {
+        cookie: 'bodhai_logged_in=true; bodhai_user_role=student',
+      },
+    });
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/student');
+  });
+
+  it('redirects logged-in student visiting /en/admin to /en/student', () => {
+    const req = new NextRequest('http://localhost:3000/en/admin', {
+      headers: {
+        cookie: 'bodhai_logged_in=true; bodhai_user_role=student',
+      },
+    });
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/student');
+  });
+
+  it('redirects logged-in admin visiting /en/student to /en/admin/stats', () => {
+    const req = new NextRequest('http://localhost:3000/en/student', {
+      headers: {
+        cookie: 'bodhai_logged_in=true; bodhai_user_role=admin',
+      },
+    });
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/en/admin/stats');
+  });
 });

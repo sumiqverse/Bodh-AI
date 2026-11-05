@@ -19,6 +19,7 @@ import {
 } from '@bodhai/ui';
 import { useTest } from '@/hooks/useTest';
 import { KatexRenderer } from '@/components/katex-renderer';
+import { getCurrentUser } from '@/lib/api-client';
 
 function TestSkeleton(): React.JSX.Element {
   return (
@@ -55,6 +56,18 @@ function TestContent(): React.JSX.Element {
   } = useTest({ skillId });
 
   const [selectedOption, setSelectedOption] = React.useState<string | null>(null);
+  const [dashboardPath, setDashboardPath] = React.useState<string>('/student');
+
+  React.useEffect(() => {
+    const user = getCurrentUser();
+    if (user?.role === 'teacher') {
+      setDashboardPath('/classes');
+    } else if (user?.role === 'admin') {
+      setDashboardPath('/admin/stats');
+    } else {
+      setDashboardPath('/student');
+    }
+  }, []);
 
   // Clear choice on question advance
   React.useEffect(() => {
@@ -189,7 +202,7 @@ function TestContent(): React.JSX.Element {
                 type="button"
                 variant="orange"
                 size="lg"
-                onClick={() => router.push('/student')}
+                onClick={() => router.push(dashboardPath)}
                 className="w-full sm:flex-1 h-12 min-h-[48px] cursor-pointer font-black text-sm shadow-card rounded-full border-2 border-ink bg-primary-orange hover:bg-primary-orange-dark text-ink hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center gap-2"
               >
                 <span>{t('returnToMap')}</span>
@@ -226,7 +239,7 @@ function TestContent(): React.JSX.Element {
           <div className="mt-6 flex justify-center">
             <Button
               variant="outline"
-              onClick={() => router.push('/student')}
+              onClick={() => router.push(dashboardPath)}
               className="rounded-full border-2 border-ink font-bold"
             >
               {tCommon('backToHome')}
@@ -245,7 +258,7 @@ function TestContent(): React.JSX.Element {
         <CardHeader className="space-y-4 pb-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/student"
+              href={dashboardPath}
               className="text-xs font-bold text-ink underline underline-offset-4 hover:opacity-80"
             >
               ← {tCommon('backToHome')}
