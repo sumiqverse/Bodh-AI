@@ -10,6 +10,7 @@ import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { ToastProvider } from '@bodhai/ui';
 import { ServiceWorkerRegister } from '@/components/offline';
+import { JsonLd } from '@/components/json-ld';
 import 'katex/dist/katex.min.css';
 import '../globals.css';
 
@@ -36,7 +37,6 @@ import { getBaseUrl } from '@/lib/site-url';
 export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
   const { locale } = await params;
   const baseUrl = getBaseUrl();
-  const canonicalPath = `/${locale}`;
 
   return {
     manifest: '/manifest.json',
@@ -49,6 +49,19 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
       ],
       shortcut: '/favicon.ico',
       apple: [{ url: '/icons/image.webp', sizes: '180x180', type: 'image/webp' }],
+    },
+    applicationName: 'BodhAI',
+    category: 'education',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
+      },
     },
     title: {
       default: 'BodhAI (बोधAI) — Adaptive Mastery Learning for Classes 6–10 in India',
@@ -76,7 +89,6 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
     openGraph: {
       type: 'website',
       locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
-      url: `${baseUrl}/${locale}`,
       siteName: 'BodhAI (बोधAI)',
       title: 'BodhAI — Adaptive Mastery Learning for Classes 6–10',
       description:
@@ -85,33 +97,21 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
           : 'Personalized diagnostic assessments and mastery learning for middle and high school students in India.',
       images: [
         {
-          url: `${baseUrl}/icons/image.png`,
-          width: 1200,
-          height: 630,
+          url: `${baseUrl}/icons/image.webp`,
+          width: 1254,
+          height: 1254,
           alt: 'BodhAI — Adaptive Mastery Learning for Classes 6 to 10 in India',
         },
       ],
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title: 'BodhAI — Adaptive Learning for Classes 6–10',
       description:
         locale === 'hi'
           ? 'भारतीय विद्यालयों के लिए द्विभाषी अनुकूली नैदानिक शिक्षण।'
           : 'Bilingual adaptive diagnostic learning for Indian schools.',
-      images: [`${baseUrl}/icons/image.png`],
-    },
-    alternates: {
-      canonical: canonicalPath,
-      languages: {
-        en: '/en',
-        hi: '/hi',
-        'x-default': '/en',
-      },
-    },
-    robots: {
-      index: true,
-      follow: true,
+      images: [`${baseUrl}/icons/image.webp`],
     },
   };
 }
@@ -156,85 +156,36 @@ export default async function LocaleLayout({
       name: 'India',
     },
     sameAs: [
+      'https://github.com/sumiqverse/Bodh-AI',
+      'https://twitter.com/BodhAI_Edu',
+      'https://www.linkedin.com/company/bodhai',
       'https://en.wikipedia.org/wiki/National_Council_of_Educational_Research_and_Training',
-      'https://www.wikidata.org/wiki/Q11068875',
-      'https://github.com/bodhai-org/bodhai',
-      'https://twitter.com/bodhai_edu',
+      'https://ncert.nic.in',
+      'https://cbseacademic.nic.in',
     ],
+    knowsLanguage: ['en-IN', 'hi-IN'],
+    audience: {
+      '@type': 'EducationalAudience',
+      educationalRole: 'student',
+    },
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Pedagogical & Technical Inquiries',
       email: 'contact@bodhai.org.in',
       availableLanguage: ['English', 'Hindi'],
+      areaServed: { '@type': 'Country', name: 'India' },
     },
-    educationalCredentialAwarded: 'NCERT Competency Mastery Evaluation',
   };
 
-  const webPageJsonLd = {
+  const websiteJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    '@id': `${baseUrl}/${locale}#webpage`,
-    url: `${baseUrl}/${locale}`,
-    name:
-      locale === 'hi'
-        ? 'बोधAI — कक्षा 6 से 10 के लिए अनुकूली महारत अधिगम'
-        : 'BodhAI — Adaptive Mastery Learning for Middle & Secondary School',
-    description:
-      'BodhAI is an open-source, NCERT-aligned adaptive diagnostic and mastery learning platform for Classes 6–10 across India.',
-    inLanguage: locale === 'hi' ? 'hi-IN' : 'en-IN',
-    isPartOf: {
-      '@type': 'WebSite',
-      '@id': `${baseUrl}/#website`,
-      name: 'BodhAI',
-      url: baseUrl,
-    },
-    about: {
-      '@type': 'Organization',
-      '@id': `${baseUrl}/#organization`,
-      name: 'BodhAI Foundation',
-      url: baseUrl,
-    },
-    publisher: {
-      '@type': 'Organization',
-      '@id': `${baseUrl}/#organization`,
-      name: 'BodhAI Foundation',
-      url: baseUrl,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${baseUrl}/icons/image.webp`,
-      },
-    },
-    author: {
-      '@type': 'Organization',
-      name: 'BodhAI Foundation',
-      url: baseUrl,
-    },
-    datePublished: '2026-01-15T00:00:00+05:30',
-    dateModified: '2026-11-04T00:00:00+05:30',
-  };
-
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: locale === 'hi' ? 'गृह' : 'Home',
-        item: baseUrl,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: locale === 'hi' ? 'दक्षता अधिगम' : 'Mastery Learning',
-        item: `${baseUrl}/${locale}`,
-      },
-    ],
-  };
-
-  const graphJsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [organizationJsonLd, webPageJsonLd, breadcrumbJsonLd],
+    '@type': 'WebSite',
+    '@id': `${baseUrl}/#website`,
+    url: baseUrl,
+    name: 'BodhAI',
+    alternateName: ['बोधAI', 'BodhAI Learning'],
+    inLanguage: ['en-IN', 'hi-IN'],
+    publisher: { '@id': `${baseUrl}/#organization` },
   };
 
   return (
@@ -251,22 +202,8 @@ export default async function LocaleLayout({
           href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
           crossOrigin="anonymous"
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(graphJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-        />
+        <link rel="alternate" type="text/plain" href="/llms.txt" title="BodhAI llms.txt" />
+        <JsonLd data={[organizationJsonLd, websiteJsonLd]} />
       </head>
       <body className="min-h-screen font-sans bg-background text-foreground antialiased flex flex-col">
         <a href="#main-content" className="skip-to-content">

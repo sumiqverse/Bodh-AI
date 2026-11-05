@@ -24,7 +24,17 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@bodhai/ui';
-import { Printer } from 'lucide-react';
+import {
+  Printer,
+  BarChart2,
+  BookOpen,
+  Target,
+  AlertTriangle,
+  Lightbulb,
+  FileText,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
 import { getWebApiClient, getAuthToken } from '@/lib/api-client';
 import type {
   ClassDetailResponse,
@@ -46,6 +56,7 @@ import { AssignmentsView } from '@/components/teacher/AssignmentsView';
 import { ProgressReassessmentView } from '@/components/teacher/ProgressReassessmentView';
 import { StudentProfileModal } from '@/components/teacher/StudentProfileModal';
 import { CurriculumContentHub } from '@/components/teacher/CurriculumContentHub';
+import { ClassPedagogicalSeoGuide } from '@/components/teacher/ClassPedagogicalSeoGuide';
 
 interface PageProps {
   readonly params: Promise<{ id: string; locale: string }>;
@@ -445,66 +456,76 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
             <TabsList className="flex h-auto min-h-12 flex-wrap gap-1.5 bg-surface-cream/50 p-2 rounded-2xl border-2 border-ink shadow-xs overflow-x-auto">
               <TabsTrigger
                 value="heatmap"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                📊 {tTeacher('tabs.heatmap')}
+                <BarChart2 className="w-3.5 h-3.5" />
+                <span>{tTeacher('tabs.heatmap')}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="curriculum"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                📚 Curriculum & Content Hub
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Curriculum & Content Hub</span>
               </TabsTrigger>
               <TabsTrigger
                 value="clusters"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                🎯 {tTeacher('tabs.gapClusters')}
+                <Target className="w-3.5 h-3.5" />
+                <span>{tTeacher('tabs.gapClusters')}</span>
                 {clusters && clusters.clusters.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-primary-orange text-white text-[10px] font-black border border-ink">
+                  <span className="ml-1 px-2 py-0.2 rounded-full bg-primary-orange text-white text-[10px] font-black border border-ink">
                     {clusters.clusters.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="warnings"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                ⚠️ {tTeacher('tabs.earlyWarnings')}
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>{tTeacher('tabs.earlyWarnings')}</span>
                 {warnings && warnings.warnings.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-surface-pink text-ink text-[10px] font-black border border-ink">
+                  <span className="ml-1 px-2 py-0.2 rounded-full bg-surface-pink text-ink text-[10px] font-black border border-ink">
                     {warnings.warnings.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="suggestions"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                💡 {tTeacher('tabs.suggestions')}
+                <Lightbulb className="w-3.5 h-3.5" />
+                <span>{tTeacher('tabs.suggestions')}</span>
                 {suggestions && suggestions.suggestions.length > 0 && (
-                  <span className="ml-1.5 px-2 py-0.2 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink">
+                  <span className="ml-1 px-2 py-0.2 rounded-full bg-surface-yellow text-ink text-[10px] font-black border border-ink">
                     {suggestions.suggestions.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="assignments"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                📝 {tTeacher('tabs.assignments')}
+                <FileText className="w-3.5 h-3.5" />
+                <span>{tTeacher('tabs.assignments')}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="progress"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                📈 {tTeacher('tabs.progress')}
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>{tTeacher('tabs.progress')}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="roster"
-                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer"
+                className="rounded-full px-4 py-1.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
               >
-                👥 {tTeacher('tabs.roster')} ({classDetail.students.length})
+                <Users className="w-3.5 h-3.5" />
+                <span>
+                  {tTeacher('tabs.roster')} ({classDetail.students.length})
+                </span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -695,6 +716,13 @@ export default function ClassDetailPage({ params }: PageProps): React.JSX.Elemen
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Pedagogical Analytics Guide, Empirical Proof & FAQ Sections for SEO/AEO/GEO */}
+        <ClassPedagogicalSeoGuide
+          locale={resolvedParams.locale}
+          grade={classDetail?.grade ?? 9}
+          subject={classDetail?.name?.toLowerCase().includes('math') ? 'Mathematics' : 'Science'}
+        />
 
         {/* Student Profile Modal */}
         <StudentProfileModal

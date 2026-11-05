@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import {
@@ -42,6 +42,7 @@ import { AssignmentsView } from '@/components/teacher/AssignmentsView';
 import { ProgressReassessmentView } from '@/components/teacher/ProgressReassessmentView';
 import { StudentProfileModal } from '@/components/teacher/StudentProfileModal';
 import { CurriculumContentHub } from '@/components/teacher/CurriculumContentHub';
+import { ClassPedagogicalSeoGuide } from '@/components/teacher/ClassPedagogicalSeoGuide';
 import {
   Sparkles,
   RefreshCw,
@@ -57,6 +58,7 @@ import {
 
 export default function TeacherDashboardPage(): React.JSX.Element {
   const t = useTranslations('classes');
+  const locale = useLocale();
   const router = useRouter();
   const apiClient = getWebApiClient();
 
@@ -1423,6 +1425,13 @@ export default function TeacherDashboardPage(): React.JSX.Element {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Pedagogical Analytics Guide, Empirical Proof & FAQ Sections for SEO/AEO/GEO */}
+        <ClassPedagogicalSeoGuide
+          locale={locale}
+          grade={activeClass?.grade ?? 9}
+          subject={activeClass?.name?.toLowerCase().includes('math') ? 'Mathematics' : 'Science'}
+        />
 
         {/* Student Profile Modal */}
         <StudentProfileModal
